@@ -11,7 +11,7 @@
         "build": "vite build --config vite.config.js",
         "build-wp": "webpack build --mode=production",
         "preview": "vite preview",
-        "test": "deno run --allow-all ./test/Host.ts"
+        "test": "deno run --allow-all ./test/Subscribe.ts"
     },
     "browserslist": [
         "last 1 chrome version",
