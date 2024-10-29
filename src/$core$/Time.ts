@@ -87,6 +87,7 @@ export default class AxTime {
 }
 
 //
+export {AxTime as Time};
 export const defaultTimer = new AxTime();
 
 //
