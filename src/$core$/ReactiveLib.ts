@@ -54,9 +54,9 @@ export class Subscript {
     }
 
     //
-    trigger(name, value = null) {
-        Array.from(this.subscribers.get(name)?.values?.() || []).forEach((cb: (value: any, prop: keyType) => void) => cb(value, name));
-        Array.from(this.listeners?.values?.() || []).forEach((cb: (value: any, prop: keyType) => void) => cb(value, name));
+    trigger(name, value = null, oldValue?: any) {
+        Array.from(this.subscribers.get(name)?.values?.() || []).forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
+        Array.from(this.listeners?.values?.() || []).forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
     }
 }
 
@@ -188,8 +188,9 @@ export class ReactiveMap {
         //
         if (name == "delete") {
             return (prop, _ = null) => {
+                const oldValue = target.get(prop);
                 const result = valueOrFx(prop);
-                subscriptRegistry.get(target)?.trigger?.(prop, null);
+                subscriptRegistry.get(target)?.trigger?.(prop, null, oldValue);
                 return result;
             };
         }
@@ -197,8 +198,9 @@ export class ReactiveMap {
         //
         if (name == "set") {
             return (prop, value) => {
+                const oldValue = target.get(prop);
                 const result = valueOrFx(prop, value);
-                subscriptRegistry.get(target)?.trigger?.(prop, value);
+                subscriptRegistry.get(target)?.trigger?.(prop, value, oldValue);
                 return result;
             };
         }
@@ -241,8 +243,9 @@ export class ReactiveSet {
         //
         if (name == "delete") {
             return (value) => {
+                const oldValue = target.get(value);
                 const result = valueOrFx(value);
-                subscriptRegistry.get(target)?.trigger?.(value, null);
+                subscriptRegistry.get(target)?.trigger?.(value, null, oldValue);
                 return result;
             };
         }
@@ -250,8 +253,9 @@ export class ReactiveSet {
         //
         if (name == "add") {
             return (value) => {
+                const oldValue = target.get(value);
                 const result = valueOrFx(value);
-                subscriptRegistry.get(target)?.trigger?.(value, value);
+                subscriptRegistry.get(target)?.trigger?.(value, value, oldValue);
                 return result;
             };
         }
@@ -301,17 +305,19 @@ export class ReactiveObject {
 
     //
     set(target, name: keyType, value) {
+        const oldValue = target[name];
         const result = Reflect.set(target, name, value);
         const self = subscriptRegistry.get(target);
-        self?.trigger?.(name, value);
+        self?.trigger?.(name, value, oldValue);
         return result;
     }
 
     //
     deleteProperty(target, name: keyType) {
+        const oldValue = target[name];
         const result = Reflect.deleteProperty(target, name);
         const self = subscriptRegistry.get(target);
-        self?.trigger?.(name, null);
+        self?.trigger?.(name, null, oldValue);
         return result;
     }
 }
