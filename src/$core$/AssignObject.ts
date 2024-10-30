@@ -122,6 +122,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
 }
 
 //
+export const $originalKey$ = "$@origin@";//Symbol("@origin");
 export class AssignObjectHandler {
     //
     constructor() {
@@ -129,6 +130,7 @@ export class AssignObjectHandler {
 
     //
     get(target, name: keyType, ctx) {
+        if (name == $originalKey$) { return target; };
         return Reflect.get(target, name, ctx);
     }
 
@@ -160,7 +162,10 @@ export class AssignObjectHandler {
 }
 
 //
+export const $originalObjects$ = new WeakMap();
 export const makeObjectAssignable = (obj) => {
     // @ts-ignore
-    return new Proxy(obj, new AssignObjectHandler());
+    const px = new Proxy(obj, new AssignObjectHandler());
+    $originalObjects$.set(px, obj);
+    return px;
 };

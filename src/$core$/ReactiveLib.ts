@@ -1,4 +1,4 @@
-import { objectAssign } from "./AssignObject";
+import { $originalKey$, $originalObjects$, objectAssign } from "./AssignObject";
 //import stateMap from "./StateManager.ts";
 
 //
@@ -62,7 +62,7 @@ export class Subscript {
 
 //
 const subscriptRegistry = new WeakMap<any, Subscript>();
-export const extractSymbol = Symbol("@extract");
+export const extractSymbol = "$@extract@$";//Symbol("@extract");
 
 //
 const register = (what: any, handle: any): any => {
@@ -135,6 +135,7 @@ export const derivate = (from, reactFn, watch?) => {
 
 //
 export const subscribe = (target, cb: (value: any, prop: keyType) => void, prop: keyType | null = null, ctx: any | null = null)=>{
+    (target = $originalObjects$.get(target) ?? target?.[$originalKey$] ?? target);
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[extractSymbol] ?? target) : target;
 
     //
