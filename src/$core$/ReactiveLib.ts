@@ -41,7 +41,7 @@ export class Subscript {
 
     //
     subscribe(cb: (value: any, prop: keyType) => void, prop: keyType | null) {
-        if (prop) {
+        if (prop != null) {
             if (this.subscribers.has(prop)) {
                 this.subscribers.get(prop)?.add?.(cb);
             } else {
@@ -133,22 +133,34 @@ export const derivate = (from, reactFn, watch?) => {
     return bindWith(reactFn(safe(from)), from, watch);
 }
 
+// TODO! WeakMap or WeakSet support
+const isKeyType = (prop: any)=>{
+    return ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
+}
+
 //
-export const subscribe = (target, cb: (value: any, prop: keyType) => void, prop: keyType | null = null, ctx: any | null = null)=>{
+export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, ctx: any | null = null)=>{
+    const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
+    const prop = isPair ? target?.[1] : null;
+
+    // hard and advanced definition
+    target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
+
+    //
     (target = $originalObjects$.get(target) ?? target?.[$originalKey$] ?? target);
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[extractSymbol] ?? target) : target;
 
     //
-    if (prop) {
+    if (prop != null) {
         if (unwrap instanceof Map || unwrap instanceof WeakMap) {
-            if (unwrap.has(prop as any) || !prop) {
+            if (unwrap.has(prop as any) || prop == null) {
                 cb?.(unwrap.get(prop as any), prop);
             }
         } else
 
         //
         if (unwrap instanceof Set || unwrap instanceof WeakSet) {
-            if (unwrap.has(prop as any) || !prop) {
+            if (unwrap.has(prop as any) || prop == null) {
                 // @ts-ignore
                 cb?.(unwrap.get(prop as any), prop);
             }
