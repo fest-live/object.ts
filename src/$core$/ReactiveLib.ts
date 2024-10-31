@@ -281,8 +281,8 @@ export class ReactiveSet {
         //
         if (name == "delete") {
             return (value) => {
-                const oldValue = target.get(value);
-                const result = valueOrFx(value);
+                const oldValue = target.has(value) ? value : null;
+                const result   = valueOrFx(value);
                 subscriptRegistry.get(target)?.trigger?.(value, null, oldValue);
                 return result;
             };
@@ -291,8 +291,8 @@ export class ReactiveSet {
         //
         if (name == "add") {
             return (value) => {
-                const oldValue = target.get(value);
-                const result = valueOrFx(value);
+                const oldValue = target.has(value) ? value : null;
+                const result   = valueOrFx(value);
                 subscriptRegistry.get(target)?.trigger?.(value, value, oldValue);
                 return result;
             };
