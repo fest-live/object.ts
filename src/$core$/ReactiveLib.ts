@@ -139,6 +139,46 @@ const isKeyType = (prop: any)=>{
 }
 
 //
+const callByProp = (unwrap, prop, cb, ctx)=>{
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) {
+        if (prop != null && unwrap.has(prop as any)) {
+            return cb?.(unwrap.get(prop as any), prop);
+        }
+    } else
+
+    //
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) {
+        if (prop != null && unwrap.has(prop as any)) {
+            // @ts-ignore
+            return cb?.(prop, prop);
+        }
+    } else
+
+    //
+    if (typeof unwrap == "function" || typeof unwrap == "object") {
+        return cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop);
+    }
+}
+
+//
+const isIterable = (obj) => {
+    return (typeof obj?.[Symbol.iterator] == "function");
+}
+
+//
+const callByAllProp = (unwrap, cb, ctx)=>{
+    let keys: any = [];
+    if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") {
+        // @ts-ignore
+        keys = unwrap?.keys?.() || keys;
+    } else
+    if (typeof unwrap == "object" || typeof unwrap == "function") {
+        keys = Object.keys(unwrap) || keys;
+    }
+    return Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx));
+}
+
+//
 export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, ctx: any | null = null)=>{
     const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
     const prop = isPair ? target?.[1] : null;
@@ -152,25 +192,10 @@ export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, 
 
     //
     if (prop != null) {
-        if (unwrap instanceof Map || unwrap instanceof WeakMap) {
-            if (unwrap.has(prop as any) || prop == null) {
-                cb?.(unwrap.get(prop as any), prop);
-            }
-        } else
-
-        //
-        if (unwrap instanceof Set || unwrap instanceof WeakSet) {
-            if (unwrap.has(prop as any) || prop == null) {
-                // @ts-ignore
-                cb?.(unwrap.get(prop as any), prop);
-            }
-        } else
-
-        //
-        if (typeof unwrap == "function" || typeof unwrap == "object") {
-            cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop);
-        }
-    };
+        callByProp(unwrap, prop, cb, ctx);
+    } else {
+        callByAllProp(unwrap, cb, ctx);
+    }
 
     //
     const self = subscriptRegistry.get(unwrap);
