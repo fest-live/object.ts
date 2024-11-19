@@ -55,7 +55,7 @@ export default class AxTime {
 
     //
     static get raf() {
-        return new Promise(r => requestAnimationFrame(r));
+        return new Promise(r => requestIdleCallback(r));
     }
 
     // protect from looping (for example)
@@ -91,9 +91,9 @@ export {AxTime as Time};
 export const defaultTimer = new AxTime();
 
 //
-(async () => {
+requestIdleCallback(async () => {
     while (true) {
         await Promise.allSettled(Array.from(AxTime.looping.values()).map(fn => fn?.(performance.now())));
         await new Promise(r => requestAnimationFrame(r));
     }
-})();
+}, {timeout: 1000});
