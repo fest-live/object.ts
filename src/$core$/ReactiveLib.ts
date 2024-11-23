@@ -1,32 +1,5 @@
-import { $originalKey$, $originalObjects$, objectAssign } from "./AssignObject";
-//import stateMap from "./StateManager.ts";
-
-//
-const boundCtx = new WeakMap();
-const bindFx = (target, fx)=>{
-    if (!boundCtx.has(target)) {
-        boundCtx.set(target, new WeakMap());
-    }
-
-    //
-    const be = boundCtx.get(target);
-    if (!be.has(fx)) {
-        const bfx = fx?.bind?.(target);
-        be.set(fx, bfx);
-    }
-
-    //
-    return be.get(fx);
-}
-
-//
-const bindCtx = (target, fx) => {
-    return (typeof fx == "function" ? bindFx(target, fx) : fx) ?? fx;
-}
-
-//
-type keyType = string | number | symbol;
-
+import { objectAssign } from "./AssignObject";
+import { $originalObjects$, $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, isIterable, callByProp, callByAllProp } from "./Keys.js";
 
 //
 export class Subscript {
@@ -62,22 +35,17 @@ export class Subscript {
 
 //
 const subscriptRegistry = new WeakMap<any, Subscript>();
-export const extractSymbol = "$@extract@$";//Symbol("@extract");
-
-//
 const register = (what: any, handle: any): any => {
-    const unwrap = what?.[extractSymbol] ?? what;
+    const unwrap = what?.[$extractKey$] ?? what;
     if (!subscriptRegistry.has(unwrap)) {
         subscriptRegistry.set(unwrap, new Subscript());
     }
     return handle;
 }
 
-
-
 //
 export const safe = (target)=>{
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[extractSymbol] ?? target) : target;
+    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
 
     //
     if (Array.isArray(unwrap)) {
@@ -133,51 +101,6 @@ export const derivate = (from, reactFn, watch?) => {
     return bindWith(reactFn(safe(from)), from, watch);
 }
 
-// TODO! WeakMap or WeakSet support
-const isKeyType = (prop: any)=>{
-    return ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
-}
-
-//
-const callByProp = (unwrap, prop, cb, ctx)=>{
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) {
-        if (prop != null && unwrap.has(prop as any)) {
-            return cb?.(unwrap.get(prop as any), prop);
-        }
-    } else
-
-    //
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) {
-        if (prop != null && unwrap.has(prop as any)) {
-            // @ts-ignore
-            return cb?.(prop, prop);
-        }
-    } else
-
-    //
-    if (typeof unwrap == "function" || typeof unwrap == "object") {
-        return cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop);
-    }
-}
-
-//
-const isIterable = (obj) => {
-    return (typeof obj?.[Symbol.iterator] == "function");
-}
-
-//
-const callByAllProp = (unwrap, cb, ctx)=>{
-    let keys: any = [];
-    if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") {
-        // @ts-ignore
-        keys = unwrap?.keys?.() || keys;
-    } else
-    if (typeof unwrap == "object" || typeof unwrap == "function") {
-        keys = Object.keys(unwrap) || keys;
-    }
-    return Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx));
-}
-
 //
 export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, ctx: any | null = null)=>{
     const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
@@ -188,7 +111,7 @@ export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, 
 
     //
     (target = $originalObjects$.get(target) ?? target?.[$originalKey$] ?? target);
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[extractSymbol] ?? target) : target;
+    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
 
     //
     if (prop != null) {
@@ -216,8 +139,8 @@ export class ReactiveMap {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == extractSymbol) {
-            return target?.[extractSymbol] ?? target;
+        if (name == $extractKey$ || name == $originalKey$) {
+            return target?.[name] ?? target;
         }
 
         //
@@ -271,8 +194,8 @@ export class ReactiveSet {
     //
     get(target, name: keyType, ctx) {
         //
-        if (name == extractSymbol) {
-            return target?.[extractSymbol] ?? target;
+        if (name == $extractKey$) {
+            return target?.[$extractKey$] ?? target;
         }
 
         //
@@ -320,8 +243,8 @@ export class ReactiveObject {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == extractSymbol) {
-            return target?.[extractSymbol] ?? target;
+        if (name == $extractKey$) {
+            return target?.[$extractKey$] ?? target;
         }
         return bindCtx(target, Reflect.get(target, name, ctx));
     }
@@ -361,9 +284,9 @@ export class ReactiveObject {
 }
 
 //
-export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => new Proxy<T>(obj?.[extractSymbol] ?? obj, register(obj, new ReactiveObject()) as ProxyHandler<T>);
-export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) => new Proxy(map?.[extractSymbol] ?? map, register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>);
-export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) => new Proxy(set?.[extractSymbol] ?? set, register(set, new ReactiveSet()) as ProxyHandler<Set<V>>);
+export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => new Proxy<T>(obj?.[$extractKey$] ?? obj, register(obj, new ReactiveObject()) as ProxyHandler<T>);
+export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) => new Proxy(map?.[$extractKey$] ?? map, register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>);
+export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) => new Proxy(set?.[$extractKey$] ?? set, register(set, new ReactiveSet()) as ProxyHandler<Set<V>>);
 
 //
 export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => new Proxy(new Map(map), register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>);
@@ -371,7 +294,7 @@ export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) =>
 
 //stateMap
 export const makeReactive: any = (target: any, stateName = ""): any => {
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[extractSymbol] ?? target) : target;
+    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
     let reactive = target;
 
     //
@@ -398,7 +321,7 @@ export const makeReactive: any = (target: any, stateName = ""): any => {
 
 //
 export const createReactive: any = (target: any, stateName = ""): any => {
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[extractSymbol] ?? target) : target;
+    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
     let reactive = target;
 
     // BROKEN!

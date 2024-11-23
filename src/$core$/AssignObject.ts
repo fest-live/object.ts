@@ -1,10 +1,4 @@
-//
-type keyType = string | number | symbol;
-
-//
-const isIterable = (obj) => {
-    return (typeof obj?.[Symbol.iterator] == "function");
-}
+import { $extractKey$, $originalKey$, $originalObjects$, isIterable, type keyType } from "./Keys.js";
 
 //
 export const removeExtra = (target, value, name: keyType | null = null)=>{
@@ -122,7 +116,6 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
 }
 
 //
-export const $originalKey$ = "$@origin@";//Symbol("@origin");
 export class AssignObjectHandler {
     //
     constructor() {
@@ -130,7 +123,9 @@ export class AssignObjectHandler {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == $originalKey$) { return target; };
+        if (name == $extractKey$ || name == $originalKey$) {
+            return target?.[name] ?? target;
+        }
         return Reflect.get(target, name, ctx);
     }
 
@@ -162,10 +157,12 @@ export class AssignObjectHandler {
 }
 
 //
-export const $originalObjects$ = new WeakMap();
 export const makeObjectAssignable = (obj) => {
     // @ts-ignore
     const px = new Proxy(obj, new AssignObjectHandler());
     $originalObjects$.set(px, obj);
     return px;
 };
+
+//
+export { $originalKey$ };
