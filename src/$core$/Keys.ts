@@ -72,3 +72,44 @@ export const callByAllProp = (unwrap, cb, ctx)=>{
     }
     return Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx));
 }
+
+//
+export const safe = (target)=>{
+    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
+
+    //
+    if (Array.isArray(unwrap)) {
+        const mapped = (e)=>safe(e);
+        return unwrap?.map?.(mapped) || Array.from(unwrap || []).map(mapped);
+    } else
+
+    //
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) {
+        const map = new Map();
+        // @ts-ignore
+        for (const E of unwrap?.entries?.()) { map.set(E[0], safe(E[1])); };
+        return map;
+    } else
+
+    //
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) {
+        const set = new Set();
+        // @ts-ignore
+        for (const E of unwrap?.values?.()) { set.add(safe(E[0])); };
+        return set;
+    } else
+
+    //
+    if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") {
+        const obj = {};
+        for (const [K,V] of Object.entries(unwrap || {})) {
+            if (K != $extractKey$ && K != $originalKey$) {
+                obj[K] = safe(V);
+            }
+        };
+        return obj;
+    }
+
+    //
+    return unwrap;
+}

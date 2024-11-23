@@ -1,5 +1,8 @@
 import { objectAssign } from "./AssignObject";
-import { $originalObjects$, $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, isIterable, callByProp, callByAllProp } from "./Keys.js";
+import { $originalObjects$, $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, isIterable, callByProp, callByAllProp, safe } from "./Keys.js";
+
+//
+export { safe };
 
 //
 export class Subscript {
@@ -41,45 +44,6 @@ const register = (what: any, handle: any): any => {
         subscriptRegistry.set(unwrap, new Subscript());
     }
     return handle;
-}
-
-//
-export const safe = (target)=>{
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
-
-    //
-    if (Array.isArray(unwrap)) {
-        const mapped = (e)=>safe(e);
-        return unwrap?.map?.(mapped) || Array.from(unwrap || []).map(mapped);
-    } else
-
-    //
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) {
-        const map = new Map();
-        // @ts-ignore
-        for (const E of unwrap?.entries?.()) { map.set(E[0], safe(E[1])); };
-        return map;
-    } else
-
-    //
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) {
-        const set = new Set();
-        // @ts-ignore
-        for (const E of unwrap?.values?.()) { set.add(safe(E[0])); };
-        return set;
-    } else
-
-    //
-    if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") {
-        const obj = {};
-        for (const E of Object.entries(unwrap || {})) {
-            obj[E[0]] = safe(E[1]);
-        };
-        return obj;
-    }
-
-    //
-    return unwrap;
 }
 
 //
