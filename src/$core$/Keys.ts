@@ -76,38 +76,28 @@ export const callByAllProp = (unwrap, cb, ctx)=>{
 //
 export const safe = (target)=>{
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
+    const mapped = (e)=>safe(e);
 
     //
     if (Array.isArray(unwrap)) {
-        const mapped = (e)=>safe(e);
-        return unwrap?.map?.(mapped) || Array.from(unwrap || []).map(mapped);
+        return unwrap?.map?.(mapped) || Array.from(unwrap || [])?.map?.(mapped) || [];
     } else
 
     //
     if (unwrap instanceof Map || unwrap instanceof WeakMap) {
-        const map = new Map();
         // @ts-ignore
-        for (const E of unwrap?.entries?.()) { map.set(E[0], safe(E[1])); };
-        return map;
+        return new Map(Array.from(unwrap?.entries?.() || [])?.map?.(([K,V])=>[V,safe(V)]));
     } else
 
     //
     if (unwrap instanceof Set || unwrap instanceof WeakSet) {
-        const set = new Set();
         // @ts-ignore
-        for (const E of unwrap?.values?.()) { set.add(safe(E)); };
-        return set;
+        return new Set(Array.from(unwrap?.values?.() || [])?.map?.(mapped));
     } else
 
     //
     if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") {
-        const obj = {};
-        for (const [K,V] of Object.entries(unwrap || {})) {
-            if (K != $extractKey$ && K != $originalKey$) {
-                obj[K] = safe(V);
-            }
-        };
-        return obj;
+        return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$))?.map?.(([K,V])=>[V,safe(V)]));
     }
 
     //
