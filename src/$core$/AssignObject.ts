@@ -95,7 +95,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
         if (exists instanceof Set || exists instanceof WeakSet) {
             for (const E of entries) {
                 // @ts-ignore
-                exists.add(...E);
+                exists.add(E);
             }
             return true;
         }
