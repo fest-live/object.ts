@@ -86,7 +86,7 @@ export const safe = (target)=>{
     //
     if (unwrap instanceof Map || unwrap instanceof WeakMap) {
         // @ts-ignore
-        return new Map(Array.from(unwrap?.entries?.() || [])?.map?.(([K,V])=>[V,safe(V)]));
+        return new Map(Array.from(unwrap?.entries?.() || [])?.map?.(([K,V])=>[K,safe(V)]));
     } else
 
     //
@@ -97,7 +97,7 @@ export const safe = (target)=>{
 
     //
     if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") {
-        return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$))?.map?.(([K,V])=>[V,safe(V)]));
+        return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$))?.map?.(([K,V])=>[K,safe(V)]));
     }
 
     //
