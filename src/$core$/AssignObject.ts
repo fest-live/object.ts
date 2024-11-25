@@ -65,7 +65,7 @@ export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
 }
 
 //
-export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = false, mergeKey = "id")=>{
+export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = true, mergeKey = "id")=>{
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
     let entries: any = null;
 
