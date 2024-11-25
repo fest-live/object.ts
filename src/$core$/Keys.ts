@@ -95,7 +95,7 @@ export const safe = (target)=>{
     if (unwrap instanceof Set || unwrap instanceof WeakSet) {
         const set = new Set();
         // @ts-ignore
-        for (const E of unwrap?.values?.()) { set.add(safe(E[0])); };
+        for (const E of unwrap?.values?.()) { set.add(safe(E)); };
         return set;
     } else
 
