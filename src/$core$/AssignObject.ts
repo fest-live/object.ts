@@ -58,7 +58,14 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
 }
 
 //
-export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = false)=>{
+export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
+    const entries = Array.from(items?.values?.()).map((I)=>[I?.[key],I]);
+    const map = new Map(entries as any);
+    return Array.from(map?.values?.() || []);
+}
+
+//
+export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = false, mergeKey = "id")=>{
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
     let entries: any = null;
 
@@ -94,6 +101,10 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
         //
         if (exists instanceof Set || exists instanceof WeakSet) {
             for (const E of entries) {
+                // @ts-ignore
+                const mergeObj = E?.[mergeKey] ? Array.from(exists?.values?.() || []).find((I)=>I?.[mergeKey]==E?.[mergeKey]) : null;
+                if (mergeObj) { return objectAssign(mergeObj, E, null, removeNotExists, mergeKey); }
+
                 // @ts-ignore
                 exists.add(E);
             }
