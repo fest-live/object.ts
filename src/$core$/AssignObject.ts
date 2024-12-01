@@ -118,6 +118,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
                 for (const E of entries) {
                     if (I < exists.length) { exists[I++] = E; } else { exists?.push?.(E); };
                 }
+                return exists;
             }
             return Object.assign(exists, Object.fromEntries([...(entries||[])]));
         }
