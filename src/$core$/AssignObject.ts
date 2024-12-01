@@ -115,7 +115,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
 
         //
         if (typeof exists == "object" || typeof exists == "function") {
-            if (Array.isArray(value) || isIterable(value)) {
+            if (Array.isArray(exists) || isIterable(exists)) {
                 let I = 0;
                 for (const E of entries) {
                     if (I < exists.length) { exists[I++] = E; } else { exists?.push?.(E); };
