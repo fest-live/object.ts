@@ -86,7 +86,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
             for (const [k,v] of entries) {
                 exists[k] = v;
             }
-            return true;
+            return exists;
         }
 
         //
@@ -95,7 +95,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
                 // @ts-ignore
                 exists.set(...E);
             }
-            return true;
+            return exists;
         }
 
         //
@@ -108,9 +108,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
                 // @ts-ignore
                 exists.add(E);
             }
-
-            //
-            return true;
+            return exists;
         }
 
         //
@@ -128,7 +126,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
     //
     if (name != null) {
         Reflect.set(target, name, value);
-        return value;
+        return target;
     } else
     if (typeof value == "object" || typeof value == "function") {
         return Object.assign(target, value);
