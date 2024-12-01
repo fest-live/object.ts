@@ -65,12 +65,12 @@ export const callByAllProp = (unwrap, cb, ctx)=>{
     let keys: any = [];
     if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") {
         // @ts-ignore
-        keys = unwrap?.keys?.() || keys;
+        keys = unwrap?.keys?.() || [];
     } else
-    if (typeof unwrap == "object" || typeof unwrap == "function") {
-        keys = Object.keys(unwrap) || keys;
+    if ((typeof unwrap == "object" || typeof unwrap == "function") && unwrap != null) {
+        keys = Object.keys(unwrap) || [];
     }
-    return Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx));
+    return keys != null ? Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx)) : [];
 }
 
 //
