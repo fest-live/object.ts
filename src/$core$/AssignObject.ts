@@ -67,21 +67,21 @@ export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
 //
 export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = true, mergeKey = "id")=>{
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
-    let entries: any = null;
+    let entries: any = [];
 
     //
     if (removeNotExists) { removeExtra(exists, value); }
 
     //
     if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value)) {
-        entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || value;
+        entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []);
     } else
     if (typeof value == "object" || typeof value == "function") {
         entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value);
     }
 
     //
-    if (exists && entries) {
+    if (exists && entries && (typeof entries == "object" || typeof entries == "function")) {
         if (Array.isArray(exists)) {
             for (const [k,v] of entries) {
                 exists[k] = v;
@@ -108,22 +108,34 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
                 // @ts-ignore
                 exists.add(E);
             }
+
+            //
             return true;
         }
 
         //
         if (typeof exists == "object" || typeof exists == "function") {
-            return Object.assign(exists, Object.fromEntries(entries));
+            if (Array.isArray(value) || isIterable(value)) {
+                let I = 0;
+                for (const E of entries) {
+                    if (I < exists.length) { exists[I++] = E; } else { exists?.push?.(E); };
+                }
+            }
+            return Object.assign(exists, Object.fromEntries([...(entries||[])]));
         }
     }
 
     //
     if (name != null) {
-        return Reflect.set(target, name, value);
+        Reflect.set(target, name, value);
+        return value;
     } else
     if (typeof value == "object" || typeof value == "function") {
         return Object.assign(target, value);
     }
+
+    //
+    return value;
 }
 
 //
@@ -157,7 +169,8 @@ export class AssignObjectHandler {
 
     //
     set(target, name: keyType, value) {
-        return objectAssign(target, value, name);
+        objectAssign(target, value, name);
+        return true;
     }
 
     //
