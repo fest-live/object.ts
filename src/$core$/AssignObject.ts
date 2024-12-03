@@ -7,7 +7,7 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
     //
     let entries: any = [];
     if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value)) {
-        entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || value;
+        entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []);
     } else
     if (typeof value == "object" || typeof value == "function") {
         entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value);
@@ -30,12 +30,10 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
         exEntries = Object.entries(exists);
     }
 
-    //
+    // REQUIRES NEW ECMASCRIPT!!!
     const keys = new Set(Array.from(entries).map((e)=>e?.[0]));
     const exe  = new Set(Array.from(exEntries).map((e)=>e?.[0]));
-
-    // REQUIRES NEW ECMASCRIPT!!!
-    const exclude = exe?.difference?.(keys);
+    const exclude = keys?.difference?.(exe);
 
     //
     if (Array.isArray(exists)) {
@@ -82,14 +80,6 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
 
     //
     if (exists && entries && (typeof entries == "object" || typeof entries == "function")) {
-        if (Array.isArray(exists)) {
-            for (const [k,v] of entries) {
-                exists[k] = v;
-            }
-            return exists;
-        }
-
-        //
         if (exists instanceof Map || exists instanceof WeakMap) {
             for (const E of entries) {
                 // @ts-ignore
@@ -116,7 +106,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
             if (Array.isArray(exists) || isIterable(exists)) {
                 let I = 0;
                 for (const E of entries) {
-                    if (I < exists.length) { exists[I++] = E; } else { exists?.push?.(E); };
+                    if (I < exists.length) { exists[I++] = E?.[1]; } else { exists?.push?.(E?.[1]); };
                 }
                 return exists;
             }
