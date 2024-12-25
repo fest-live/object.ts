@@ -93,10 +93,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
             for (const E of entries) {
                 // @ts-ignore
                 const mergeObj = E?.[mergeKey] ? Array.from(exists?.values?.() || []).find((I)=>I?.[mergeKey]==E?.[mergeKey]) : null;
-                if (mergeObj) { return objectAssign(mergeObj, E, null, removeNotExists, mergeKey); }
-
-                // @ts-ignore
-                exists.add(E);
+                if (mergeObj) { objectAssign(mergeObj, E, null, removeNotExists, mergeKey); } else { exists.add(E); }
             }
             return exists;
         }
