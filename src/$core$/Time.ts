@@ -96,4 +96,4 @@ requestIdleCallback(async () => {
         await Promise.allSettled(Array.from(AxTime.looping.values()).map(fn => fn?.(performance.now())));
         await new Promise(r => requestAnimationFrame(r));
     }
-}, {timeout: 1000});
+}, {timeout: 100});
