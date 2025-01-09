@@ -18,7 +18,6 @@
         "last 1 firefox version"
     ],
     "devDependencies": {
-        "@effective/eslint-config": "^5.4.7",
         "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^12.1.0",
         "@sass-fairy/list": "^1.2.4",
