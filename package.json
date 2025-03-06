@@ -8,6 +8,7 @@
     "scripts": {
         "dev": "vite",
         "worker": "vite build",
+        "watch": "vite build --watch",
         "build": "vite build --config vite.config.js",
         "build-wp": "webpack build --mode=production",
         "preview": "vite preview",
@@ -23,7 +24,7 @@
         "@sass-fairy/list": "^1.2.4",
         "@types/node": "^22.8.1",
         "autoprefixer": "^10.4.16",
-        "esbuild": "^0.24.0",
+        "esbuild": "^0.25.0",
         "eslint": "^9.13.0",
         "eslint-config-prettier": "^9.1.0",
         "sass": "^1.77.6",
