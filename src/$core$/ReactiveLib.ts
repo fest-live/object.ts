@@ -111,6 +111,18 @@ export class ReactiveMap {
         const valueOrFx = bindCtx(target, Reflect.get(target, name, ctx));
 
         //
+        if (name == "clear") {
+            return () => {
+                const oldValues: any = Array.from(target?.entries?.() || []);
+                const result = valueOrFx();
+                oldValues.forEach(([prop, oldValue])=>{
+                    subscriptRegistry.get(target)?.trigger?.(prop, null, oldValue);
+                });
+                return result;
+            };
+        }
+
+        //
         if (name == "delete") {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop);
@@ -164,6 +176,18 @@ export class ReactiveSet {
 
         //
         const valueOrFx = bindCtx(target, Reflect.get(target, name, ctx));
+
+        //
+        if (name == "clear") {
+            return () => {
+                const oldValues = Array.from(target?.values?.() || []);
+                const result = valueOrFx();
+                oldValues.forEach((oldValue)=>{
+                    subscriptRegistry.get(target)?.trigger?.(null, null, oldValue);
+                });
+                return result;
+            };
+        }
 
         //
         if (name == "delete") {
