@@ -137,7 +137,7 @@ export class ReactiveMap {
             return (prop, value) => {
                 const oldValue = target.get(prop);
                 const result = valueOrFx(prop, value);
-                subscriptRegistry.get(target)?.trigger?.(prop, value, oldValue);
+                if (oldValue !== value) { subscriptRegistry.get(target)?.trigger?.(prop, value, oldValue); };
                 return result;
             };
         }
@@ -204,7 +204,7 @@ export class ReactiveSet {
             return (value) => {
                 const oldValue = target.has(value) ? value : null;
                 const result   = valueOrFx(value);
-                subscriptRegistry.get(target)?.trigger?.(value, value, oldValue);
+                if (oldValue !== value) { subscriptRegistry.get(target)?.trigger?.(value, value, oldValue); };
                 return result;
             };
         }
@@ -257,7 +257,7 @@ export class ReactiveObject {
         const oldValue = target[name];
         const result = Reflect.set(target, name, value);
         const self = subscriptRegistry.get(target);
-        self?.trigger?.(name, value, oldValue);
+        if (oldValue !== value) { self?.trigger?.(name, value, oldValue); };
         return result;
     }
 
