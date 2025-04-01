@@ -41,6 +41,9 @@ export const isIterable = (obj) => {
 
 //
 export const callByProp = (unwrap, prop, cb, ctx)=>{
+    if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$) return;
+
+    //
     if (unwrap instanceof Map || unwrap instanceof WeakMap) {
         if (prop != null && unwrap.has(prop as any)) {
             return cb?.(unwrap.get(prop as any), prop);
@@ -98,7 +101,7 @@ export const safe = (target)=>{
 
     //
     if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") {
-        return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$))?.map?.(([K,V])=>[K,safe(V)]));
+        return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$ && K != $registryKey$))?.map?.(([K,V])=>[K,safe(V)]));
     }
 
     //

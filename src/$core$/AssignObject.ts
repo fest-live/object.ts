@@ -107,7 +107,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
                 }
                 return exists;
             }
-            return Object.assign(exists, Object.fromEntries([...(entries||[])]));
+            return Object.assign(exists, Object.fromEntries([...(entries||[])].filter((K)=>(K != $extractKey$ && K != $originalKey$ && K != $registryKey$))));
         }
     }
 
