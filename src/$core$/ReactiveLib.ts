@@ -65,28 +65,37 @@ export const derivate = (from, reactFn, watch?) => {
     return bindWith(reactFn(safe(from)), from, watch);
 }
 
+// experimental promise support
+export const withPromise = (target, cb)=>{
+    if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
+    if (typeof target?.then == "function") return target?.then?.(cb);
+    return cb(target);
+}
+
 //
-export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, ctx: any | null = null)=>{
-    const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
-    const prop = isPair ? target?.[1] : null;
+export const subscribe = (tg: any, cb: (value: any, prop: keyType) => void, ctx: any | null = null)=>{
+    return withPromise(tg, (target: any)=>{
+        const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
+        const prop = isPair ? target?.[1] : null;
 
-    // hard and advanced definition
-    target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
+        // hard and advanced definition
+        target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
 
-    //
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
+        //
+        const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
 
-    //
-    if (prop != null) {
-        callByProp(unwrap, prop, cb, ctx);
-    } else {
-        callByAllProp(unwrap, cb, ctx);
-    }
+        //
+        if (prop != null) {
+            callByProp(unwrap, prop, cb, ctx);
+        } else {
+            callByAllProp(unwrap, cb, ctx);
+        }
 
-    //
-    const self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
-    self?.subscribe?.(cb, prop);
-    return self;
+        //
+        const self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
+        self?.subscribe?.(cb, prop);
+        return self;
+    });
 }
 
 //
