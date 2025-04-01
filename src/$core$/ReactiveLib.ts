@@ -74,7 +74,6 @@ export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, 
     target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
 
     //
-    (target = $originalObjects$.get(target) ?? target?.[$originalKey$] ?? target);
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
 
     //

@@ -135,8 +135,8 @@ export class AssignObjectHandler {
         /*if (name == $registryKey$) {
             return (subscriptRegistry).get(target);
         }*/
-        if (name == $extractKey$ || name == $originalKey$ || name == $registryKey$) {
-            return target?.[name] ?? target;
+        if (name == $originalKey$ || name == $extractKey$ || name == $registryKey$) {
+            return (name == $extractKey$ || name == $registryKey$) ? target?.[name] : (target?.[name] ?? target);
         }
         return Reflect.get(target, name, ctx);
     }
