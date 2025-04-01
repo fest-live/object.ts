@@ -1,5 +1,5 @@
 import { objectAssign } from "./AssignObject";
-import { $originalObjects$, $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, isIterable, callByProp, callByAllProp, safe } from "./Keys.js";
+import { $originalObjects$, $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, $registryKey$, callByProp, callByAllProp, safe } from "./Keys.js";
 
 //
 export { safe };
@@ -85,24 +85,19 @@ export const subscribe = (target: any, cb: (value: any, prop: keyType) => void, 
     }
 
     //
-    const self = subscriptRegistry.get(unwrap);
+    const self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
     self?.subscribe?.(cb, prop);
     return self;
 }
 
 //
 export class ReactiveMap {
-    //
-    constructor() {
-    }
-
-    //
-    has(target, prop: keyType) {
-        return Reflect.has(target, prop);
-    }
-
-    //
+    constructor() { }
+    has(target, prop: keyType) { return Reflect.has(target, prop); }
     get(target, name: keyType, ctx) {
+        if (name == $registryKey$) {
+            return (subscriptRegistry).get(target);
+        }
         if (name == $extractKey$ || name == $originalKey$) {
             return target?.[name] ?? target;
         }
@@ -170,8 +165,11 @@ export class ReactiveSet {
     //
     get(target, name: keyType, ctx) {
         //
-        if (name == $extractKey$) {
-            return target?.[$extractKey$] ?? target;
+        if (name == $registryKey$) {
+            return (subscriptRegistry).get(target);
+        }
+        if (name == $extractKey$ || name == $originalKey$) {
+            return target?.[name] ?? target;
         }
 
         //
@@ -231,8 +229,11 @@ export class ReactiveObject {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == $extractKey$) {
-            return target?.[$extractKey$] ?? target;
+        if (name == $registryKey$) {
+            return (subscriptRegistry).get(target);
+        }
+        if (name == $extractKey$ || name == $originalKey$) {
+            return target?.[name] ?? target;
         }
         return bindCtx(target, Reflect.get(target, name, ctx));
     }
@@ -272,16 +273,19 @@ export class ReactiveObject {
 }
 
 //
-export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => new Proxy<T>(obj?.[$extractKey$] ?? obj, register(obj, new ReactiveObject()) as ProxyHandler<T>);
-export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) => new Proxy(map?.[$extractKey$] ?? map, register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>);
-export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) => new Proxy(set?.[$extractKey$] ?? set, register(set, new ReactiveSet()) as ProxyHandler<Set<V>>);
+export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => { return obj?.[$extractKey$] ? obj : new Proxy<T>(obj?.[$extractKey$] ?? obj, register(obj, new ReactiveObject()) as ProxyHandler<T>) };
+export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) => { return map?.[$extractKey$] ? map : new Proxy(map?.[$extractKey$] ?? map, register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>) };
+export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) => { return set?.[$extractKey$] ? set : new Proxy(set?.[$extractKey$] ?? set, register(set, new ReactiveSet()) as ProxyHandler<Set<V>>)} ;
 
 //
 export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => new Proxy(new Map(map), register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>);
 export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) => new Proxy(new Set(set), register(set, new ReactiveSet()) as ProxyHandler<Set<V>>);
 
-//stateMap
+//
 export const makeReactive: any = (target: any, stateName = ""): any => {
+    if (target?.[$extractKey$]) { return target; }
+
+    //
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
     let reactive = target;
 
@@ -309,6 +313,9 @@ export const makeReactive: any = (target: any, stateName = ""): any => {
 
 //
 export const createReactive: any = (target: any, stateName = ""): any => {
+    if (target?.[$extractKey$]) { return target; }
+
+    //
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
     let reactive = target;
 

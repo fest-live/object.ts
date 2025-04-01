@@ -1,4 +1,4 @@
-import { $extractKey$, $originalKey$, $originalObjects$, isIterable, type keyType } from "./Keys.js";
+import { $extractKey$, $originalKey$, $originalObjects$, $registryKey$, isIterable, type keyType } from "./Keys.js";
 
 //
 export const removeExtra = (target, value, name: keyType | null = null)=>{
@@ -132,7 +132,10 @@ export class AssignObjectHandler {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == $extractKey$ || name == $originalKey$) {
+        /*if (name == $registryKey$) {
+            return (subscriptRegistry).get(target);
+        }*/
+        if (name == $extractKey$ || name == $originalKey$ || name == $registryKey$) {
             return target?.[name] ?? target;
         }
         return Reflect.get(target, name, ctx);
@@ -168,11 +171,10 @@ export class AssignObjectHandler {
 
 //
 export const makeObjectAssignable = (obj) => {
+    if (obj?.[$originalKey$] || $originalObjects$.has(obj)) { return obj; }
+
     // @ts-ignore
     const px = new Proxy(obj, new AssignObjectHandler());
     $originalObjects$.set(px, obj);
     return px;
 };
-
-//
-//export { $originalKey$ };

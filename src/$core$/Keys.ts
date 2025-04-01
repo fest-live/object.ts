@@ -1,6 +1,7 @@
 export const $extractKey$ = "$@extract@$";//Symbol("@extract");
 export const $originalKey$ = "$@origin@$";//Symbol("@origin");
 export const $originalObjects$ = new WeakMap();
+export const $registryKey$ = "$@registry@$";
 
 //
 export const boundCtx = new WeakMap();
