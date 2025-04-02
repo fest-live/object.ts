@@ -47,6 +47,20 @@ const register = (what: any, handle: any): any => {
 }
 
 //
+const wrapWith = (what, handle)=>{
+    what = what?.[$extractKey$] ?? what;
+    if (what?.value != null && (typeof what?.value != "object" && typeof what?.value != "function")) { what = what?.value; };
+    return new Proxy(what, register(what, handle));
+}
+
+//
+export const deref = (target?: any)=>{
+    let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function")) ? target?.value : target;
+    if (from instanceof WeakRef) { from = deref(from.deref()); }
+    return from;
+}
+
+//
 export const bindByKey = (target, reactive, key = ()=>"")=>{
     subscribe(reactive, (value, id)=>{
         if (id == key()) { objectAssign(target, value, null, true); }
@@ -73,7 +87,7 @@ export const withPromise = (target, cb)=>{
 }
 
 //
-export const subscribe = (tg: any, cb: (value: any, prop: keyType) => void, ctx: any | null = null)=>{
+export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null)=>{
     return withPromise(tg, (target: any)=>{
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
         const prop = isPair ? target?.[1] : null;
@@ -103,12 +117,12 @@ export class ReactiveMap {
     constructor() { }
     has(target, prop: keyType) { return Reflect.has(target, prop); }
     get(target, name: keyType, ctx) {
-        if (name == $registryKey$) {
-            return (subscriptRegistry).get(target);
-        }
-        if (name == $extractKey$ || name == $originalKey$) {
-            return target?.[name] ?? target;
-        }
+        if (name == $registryKey$) { return (subscriptRegistry).get(target); }
+        if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
+
+        // redirect to value key
+        const registry = subscriptRegistry.get(target);
+        if ((target = deref(target)) == null) return;
 
         //
         const valueOrFx = bindCtx(target, Reflect.get(target[$extractKey$] ?? target[$originalKey$] ?? target, name, ctx));
@@ -119,7 +133,7 @@ export class ReactiveMap {
                 const oldValues: any = Array.from(target?.entries?.() || []);
                 const result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    subscriptRegistry.get(target)?.trigger?.(prop, null, oldValue);
+                    registry?.trigger?.(prop, null, oldValue);
                 });
                 return result;
             };
@@ -130,7 +144,7 @@ export class ReactiveMap {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop);
                 const result = valueOrFx(prop);
-                subscriptRegistry.get(target)?.trigger?.(prop, null, oldValue);
+                registry?.trigger?.(prop, null, oldValue);
                 return result;
             };
         }
@@ -140,7 +154,7 @@ export class ReactiveMap {
             return (prop, value) => {
                 const oldValue = target.get(prop);
                 const result = valueOrFx(prop, value);
-                if (oldValue !== value) { subscriptRegistry.get(target)?.trigger?.(prop, value, oldValue); };
+                if (oldValue !== value) { registry?.trigger?.(prop, value, oldValue); };
                 return result;
             };
         }
@@ -151,11 +165,15 @@ export class ReactiveMap {
 
     //
     construct(target, args, newT) {
+        // redirect to value key
+        if ((target = deref(target)) == null) return;
         return Reflect.construct(target, args, newT);
     }
 
     //
     apply(target, ctx, args) {
+        // redirect to value key
+        if ((target = deref(target)) == null) return;
         return Reflect.apply(target, ctx, args);
     }
 }
@@ -167,18 +185,19 @@ export class ReactiveSet {
 
     //
     has(target, prop: keyType) {
+        // redirect to value key
+        if ((target = deref(target)) == null) return;
         return Reflect.has(target, prop);
     }
 
     //
     get(target, name: keyType, ctx) {
-        //
-        if (name == $registryKey$) {
-            return (subscriptRegistry).get(target);
-        }
-        if (name == $extractKey$ || name == $originalKey$) {
-            return target?.[name] ?? target;
-        }
+        if (name == $registryKey$) { return (subscriptRegistry).get(target); }
+        if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
+
+        // redirect to value key
+        const registry = subscriptRegistry.get(target);
+        if ((target = deref(target)) == null) return;
 
         //
         const valueOrFx = bindCtx(target, Reflect.get(target, name, ctx));
@@ -189,7 +208,7 @@ export class ReactiveSet {
                 const oldValues = Array.from(target?.values?.() || []);
                 const result = valueOrFx();
                 oldValues.forEach((oldValue)=>{
-                    subscriptRegistry.get(target)?.trigger?.(null, null, oldValue);
+                    registry?.trigger?.(null, null, oldValue);
                 });
                 return result;
             };
@@ -200,7 +219,7 @@ export class ReactiveSet {
             return (value) => {
                 const oldValue = target.has(value) ? value : null;
                 const result   = valueOrFx(value);
-                subscriptRegistry.get(target)?.trigger?.(value, null, oldValue);
+                registry?.trigger?.(value, null, oldValue);
                 return result;
             };
         }
@@ -210,7 +229,7 @@ export class ReactiveSet {
             return (value) => {
                 const oldValue = target.has(value) ? value : null;
                 const result   = valueOrFx(value);
-                if (oldValue !== value) { subscriptRegistry.get(target)?.trigger?.(value, value, oldValue); };
+                if (oldValue !== value) { registry?.trigger?.(value, value, oldValue); };
                 return result;
             };
         }
@@ -221,11 +240,15 @@ export class ReactiveSet {
 
     //
     construct(target, args, newT) {
+        // redirect to value key
+        if ((target = deref(target)) == null) return;
         return Reflect.construct(target, args, newT);
     }
 
     //
     apply(target, ctx, args) {
+        // redirect to value key
+        if ((target = deref(target)) == null) return;
         return Reflect.apply(target, ctx, args);
     }
 }
@@ -235,59 +258,68 @@ export class ReactiveObject {
     constructor() {
     }
 
-    //
+    // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
-        if (name == $registryKey$) {
-            return (subscriptRegistry).get(target);
-        }
-        if (name == $extractKey$ || name == $originalKey$) {
-            return target?.[name] ?? target;
-        }
+        const registry = (subscriptRegistry).get(target);
+        if ((target = deref(target)) == null) return;
+        if (name == $registryKey$) { return registry; }
+        if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
+
+        //
         return bindCtx(target, Reflect.get(target, name, ctx));
     }
 
     //
     construct(target, args, newT) {
+        if ((target = deref(target)) == null) return;
         return Reflect.construct(target, args, newT);
     }
 
     //
     has(target, prop: keyType) {
+        if ((target = deref(target)) == null) return;
         return Reflect.has(target, prop);
     }
 
     //
     apply(target, ctx, args) {
+        if ((target = deref(target)) == null) return;
         return Reflect.apply(target, ctx, args);
     }
 
-    //
+    // supports nested "value" objects
     set(target, name: keyType, value) {
+        const registry = (subscriptRegistry).get(target);
+        if ((target = deref(target)) == null) return;
+
+        //
         const oldValue = target[name];
         const result = Reflect.set(target, name, value);
-        const self = subscriptRegistry.get(target);
-        if (oldValue !== value) { self?.trigger?.(name, value, oldValue); };
+        if (oldValue !== value) { registry?.trigger?.(name, value, oldValue); };
         return result;
     }
 
     //
     deleteProperty(target, name: keyType) {
+        const registry = (subscriptRegistry).get(target);
+        if ((target = deref(target)) == null) return;
+
+        //
         const oldValue = target[name];
         const result = Reflect.deleteProperty(target, name);
-        const self = subscriptRegistry.get(target);
-        self?.trigger?.(name, null, oldValue);
+        registry?.trigger?.(name, null, oldValue);
         return result;
     }
 }
 
 //
-export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => { return (obj?.[$extractKey$] ? obj : new Proxy<T>(obj?.[$extractKey$] ?? obj, register(obj, new ReactiveObject()) as ProxyHandler<T>)) };
-export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) => { return (map?.[$extractKey$] ? map : new Proxy(map?.[$extractKey$] ?? map, register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>)) };
-export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) => { return (set?.[$extractKey$] ? set : new Proxy(set?.[$extractKey$] ?? set, register(set, new ReactiveSet()) as ProxyHandler<Set<V>>))} ;
+export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
+export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) =>    { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
+export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) =>                   { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };
 
 //
-export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => new Proxy(new Map(map), register(map, new ReactiveMap()) as ProxyHandler<Map<K, V>>);
-export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) => new Proxy(new Set(set), register(set, new ReactiveSet()) as ProxyHandler<Set<V>>);
+export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => wrapWith(new Map(map), new ReactiveMap());
+export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) => wrapWith(new Set(set), new ReactiveSet());
 
 //
 export const makeReactive: any = (target: any, stateName = ""): any => {
@@ -343,4 +375,87 @@ export const createReactive: any = (target: any, stateName = ""): any => {
 
     //
     return reactive;
+}
+
+// reacts by change storage, loads from storage, and reacts from storage event changes
+export const localStorageRef = (key, initial?: any)=>{
+    const ref = makeReactive({value: localStorage.getItem(key) ?? initial});
+    addEventListener("storage", (ev)=>{
+        if (ev.storageArea == localStorage && ev.key == key) {
+            if (ref.value !== ev.newValue) { ref.value = ev.newValue; };
+        }
+    });
+    subscribe([ref, "value"], (val)=>{
+        localStorage.setItem(key, val);
+    });
+    return ref;
+}
+
+// reacts only from media, you can't change media condition
+export const matchMediaRef = (condition: string)=>{
+    const med = matchMedia(condition);
+    const ref = makeReactive({value: med.matches});
+    med.addEventListener("change", (ev)=>{
+        ref.value = ev.matches;
+    });
+    return ref;
+}
+
+//
+export const ref = (initial?: any)=>{
+    return makeReactive({value: initial});
+}
+
+//
+export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
+    const cond = makeReactive({value: ref.value ? ifTrue : ifFalse});
+    subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
+    return cond;
+}
+
+//
+export const objectAssignNotEqual = (dst, src = {})=>{
+    Object.entries(src)?.forEach?.(([k,v])=>{ if (v !== dst[k]) { dst[k] = v; }; });
+    return dst;
+}
+
+//
+export const weak = (initial?: any)=>{
+    return makeReactive({value: new WeakRef(initial)});
+}
+
+// used for conditional reaction
+// !one-directional
+export const computed = (sub, cb?: Function|null, dest?: [any, string|number|symbol]|null)=>{
+    if (!dest) dest = [makeReactive({}), "value"];
+    subscribe(sub, (value, prop, old) => {
+        const got = cb?.(value, prop, old);
+        if (got !== dest[dest[1]]) {
+            dest[dest[1]] = got;
+        }
+    });
+    return dest?.[0]; // return reactive value
+}
+
+// used for redirection properties
+// !one-directional
+export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
+    if (!dest) dest = makeReactive({});
+    subscribe(sub, (value, prop, old)=> {
+        const got = cb?.(value, prop, old);
+        if (typeof got == "object") {
+            objectAssignNotEqual(dest, got);
+        } else
+        if (dest[prop] !== got) dest[prop] = got;
+    });
+    return dest; // return reactive value
+}
+
+// !one-directional
+export const unified = (...subs: any[])=>{
+    const dest = makeReactive({});
+    subs?.forEach?.((sub)=>subscribe(sub, (value, prop, _)=>{
+        if (dest[prop] !== value) { dest[prop] = value; };
+    }));
+    return dest;
 }
