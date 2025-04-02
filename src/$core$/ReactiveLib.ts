@@ -1,38 +1,36 @@
 import { objectAssign } from "./AssignObject";
-import { $originalObjects$, $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, $registryKey$, callByProp, callByAllProp, safe } from "./Keys.js";
+import { $originalKey$, $extractKey$, type keyType, bindCtx, isKeyType, $registryKey$, callByProp, callByAllProp, safe } from "./Keys.js";
 
 //
 export { safe };
 
 //
+const propCbMap = new WeakMap();
+const associateWith = (cb, name)=>{
+    if (propCbMap.has(cb)) return propCbMap.get(cb);
+    const nw = (val, prop, old)=>{ if (prop == name) return cb?.(val, prop, old); };
+    propCbMap.set(cb, nw); return nw;
+    //return (val, prop, old)=>{ if (prop == name) return cb(val, prop, old); };
+}
+
+//
 export class Subscript {
-    subscribers: Map<keyType, Set<(value: any, prop: keyType) => void>>;
-    listeners: Set<(value: any, prop: keyType) => void>;
+    #listeners: Set<(value: any, prop: keyType, oldValue?: any) => void>;
 
     //
-    constructor(){
-        this.subscribers = new Map();
-        this.listeners = new Set();
+    constructor(withWeak?: any) {
+        this.#listeners = new Set();
     }
 
     //
     subscribe(cb: (value: any, prop: keyType) => void, prop: keyType | null) {
-        if (prop != null) {
-            if (this.subscribers.has(prop)) {
-                this.subscribers.get(prop)?.add?.(cb);
-            } else {
-                this.subscribers.set(prop, new Set([cb]));
-            }
-        } else
-        if (!this.listeners.has(cb)) {
-            this.listeners.add?.(cb);
-        }
+        if (prop != null) { cb = associateWith(cb, prop); }
+        if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }
     }
 
     //
     trigger(name, value = null, oldValue?: any) {
-        Array.from(this.subscribers.get(name)?.values?.() || []).forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
-        Array.from(this.listeners?.values?.() || []).forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
+        return this.#listeners?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
     }
 }
 
@@ -41,7 +39,7 @@ const subscriptRegistry = new WeakMap<any, Subscript>();
 const register = (what: any, handle: any): any => {
     const unwrap = what?.[$extractKey$] ?? what;
     if (!subscriptRegistry.has(unwrap)) {
-        subscriptRegistry.set(unwrap, new Subscript());
+        subscriptRegistry.set(unwrap, new Subscript(new WeakRef(unwrap)));
     }
     return handle;
 }
