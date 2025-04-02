@@ -39,15 +39,14 @@ const subscriptRegistry = new WeakMap<any, Subscript>();
 const register = (what: any, handle: any): any => {
     const unwrap = what?.[$extractKey$] ?? what;
     if (!subscriptRegistry.has(unwrap)) {
-        subscriptRegistry.set(unwrap, new Subscript(new WeakRef(unwrap)));
+        subscriptRegistry.set(unwrap, new Subscript());
     }
     return handle;
 }
 
 //
 const wrapWith = (what, handle)=>{
-    what = what?.[$extractKey$] ?? what;
-    if (what?.value != null && (typeof what?.value != "object" && typeof what?.value != "function")) { what = what?.value; };
+    what = deref(what?.[$extractKey$] ?? what);
     return new Proxy(what, register(what, handle));
 }
 
@@ -400,11 +399,6 @@ export const matchMediaRef = (condition: string)=>{
 }
 
 //
-export const ref = (initial?: any)=>{
-    return makeReactive({value: initial});
-}
-
-//
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
     const cond = makeReactive({value: ref.value ? ifTrue : ifFalse});
     subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
@@ -418,8 +412,15 @@ export const objectAssignNotEqual = (dst, src = {})=>{
 }
 
 //
-export const weak = (initial?: any)=>{
-    return makeReactive({value: new WeakRef(initial)});
+const isValidObj  = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
+export const ref  = (initial?: any)=>{ return makeReactive({value: deref(initial)}); }
+export const weak = (initial?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj}); }
+
+//
+export const promised = (promise: any)=>{
+    const ref = makeReactive({value: promise});
+    promise?.then?.((v)=>ref.value = v);
+    return ref;
 }
 
 // used for conditional reaction
