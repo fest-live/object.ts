@@ -15,27 +15,35 @@ const associateWith = (cb, name)=>{
 
 //
 export class Subscript {
-    #listeners: Set<(value: any, prop: keyType, oldValue?: any) => void>;
     compatible: any;
+    #listeners: Set<(value: any, prop: keyType, oldValue?: any) => void>;
+    #native: any;
 
     //
     constructor(withWeak?: any) {
         const weak = new WeakRef(this);
         this.#listeners = new Set();
-        this.compatible = () => ({
-            subscribe(observer) {
-                const self = weak?.deref?.();
-                const handler = (...args) => observer?.next?.(...args);
-                self?.subscribe?.(handler);
-                return {
-                    unsubscribe() { return self?.unsubscribe?.(handler); },
-                    [Symbol.dispose]() { return self?.unsubscribe?.(handler); },
-                    [Symbol.asyncDispose]() { return self?.unsubscribe?.(handler); },
-                }
-            },
-            // @ts-ignore
-            [Symbol.observable]() { return this }
-        })
+
+        // compatible with https://github.com/WICG/observable
+        // mostly, only for subscribers (virtual Observable)
+        const subscribe = function (subscriber) {
+            const self = weak?.deref?.();
+            const handler = subscriber?.next?.bind?.(subscriber);
+            self?.subscribe?.(handler);
+            const unsubscribe = () => { const r = subscriber?.complete?.(); self?.unsubscribe?.(handler); return r; };
+            return {
+                unsubscribe,
+                [Symbol.dispose]: unsubscribe,
+                [Symbol.asyncDispose]: unsubscribe,
+            }
+        }
+
+        // @ts-ignore
+        this.#native = (typeof Observable != "undefined" ? (new Observable(subscribe)) : { [Symbol.observable]() { return this },
+            subscribe })
+
+        //
+        this.compatible = ()=>this.#native;
     }
 
     //
