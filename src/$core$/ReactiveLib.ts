@@ -487,8 +487,8 @@ export const computed = (sub, cb?: Function|null, dest?: [any, string|number|sym
     if (!dest) dest = [makeReactive({}), "value"];
     subscribe(sub, (value, prop, old) => {
         const got = cb?.(value, prop, old);
-        if (got !== dest[dest[1]]) {
-            dest[dest[1]] = got;
+        if (got !== dest[0]?.[dest[1] ?? "value"]) {
+            dest[0][dest[1] ?? "value"] = got;
         }
     });
     return dest?.[0]; // return reactive value
