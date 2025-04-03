@@ -115,6 +115,7 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         //
         const unsub = ()=>{ return self?.unsubsribe?.(cb, prop); }
         if (Symbol?.dispose != null) { unsub[Symbol.dispose] = ()=>{ return self?.unsubsribe?.(cb, prop); } }
+        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] = ()=>{ return self?.unsubsribe?.(cb, prop); } }
         return unsub;
     });
 }
