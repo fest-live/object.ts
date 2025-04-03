@@ -101,6 +101,7 @@ export const safe = (target)=>{
 
     //
     if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") {
+        // @ts-ignore
         return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$ && K != $registryKey$))?.map?.(([K,V])=>[K,safe(V)]));
     }
 

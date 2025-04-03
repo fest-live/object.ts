@@ -1,6 +1,15 @@
 import { $extractKey$, $originalKey$, $originalObjects$, $registryKey$, isIterable, type keyType } from "./Keys.js";
 
 //
+export const isValidObj  = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
+
+//
+export const objectAssignNotEqual = (dst, src = {})=>{
+    Object.entries(src)?.forEach?.(([k,v])=>{ if (v !== dst[k]) { dst[k] = v; }; });
+    return dst;
+}
+
+//
 export const removeExtra = (target, value, name: keyType | null = null)=>{
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
 
