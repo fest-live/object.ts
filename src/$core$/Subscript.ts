@@ -14,11 +14,18 @@ export class Subscript {
     compatible: any;
     #listeners: Set<(value: any, prop: keyType, oldValue?: any) => void>;
     #native: any;
+    #iterator: any;
+    //#caller: any;
 
     //
     constructor(withWeak?: any) {
         const weak = new WeakRef(this);
         this.#listeners = new Set();
+
+        //
+        const listeners = new WeakRef(this.#listeners);
+        const caller = (name, value = null, oldValue?: any)=>listeners?.deref()?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
+        //this.#caller = caller;
 
         // compatible with https://github.com/WICG/observable
         // mostly, only for subscribers (virtual Observable)
@@ -34,11 +41,21 @@ export class Subscript {
             }
         }
 
+        //
+        const generator = function*() {
+            while (weak?.deref?.() && listeners?.deref?.()) {
+                const args: [any, any, any] = yield;
+                if (args) { caller(...args); }
+            }
+        }
+
         // @ts-ignore
         this.#native = (typeof Observable != "undefined" ? (new Observable(subscribe)) : { [Symbol.observable]() { return this },
             subscribe })
 
-        //
+        // initiate generator, and do next
+        this.#iterator = generator();
+        this.#iterator?.next?.();
         this.compatible = ()=>this.#native;
     }
 
@@ -49,14 +66,17 @@ export class Subscript {
     }
 
     //
-    trigger(name, value = null, oldValue?: any) {
-        return this.#listeners?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
-    }
-
-    //
     unsubscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb); }
         if (this.#listeners.has(cb)) { this.#listeners.delete(cb); }
+    }
+
+    // try execute immediatly, if already running, try delayed action in callstack
+    // if catch will also fail, will cause another unhandled reject (will no repeating)
+    trigger(name, value = null, oldValue?: any) {
+
+        // @ts-ignore
+        return Promise.try(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(console.warn.bind(console));
     }
 }
 
