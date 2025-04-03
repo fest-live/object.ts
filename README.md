@@ -1,10 +1,8 @@
 # Object.ts
 
-Reactive and objects utils for JS.
+Reactive and objects utils for JS. It's minor sibling of [`Uniform.TS`](https://github.com/unite-2-re/uniform.ts), created in earlier 2024 and partially revisited in 2025.
 
 At moment of 2025 I can't say about next-generation. It's used for own projects. For 2020 may to be something revolutional.
-
-It's minor sibling of [`Uniform.TS`](https://github.com/unite-2-re/uniform.ts), created in earlier 2024 and partially revisited in 2025.
 
 ## Features
 
