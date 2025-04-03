@@ -118,14 +118,20 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
 
         //
-        if (prop != null) {
-            callByProp(unwrap, prop, cb, ctx);
-        } else {
-            callByAllProp(unwrap, cb, ctx);
+        if (prop != null) { callByProp(unwrap, prop, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
+        let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
+
+        // !experimental support for backward compatible (DOESN'T SUPPORT FOR MAP/SET)
+        // @ts-ignore
+        if (!self && unwrap?.[Symbol.observable]) {
+            target = makeReactive(unwrap);
+
+            // @ts-ignore
+            unwrap?.[Symbol.observable]?.()?.subscribe?.((value, prop?: any) => (target[prop ?? "value"] = value));
+            self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
         }
 
         //
-        const self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
         self?.subscribe?.(cb, prop);
 
         //
