@@ -97,9 +97,9 @@ export const wrapWith = (what, handle)=>{
 }
 
 //
-export const deref = (target?: any)=>{
-    let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function")) ? target?.value : target;
-    if (from instanceof WeakRef) { from = deref(from.deref()); }
+export const deref = (target?: any, discountValue?: boolean|null)=>{
+    let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function") && !discountValue) ? target?.value : target;
+    if (from instanceof WeakRef) { from = deref(from.deref(), discountValue); }
     return from;
 }
 

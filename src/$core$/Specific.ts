@@ -156,12 +156,25 @@ export class ReactiveObject {
     // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
         const registry = (subscriptRegistry).get(target);
-        if ((target = deref(target)) == null) return;
+        if ((target = deref(target, name == "value")) == null) return;
         if (name == $registryKey$) { return registry; }
-        if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
+        if (name == $originalKey$ || name == $extractKey$) { return target?.[name] ?? target; }
 
         // @ts-ignore
-        if (name == Symbol.observable) { return (subscriptRegistry).get(target)?.compatible; }
+        if (name == Symbol.observable ) { return (subscriptRegistry).get(target)?.compatible; }
+        if (name == Symbol.toPrimitive) { return () => {
+            if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
+            return target?.[Symbol.toPrimitive]?.();
+        }};
+        if (name == "toString") {
+            return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || "");
+        }
+        if (name == "valueOf") {
+            return () => {
+                if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
+                return target?.valueOf?.();
+            }
+        }
 
         //
         return bindCtx(target, Reflect.get(target, name, ctx));
@@ -171,6 +184,24 @@ export class ReactiveObject {
     construct(target, args, newT) {
         if ((target = deref(target)) == null) return;
         return Reflect.construct(target, args, newT);
+    }
+
+    //
+    isExtensible(target) {
+        if ((target = deref(target)) == null) return;
+        return Reflect.isExtensible(target);
+    }
+
+    //
+    ownKeys(target) {
+        if ((target = deref(target)) == null) return;
+        return Reflect.ownKeys(target);
+    }
+
+    //
+    getOwnPropertyDescriptor(target, key) {
+        if ((target = deref(target)) == null) return;
+        return Reflect.getOwnPropertyDescriptor(target, key);
     }
 
     //
@@ -188,7 +219,7 @@ export class ReactiveObject {
     // supports nested "value" objects
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
-        if ((target = deref(target)) == null) return;
+        if ((target = deref(target, name == "value")) == null) return;
 
         //
         const oldValue = target[name];
