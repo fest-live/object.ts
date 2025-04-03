@@ -23,7 +23,7 @@ export class Subscript {
     }
 
     //
-    subscribe(cb: (value: any, prop: keyType) => void, prop: keyType | null) {
+    subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (prop != null) { cb = associateWith(cb, prop); }
         if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }
     }
@@ -31,6 +31,12 @@ export class Subscript {
     //
     trigger(name, value = null, oldValue?: any) {
         return this.#listeners?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
+    }
+
+    //
+    unsubsribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
+        if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb); }
+        if (this.#listeners.has(cb)) { this.#listeners.delete(cb); }
     }
 }
 
@@ -105,7 +111,11 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         //
         const self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
         self?.subscribe?.(cb, prop);
-        return self;
+
+        //
+        const unsub = ()=>{ return self?.unsubsribe?.(cb, prop); }
+        if (Symbol?.dispose != null) { unsub[Symbol.dispose] = ()=>{ return self?.unsubsribe?.(cb, prop); } }
+        return unsub;
     });
 }
 

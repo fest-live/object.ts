@@ -1,7 +1,7 @@
-export const $extractKey$ = "$@extract@$";//Symbol("@extract");
-export const $originalKey$ = "$@origin@$";//Symbol("@origin");
+export const $extractKey$  = Symbol.for("$@extract@$");//"$@extract@$";//Symbol("@extract");
+export const $originalKey$ = Symbol.for("$@origin@$"); //"$@origin@$";//Symbol("@origin");
+export const $registryKey$ = Symbol.for("$@registry@$"); //"$@registry@$";
 export const $originalObjects$ = new WeakMap();
-export const $registryKey$ = "$@registry@$";
 
 //
 export const boundCtx = new WeakMap();
