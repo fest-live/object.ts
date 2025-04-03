@@ -34,7 +34,7 @@ export class Subscript {
     }
 
     //
-    unsubsribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
+    unsubscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb); }
         if (this.#listeners.has(cb)) { this.#listeners.delete(cb); }
     }
@@ -113,12 +113,36 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         self?.subscribe?.(cb, prop);
 
         //
-        const unsub = ()=>{ return self?.unsubsribe?.(cb, prop); }
-        if (Symbol?.dispose != null) { unsub[Symbol.dispose] = ()=>{ return self?.unsubsribe?.(cb, prop); } }
-        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] = ()=>{ return self?.unsubsribe?.(cb, prop); } }
+        const unsub = ()=>{ return self?.unsubscribe?.(cb, prop); }
+        if (Symbol?.dispose != null) { unsub[Symbol.dispose] = ()=>{ return self?.unsubscribe?.(cb, prop); } }
+        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] = ()=>{ return self?.unsubscribe?.(cb, prop); } }
+
+        //
+        const weak = self ? new WeakRef(self) : null;
+        try { // @ts-ignore
+            unwrap[Symbol.observable] = () => ({
+                subscribe(observer) {
+                    const self = weak?.deref?.();
+                    const handler = (...args) => observer?.next?.(...args);
+                    self?.subscribe?.(handler);
+                    return {
+                        unsubscribe() { return self?.unsubscribe?.(handler); },
+                        [Symbol.dispose]() { return self?.unsubscribe?.(handler); },
+                        [Symbol.asyncDispose]() { return self?.unsubscribe?.(handler); },
+                    }
+                },
+                // @ts-ignore
+                [Symbol.observable]() { return this }
+            })
+        } catch(e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
+
+        //
         return unsub;
     });
 }
+
+// @ts-ignore
+Symbol.observable ||= Symbol.for('observable')
 
 //
 export class ReactiveMap {
@@ -127,6 +151,24 @@ export class ReactiveMap {
     get(target, name: keyType, ctx) {
         if (name == $registryKey$) { return (subscriptRegistry).get(target); }
         if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
+
+        // @ts-ignore
+        if (name == Symbol.observable) {
+            return () => ({
+                subscribe(observer) {
+                    const handler = (...args) => observer?.next?.(...args);
+                    const registry = (subscriptRegistry).get(target);
+                    registry?.subscribe?.(handler);
+                    return {
+                        unsubscribe() { return registry?.unsubscribe?.(handler); },
+                        [Symbol.dispose]() { return registry?.unsubscribe?.(handler); },
+                        [Symbol.asyncDispose]() { return registry?.unsubscribe?.(handler); },
+                    }
+                },
+                // @ts-ignore
+                [Symbol.observable]() { return this }
+            })
+        }
 
         // redirect to value key
         const registry = subscriptRegistry.get(target);
@@ -203,6 +245,24 @@ export class ReactiveSet {
         if (name == $registryKey$) { return (subscriptRegistry).get(target); }
         if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
 
+        // @ts-ignore
+        if (name == Symbol.observable) {
+            return () => ({
+                subscribe(observer) {
+                    const handler = (...args) => observer?.next?.(...args);
+                    const registry = (subscriptRegistry).get(target);
+                    registry?.subscribe?.(handler);
+                    return {
+                        unsubscribe() { return registry?.unsubscribe?.(handler); },
+                        [Symbol.dispose]() { return registry?.unsubscribe?.(handler); },
+                        [Symbol.asyncDispose]() { return registry?.unsubscribe?.(handler); },
+                    }
+                },
+                // @ts-ignore
+                [Symbol.observable]() { return this }
+            })
+        }
+
         // redirect to value key
         const registry = subscriptRegistry.get(target);
         if ((target = deref(target)) == null) return;
@@ -272,6 +332,24 @@ export class ReactiveObject {
         if ((target = deref(target)) == null) return;
         if (name == $registryKey$) { return registry; }
         if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
+
+        // @ts-ignore
+        if (name == Symbol.observable) {
+            return () => ({
+                subscribe(observer) {
+                    const handler = (...args) => observer?.next?.(...args);
+                    const registry = (subscriptRegistry).get(target);
+                    registry?.subscribe?.(handler);
+                    return {
+                        unsubscribe() { return registry?.unsubscribe?.(handler); },
+                        [Symbol.dispose]() { return registry?.unsubscribe?.(handler); },
+                        [Symbol.asyncDispose]() { return registry?.unsubscribe?.(handler); },
+                    }
+                },
+                // @ts-ignore
+                [Symbol.observable]() { return this }
+            })
+        }
 
         //
         return bindCtx(target, Reflect.get(target, name, ctx));
