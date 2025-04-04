@@ -6,14 +6,21 @@ export class ReactiveMap {
     constructor() { }
     has(target, prop: keyType) { return Reflect.has(target, prop); }
     get(target, name: keyType, ctx) {
-        if (name == $registryKey$) { return (subscriptRegistry).get(target); }
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
+
+        //
+        if (name == $registryKey$) { return registry?.deref?.(); }
         if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
 
         // @ts-ignore
-        if (name == Symbol.observable) { return (subscriptRegistry).get(target)?.compatible; }
+        if (name == Symbol.observable) { return registry?.deref?.()?.compatible; }
+
+        // get reactive primitives (if native iterator is available, use it)
+        if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
+        if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
 
         // redirect to value key
-        const registry = subscriptRegistry.get(target);
         if ((target = deref(target)) == null) return;
 
         //
@@ -25,7 +32,7 @@ export class ReactiveMap {
                 const oldValues: any = Array.from(target?.entries?.() || []);
                 const result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    registry?.trigger?.(prop, null, oldValue);
+                    registry?.deref()?.trigger?.(prop, null, oldValue);
                 });
                 return result;
             };
@@ -36,7 +43,7 @@ export class ReactiveMap {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop);
                 const result = valueOrFx(prop);
-                registry?.trigger?.(prop, null, oldValue);
+                registry?.deref()?.trigger?.(prop, null, oldValue);
                 return result;
             };
         }
@@ -46,7 +53,7 @@ export class ReactiveMap {
             return (prop, value) => {
                 const oldValue = target.get(prop);
                 const result = valueOrFx(prop, value);
-                if (oldValue !== value) { registry?.trigger?.(prop, value, oldValue); };
+                if (oldValue !== value) { registry?.deref()?.trigger?.(prop, value, oldValue); };
                 return result;
             };
         }
@@ -84,14 +91,21 @@ export class ReactiveSet {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == $registryKey$) { return (subscriptRegistry).get(target); }
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
+
+        //
+        if (name == $registryKey$) { return registry?.deref?.(); }
         if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
 
         // @ts-ignore
-        if (name == Symbol.observable) { return (subscriptRegistry).get(target)?.compatible; }
+        if (name == Symbol.observable) { return registry?.deref?.()?.compatible; }
+
+        // get reactive primitives (if native iterator is available, use it)
+        if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
+        if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=> registry?.deref?.()?.iterator); }
 
         // redirect to value key
-        const registry = subscriptRegistry.get(target);
         if ((target = deref(target)) == null) return;
 
         //
@@ -102,9 +116,7 @@ export class ReactiveSet {
             return () => {
                 const oldValues = Array.from(target?.values?.() || []);
                 const result = valueOrFx();
-                oldValues.forEach((oldValue)=>{
-                    registry?.trigger?.(null, null, oldValue);
-                });
+                oldValues.forEach((oldValue)=>{ registry?.deref?.()?.trigger?.(null, null, oldValue); });
                 return result;
             };
         }
@@ -114,7 +126,7 @@ export class ReactiveSet {
             return (value) => {
                 const oldValue = target.has(value) ? value : null;
                 const result   = valueOrFx(value);
-                registry?.trigger?.(value, null, oldValue);
+                registry?.deref()?.trigger?.(value, null, oldValue);
                 return result;
             };
         }
@@ -124,7 +136,7 @@ export class ReactiveSet {
             return (value) => {
                 const oldValue = target.has(value) ? value : null;
                 const result   = valueOrFx(value);
-                if (oldValue !== value) { registry?.trigger?.(value, value, oldValue); };
+                if (oldValue !== value) { registry?.deref()?.trigger?.(value, value, oldValue); };
                 return result;
             };
         }
@@ -155,13 +167,20 @@ export class ReactiveObject {
 
     // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
-        const registry = (subscriptRegistry).get(target);
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
+
+        //
         if ((target = deref(target, name == "value")) == null) return;
-        if (name == $registryKey$) { return registry; }
+        if (name == $registryKey$) { return registry?.deref?.(); }
         if (name == $originalKey$ || name == $extractKey$) { return target?.[name] ?? target; }
 
+        // get reactive primitives (if native iterator is available, use it)
+        if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
+        if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=> registry?.deref?.()?.iterator); }
+
         // @ts-ignore
-        if (name == Symbol.observable ) { return (subscriptRegistry).get(target)?.compatible; }
+        if (name == Symbol.observable ) { return registry?.deref?.()?.compatible; }
         if (name == Symbol.toPrimitive) { return () => {
             if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
             return target?.[Symbol.toPrimitive]?.();

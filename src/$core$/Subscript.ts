@@ -44,8 +44,8 @@ export class Subscript {
         //
         const generator = function*() {
             while (weak?.deref?.() && listeners?.deref?.()) {
-                const args: [any, any, any] = yield;
-                if (args) { caller(...args); }
+                const args: any = yield;
+                if (Array.isArray(args)) { caller(...args as [any, any, any]); } else { caller(args); }
             }
         }
 
@@ -78,6 +78,9 @@ export class Subscript {
         // @ts-ignore
         return Promise.try(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(console.warn.bind(console));
     }
+
+    //
+    get iterator() { return this.#iterator; }
 }
 
 //
