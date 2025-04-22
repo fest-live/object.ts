@@ -24,7 +24,8 @@ export class ReactiveMap {
         if ((target = deref(target)) == null) return;
 
         //
-        const valueOrFx = bindCtx(target, Reflect.get(target[$extractKey$] ?? target[$originalKey$] ?? target, name, ctx));
+        const tp = target[$extractKey$] ?? target[$originalKey$] ?? target;
+        const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/(tp)?.[name]);
 
         //
         if (name == "clear") {
@@ -109,7 +110,9 @@ export class ReactiveSet {
         if ((target = deref(target)) == null) return;
 
         //
-        const valueOrFx = bindCtx(target, Reflect.get(target, name, ctx));
+        //const valueOrFx = bindCtx(target, Reflect.get(target, name, ctx));
+        const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
+        const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/tp?.[name]);
 
         //
         if (name == "clear") {
