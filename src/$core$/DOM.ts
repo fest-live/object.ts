@@ -66,3 +66,15 @@ export const attrRef = (element, attribute: string)=>{
     //
     return val;
 }
+
+// ! you can't change size, due it's may break styles
+export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxOptions = "border-box")=>{
+    const val = makeReactive({ value: 0 });
+    const obs = new ResizeObserver((entries)=>{
+        if (box == "border-box") { val.value = axis == "inline" ? entries[0].borderBoxSize[0].inlineSize : entries[0].borderBoxSize[0].blockSize };
+        if (box == "content-box") { val.value = axis == "inline" ? entries[0].contentBoxSize[0].inlineSize : entries[0].contentBoxSize[0].blockSize };
+        if (box == "device-pixel-content-box") { val.value = axis == "inline" ? entries[0].devicePixelContentBoxSize[0].inlineSize : entries[0].devicePixelContentBoxSize[0].blockSize };
+    });
+    obs.observe(element, {box});
+    return val;
+}
