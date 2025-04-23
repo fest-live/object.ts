@@ -78,3 +78,54 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
     obs.observe(element, {box});
     return val;
 }
+
+// for checkbox
+export const checkedRef = (element)=>{
+    const val = makeReactive({ value: element?.checked || false });
+    element.addEventListener("change", (ev)=>{
+        if (val.value != ev?.target?.checked) { val.value = ev?.target?.checked; }
+    });
+    subscribe(val, (v)=>{
+        if (element.checked != v) {
+            element.checked = v;
+            element.dispatchEvent(new Event("change", {
+                bubbles: true
+            }));
+        }
+    })
+    return val;
+}
+
+// for string inputs
+export const valueRef = (element)=>{
+    const val = makeReactive({ value: element?.value || "" });
+    element.addEventListener("change", (ev)=>{
+        if (val.value != ev?.target?.value) { val.value = ev?.target?.value; }
+    });
+    subscribe(val, (v)=>{
+        if (element.value != v) {
+            element.value = v;
+            element.dispatchEvent(new Event("change", {
+                bubbles: true
+            }));
+        }
+    })
+    return val;
+}
+
+// for numeric inputs
+export const valueAsNumberRef = (element)=>{
+    const val = makeReactive({ value: element?.valueAsNumber || 0 });
+    element.addEventListener("change", (ev)=>{
+        if (val.value != ev?.target?.value) { val.value = ev?.target?.valueAsNumber; }
+    });
+    subscribe(val, (v)=>{
+        if (element.valueAsNumber != v) {
+            element.valueAsNumber = v;
+            element.dispatchEvent(new Event("change", {
+                bubbles: true
+            }));
+        }
+    })
+    return val;
+}
