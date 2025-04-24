@@ -81,16 +81,14 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
 
 // for checkbox
 export const checkedRef = (element)=>{
-    const val = makeReactive({ value: element?.checked || false });
-    element.addEventListener("change", (ev)=>{
-        if (val.value != ev?.target?.checked) { val.value = ev?.target?.checked; }
-    });
+    const val = makeReactive({ value: !!element?.checked || false });
+    element.addEventListener("change", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
+    element.addEventListener("input", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
+    element.addEventListener("click", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
     subscribe(val, (v)=>{
-        if (element.checked != v) {
-            element.checked = v;
-            element.dispatchEvent(new Event("change", {
-                bubbles: true
-            }));
+        if (element.checked !== v) {
+            element.checked = !!v;
+            element.dispatchEvent(new Event("change", { bubbles: true }));
         }
     })
     return val;
@@ -100,7 +98,7 @@ export const checkedRef = (element)=>{
 export const valueRef = (element)=>{
     const val = makeReactive({ value: element?.value || "" });
     element.addEventListener("change", (ev)=>{
-        if (val.value != ev?.target?.value) { val.value = ev?.target?.value; }
+        if (val.value != element?.value) { val.value = element?.value; }
     });
     subscribe(val, (v)=>{
         if (element.value != v) {
@@ -117,7 +115,7 @@ export const valueRef = (element)=>{
 export const valueAsNumberRef = (element)=>{
     const val = makeReactive({ value: element?.valueAsNumber || 0 });
     element.addEventListener("change", (ev)=>{
-        if (val.value != ev?.target?.value) { val.value = ev?.target?.valueAsNumber; }
+        if (val.value != element?.value) { val.value = element?.valueAsNumber; }
     });
     subscribe(val, (v)=>{
         if (element.valueAsNumber != v) {
