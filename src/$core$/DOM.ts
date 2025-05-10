@@ -28,7 +28,7 @@ export const matchMediaRef = (condition: string)=>{
 export const attrRef = (element, attribute: string, initial?: any)=>{
     // bi-directional attribute
     const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? ((initial?.value ?? initial) === true && typeof initial == "boolean" ? "" : (initial?.value ?? initial)) });
-    if (initial != null && element?.getAttribute?.(attribute) == null) { element?.setAttribute?.(attribute, val.value); };
+    if (initial != null && element?.getAttribute?.(attribute) == null && (typeof val.value != "object" && typeof val.value != "function") && val.value != null) { element?.setAttribute?.(attribute, val.value); };
     const config = {
         attributeFilter: [attribute],
         attributeOldValue: true,
@@ -56,7 +56,7 @@ export const attrRef = (element, attribute: string, initial?: any)=>{
     //
     subscribe(val, (v)=>{
         if (v !== element.getAttribute(attribute)) {
-            if (v == null) {
+            if (v == null || typeof v == "object" || typeof v == "function") {
                 element.removeAttribute(attribute);
             } else {
                 element.setAttribute(attribute, v);
