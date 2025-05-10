@@ -25,15 +25,16 @@ export const matchMediaRef = (condition: string)=>{
 }
 
 // one-shot update
-export const attrRef = (element, attribute: string)=>{
+export const attrRef = (element, attribute: string, initial?: string|number|boolean)=>{
     // bi-directional attribute
-    const val = makeReactive({ value: element?.getAttribute?.(attribute) });
-    const config = { 
+    const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? (initial === true ? "" : initial) });
+    if (initial != null && element?.getAttribute?.(attribute) == null) { element?.setAttribute?.(attribute, val.value); };
+    const config = {
         attributeFilter: [attribute],
         attributeOldValue: true,
-        attributes: true, 
-        childList: false, 
-        subtree: false, 
+        attributes: true,
+        childList: false,
+        subtree: false,
     };
 
     //
