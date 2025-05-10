@@ -55,3 +55,16 @@ export const unified = (...subs: any[])=>{
     }));
     return dest;
 }
+
+//
+export const assign = (a, b, prop = "value")=>{
+    if (b?.[prop||="value"] != null) { subscribe([b,prop],(v,p)=>(a[p] = b)); };
+    return a;
+}
+
+//
+export const link = (a, b, prop = "value")=>{
+    if (b?.[prop||="value"] != null) { subscribe([b,prop],(v,p)=>(a[p] = v)); };
+    if (a?.[prop]           != null) { subscribe([a,prop],(v,p)=>(b[p] = v)); };
+    return a;
+}
