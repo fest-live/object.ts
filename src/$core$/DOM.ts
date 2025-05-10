@@ -84,6 +84,7 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
 export const scrollRef = (element, axis: "inline"|"block", initial?: any)=>{
     if (initial != null && typeof (initial?.value ?? initial) == "number") { element?.scrollTo?.({ [axis=="inline"?"left":"top"]: (initial?.value ?? initial) }); };
     const val = makeReactive({ value: (axis == "inline" ? element?.scrollLeft : element?.scrollTop) || 0 });
+    subscribe([val, "value"], ()=>element?.scrollTo?.({ [axis=="inline"?"left":"top"]: (val?.value ?? val) }));
     element?.addEventListener?.("scroll", (ev)=>{ val.value = (axis == "inline" ? ev?.target?.scrollLeft : ev?.target?.scrollTop) || 0; }, { passive: true });
     return val;
 }
