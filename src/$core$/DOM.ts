@@ -25,6 +25,19 @@ export const matchMediaRef = (condition: string)=>{
 }
 
 // one-shot update
+export const visibleRef = (element, initial?: any)=>{
+    // bi-directional attribute
+    const val = makeReactive({ value: (initial?.value ?? initial) ?? (element?.getAttribute?.("data-hidden") == null) });
+    if ((initial?.value ?? initial) != null && element?.getAttribute?.("data-hidden") == null) { if (initial?.value ?? initial) { element?.removeAttribute?.("data-hidden"); } else { element?.setAttribute?.("data-hidden", val.value); } };
+
+    //
+    element.addEventListener("u2-hidden", ()=>{ val.value = false; }, {passive: true});
+    element.addEventListener("u2-visible", ()=>{ val.value = true; }, {passive: true});
+    subscribe([val, "value"], (v,p)=>{if (v) { element?.removeAttribute?.("data-hidden"); } else { element?.setAttribute?.("data-hidden", val.value); }})
+    return val;
+}
+
+// one-shot update
 export const attrRef = (element, attribute: string, initial?: any)=>{
     // bi-directional attribute
     const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? ((initial?.value ?? initial) === true && typeof initial == "boolean" ? "" : (initial?.value ?? initial)) });
