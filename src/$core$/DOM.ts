@@ -27,7 +27,7 @@ export const matchMediaRef = (condition: string)=>{
 // one-shot update
 export const attrRef = (element, attribute: string, initial?: string|number|boolean)=>{
     // bi-directional attribute
-    const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? (initial === true ? "" : initial) });
+    const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? (initial === true && typeof initial == "boolean" ? "" : initial) });
     if (initial != null && element?.getAttribute?.(attribute) == null) { element?.setAttribute?.(attribute, val.value); };
     const config = {
         attributeFilter: [attribute],
@@ -77,6 +77,13 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
         if (box == "device-pixel-content-box") { val.value = axis == "inline" ? entries[0].devicePixelContentBoxSize[0].inlineSize : entries[0].devicePixelContentBoxSize[0].blockSize };
     });
     obs.observe(element, {box});
+    return val;
+}
+
+//
+export const scrollRef = (element, axis: "inline"|"block")=>{
+    const val = makeReactive({ value: (axis == "inline" ? element?.scrollLeft : element?.scrollTop) || 0 });
+    element?.addEventListener?.("scroll", (ev)=>{ val.value = (axis == "inline" ? ev?.target?.scrollLeft : ev?.target?.scrollTop) || 0; }, { passive: true });
     return val;
 }
 

@@ -58,13 +58,13 @@ export const unified = (...subs: any[])=>{
 
 //
 export const assign = (a, b, prop = "value")=>{
-    if (b?.[prop||="value"] != null) { subscribe([b,prop],(v,p)=>(a[p] = b)); };
+    if (b?.[prop||="value"] != null) { subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
     return a;
 }
 
 //
 export const link = (a, b, prop = "value")=>{
-    if (b?.[prop||="value"] != null) { subscribe([b,prop],(v,p)=>(a[p] = v)); };
-    if (a?.[prop]           != null) { subscribe([a,prop],(v,p)=>(b[p] = v)); };
+    if (b?.[prop||="value"] != null) { subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
+    if (a?.[prop]           != null) { subscribe([a,prop],(v,p)=>(b[p] = a[p])); };
     return a;
 }
