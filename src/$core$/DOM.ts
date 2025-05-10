@@ -2,7 +2,7 @@ import { makeReactive, subscribe } from "./Mainline";
 
 // reacts by change storage, loads from storage, and reacts from storage event changes
 export const localStorageRef = (key, initial?: any)=>{
-    const ref = makeReactive({value: localStorage.getItem(key) ?? initial});
+    const ref = makeReactive({value: localStorage.getItem(key) ?? (initial?.value ?? initial)});
     addEventListener("storage", (ev)=>{
         if (ev.storageArea == localStorage && ev.key == key) {
             if (ref.value !== ev.newValue) { ref.value = ev.newValue; };
@@ -25,9 +25,9 @@ export const matchMediaRef = (condition: string)=>{
 }
 
 // one-shot update
-export const attrRef = (element, attribute: string, initial?: string|number|boolean)=>{
+export const attrRef = (element, attribute: string, initial?: any)=>{
     // bi-directional attribute
-    const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? (initial === true && typeof initial == "boolean" ? "" : initial) });
+    const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? ((initial?.value ?? initial) === true && typeof initial == "boolean" ? "" : (initial?.value ?? initial)) });
     if (initial != null && element?.getAttribute?.(attribute) == null) { element?.setAttribute?.(attribute, val.value); };
     const config = {
         attributeFilter: [attribute],
@@ -81,7 +81,8 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
 }
 
 //
-export const scrollRef = (element, axis: "inline"|"block")=>{
+export const scrollRef = (element, axis: "inline"|"block", initial?: any)=>{
+    if (initial != null && typeof (initial?.value ?? initial) == "number") { element?.scrollTo?.({ [axis=="inline"?"left":"top"]: (initial?.value ?? initial) }); };
     const val = makeReactive({ value: (axis == "inline" ? element?.scrollLeft : element?.scrollTop) || 0 });
     element?.addEventListener?.("scroll", (ev)=>{ val.value = (axis == "inline" ? ev?.target?.scrollLeft : ev?.target?.scrollTop) || 0; }, { passive: true });
     return val;
