@@ -107,9 +107,7 @@ export const checkedRef = (element)=>{
 // for string inputs
 export const valueRef = (element)=>{
     const val = makeReactive({ value: element?.value || "" });
-    element.addEventListener("change", (ev)=>{
-        if (val.value != element?.value) { val.value = element?.value; }
-    });
+    element?.addEventListener?.("change", (ev) => { if (val.value != element?.value) { val.value = element?.value; } });
     subscribe(val, (v)=>{
         if (element.value != v) {
             element.value = v;
@@ -124,7 +122,7 @@ export const valueRef = (element)=>{
 // for numeric inputs
 export const valueAsNumberRef = (element)=>{
     const val = makeReactive({ value: element?.valueAsNumber || 0 });
-    element.addEventListener("change", (ev)=>{
+    element?.addEventListener?.("change", (ev)=>{
         if (val.value != element?.value) { val.value = element?.valueAsNumber; }
     });
     subscribe(val, (v)=>{
