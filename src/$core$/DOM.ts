@@ -64,7 +64,7 @@ export const attrRef = (element, attribute: string, initial?: any)=>{
 
     //
     const observer = new MutationObserver(callback);
-    observer.observe(element, config);
+    observer.observe(element?.self ?? element, config);
 
     //
     subscribe(val, (v)=>{
@@ -89,7 +89,7 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
         if (box == "content-box") { val.value = axis == "inline" ? entries[0].contentBoxSize[0].inlineSize : entries[0].contentBoxSize[0].blockSize };
         if (box == "device-pixel-content-box") { val.value = axis == "inline" ? entries[0].devicePixelContentBoxSize[0].inlineSize : entries[0].devicePixelContentBoxSize[0].blockSize };
     });
-    obs.observe(element, {box});
+    obs.observe(element?.self ?? element, {box});
     return val;
 }
 
