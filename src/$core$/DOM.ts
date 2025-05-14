@@ -34,8 +34,8 @@ export const visibleRef = (element, initial?: any)=>{
     if ((initial?.value ?? initial) != null && element?.getAttribute?.("data-hidden") == null) { if (initial?.value ?? initial) { element?.removeAttribute?.("data-hidden"); } else { element?.setAttribute?.("data-hidden", val.value); } };
 
     //
-    element.addEventListener("u2-hidden", ()=>{ val.value = false; }, {passive: true});
-    element.addEventListener("u2-visible", ()=>{ val.value = true; }, {passive: true});
+    element?.addEventListener?.("u2-hidden", ()=>{ val.value = false; }, {passive: true});
+    element?.addEventListener?.("u2-visible", ()=>{ val.value = true; }, {passive: true});
     subscribe([val, "value"], (v,p)=>{if (v) { element?.removeAttribute?.("data-hidden"); } else { element?.setAttribute?.("data-hidden", val.value); }})
     return val;
 }
@@ -44,7 +44,7 @@ export const visibleRef = (element, initial?: any)=>{
 export const attrRef = (element, attribute: string, initial?: any)=>{
     // bi-directional attribute
     const val = makeReactive({ value: element?.getAttribute?.(attribute) ?? ((initial?.value ?? initial) === true && typeof initial == "boolean" ? "" : (initial?.value ?? initial)) });
-    if (initial != null && element?.getAttribute?.(attribute) == null && (typeof val.value != "object" && typeof val.value != "function") && val.value != null) { element?.setAttribute?.(attribute, val.value); };
+    if (initial != null && element?.getAttribute?.(attribute) == null && (typeof val.value != "object" && typeof val.value != "function") && (val.value != null && val.value !== false)) { element?.setAttribute?.(attribute, val.value); };
     const config = {
         attributeFilter: [attribute],
         attributeOldValue: true,
@@ -69,16 +69,16 @@ export const attrRef = (element, attribute: string, initial?: any)=>{
     } else {
         const callback = (mutationList, _) => { for (const mutation of mutationList) { onMutation(mutation); } };
         const observer = new MutationObserver(callback);
-        observer.observe(element, config);
+        if (element instanceof HTMLElement) { observer.observe(element, config); }
     }
 
     //
-    subscribe(val, (v)=>{
-        if (v !== element.getAttribute(attribute)) {
-            if (v == null || typeof v == "object" || typeof v == "function") {
-                element.removeAttribute(attribute);
+    subscribe([val, "value"], (v)=>{
+        if (v !== element?.getAttribute?.(attribute)) {
+            if (v == null || v === false || typeof v == "object" || typeof v == "function") {
+                element?.removeAttribute?.(attribute);
             } else {
-                element.setAttribute(attribute, v);
+                element?.setAttribute?.(attribute, v);
             }
         }
     });
@@ -95,7 +95,7 @@ export const sizeRef = (element, axis: "inline"|"block", box: ResizeObserverBoxO
         if (box == "content-box") { val.value = axis == "inline" ? entries[0].contentBoxSize[0].inlineSize : entries[0].contentBoxSize[0].blockSize };
         if (box == "device-pixel-content-box") { val.value = axis == "inline" ? entries[0].devicePixelContentBoxSize[0].inlineSize : entries[0].devicePixelContentBoxSize[0].blockSize };
     });
-    obs.observe(element?.self ?? element, {box});
+    if ((element?.self ?? element) instanceof HTMLElement) { obs.observe(element?.self ?? element, {box}); };
     return val;
 }
 
@@ -110,14 +110,16 @@ export const scrollRef = (element, axis: "inline"|"block", initial?: any)=>{
 
 // for checkbox
 export const checkedRef = (element)=>{
-    const val = makeReactive({ value: !!element?.checked || false });
-    (element?.self ?? element).addEventListener("change", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
-    (element?.self ?? element).addEventListener("input", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
-    (element?.self ?? element).addEventListener("click", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
-    subscribe(val, (v)=>{
-        if (element.checked !== v) {
+    const val = makeReactive({ value: (!!element?.checked) || false });
+    if (element?.self ?? element) {
+        (element?.self ?? element)?.addEventListener?.("change", (ev)=>{ if (val.value != ev?.target?.checked) { val.value = (!!ev?.target?.checked) || false; } });
+        (element?.self ?? element)?.addEventListener?.("input", (ev)=>{ if (val.value != ev?.target?.checked) { val.value = (!!ev?.target?.checked) || false; } });
+        (element?.self ?? element)?.addEventListener?.("click", (ev)=>{ if (val.value != ev?.target?.checked) { val.value = (!!ev?.target?.checked) || false; } });
+    }
+    subscribe([val, "value"], (v)=>{
+        if (element && element?.checked != v) {
             element.checked = !!v;
-            element.dispatchEvent(new Event("change", { bubbles: true }));
+            element?.dispatchEvent?.(new Event("change", { bubbles: true }));
         }
     })
     return val;
@@ -126,11 +128,11 @@ export const checkedRef = (element)=>{
 // for string inputs
 export const valueRef = (element)=>{
     const val = makeReactive({ value: element?.value || "" });
-    (element?.self ?? element)?.addEventListener?.("change", (ev) => { if (val.value != element?.value) { val.value = element?.value; } });
-    subscribe(val, (v)=>{
-        if (element.value != v) {
+    (element?.self ?? element)?.addEventListener?.("change", (ev) => { if (val.value != ev?.target?.value) { val.value = ev?.target?.value; } });
+    subscribe([val, "value"], (v)=>{
+        if (element && element?.value != v) {
             element.value = v;
-            element.dispatchEvent(new Event("change", {
+            element?.dispatchEvent?.(new Event("change", {
                 bubbles: true
             }));
         }
@@ -140,16 +142,14 @@ export const valueRef = (element)=>{
 
 // for numeric inputs
 export const valueAsNumberRef = (element)=>{
-    const val = makeReactive({ value: element?.valueAsNumber || 0 });
+    const val = makeReactive({ value: Number(element?.valueAsNumber) || 0 });
     (element?.self ?? element)?.addEventListener?.("change", (ev)=>{
-        if (val.value != element?.value) { val.value = element?.valueAsNumber; }
+        if (val.value != ev?.target?.valueAsNumber) { val.value = Number(ev?.target?.valueAsNumber); }
     });
-    subscribe(val, (v)=>{
-        if (element.valueAsNumber != v) {
-            element.valueAsNumber = v;
-            element.dispatchEvent(new Event("change", {
-                bubbles: true
-            }));
+    subscribe([val, "value"], (v)=>{
+        if (element && element?.valueAsNumber != v && typeof element?.valueAsNumber == "number") {
+            element.valueAsNumber = Number(v);
+            element?.dispatchEvent?.(new Event("change", { bubbles: true }));
         }
     })
     return val;

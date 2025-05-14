@@ -12,22 +12,9 @@ export const makeReactive: any = (target: any, stateName = ""): any => {
     let reactive = target;
 
     //
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) {
-        reactive = makeReactiveMap(target);
-    } else
-
-    //
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) {
-        reactive = makeReactiveSet(target);
-    } else
-
-    //
-    if (typeof unwrap == "function" || typeof unwrap == "object") {
-        reactive = makeReactiveObject(target);
-    }
-
-    //
-    //if (stateName) stateMap.set(stateName, reactive);
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target); } else
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target); } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
 
     //
     return reactive;
