@@ -1,5 +1,8 @@
 import { makeReactive, subscribe } from "./Mainline";
 
+// @ts-ignore /* @vite-ignore */
+import { observeAttributeBySelector } from "/externals/lib/dom.js";
+
 // reacts by change storage, loads from storage, and reacts from storage event changes
 export const localStorageRef = (key, initial?: any)=>{
     const ref = makeReactive({value: localStorage.getItem(key) ?? (initial?.value ?? initial)});
@@ -51,20 +54,23 @@ export const attrRef = (element, attribute: string, initial?: any)=>{
     };
 
     //
-    const callback = (mutationList, _) => {
-        for (const mutation of mutationList) {
-            if (mutation.type == "attributes") {
-                const value = mutation.target.getAttribute(mutation.attributeName);
-                if (mutation.oldValue != value && (val != null && (val?.value != null || (typeof val == "object" || typeof val == "function")))) {
-                    if (val?.value !== value) { val.value = value; }
-                }
+    const onMutation = (mutation: any)=>{
+        if (mutation.type == "attributes") {
+            const value = mutation.target.getAttribute(mutation.attributeName);
+            if (mutation.oldValue != value && (val != null && (val?.value != null || (typeof val == "object" || typeof val == "function")))) {
+                if (val?.value !== value) { val.value = value; }
             }
         }
-    };
+    }
 
     //
-    const observer = new MutationObserver(callback);
-    observer.observe(element?.self ?? element, config);
+    if (element?.self) {
+        observeAttributeBySelector(element.self, element.selector, attribute, onMutation);
+    } else {
+        const callback = (mutationList, _) => { for (const mutation of mutationList) { onMutation(mutation); } };
+        const observer = new MutationObserver(callback);
+        observer.observe(element, config);
+    }
 
     //
     subscribe(val, (v)=>{
@@ -105,9 +111,9 @@ export const scrollRef = (element, axis: "inline"|"block", initial?: any)=>{
 // for checkbox
 export const checkedRef = (element)=>{
     const val = makeReactive({ value: !!element?.checked || false });
-    element.addEventListener("change", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
-    element.addEventListener("input", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
-    element.addEventListener("click", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
+    (element?.self ?? element).addEventListener("change", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
+    (element?.self ?? element).addEventListener("input", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
+    (element?.self ?? element).addEventListener("click", (ev)=>{ if (val.value !== element?.checked) { val.value = !!element?.checked || false; } });
     subscribe(val, (v)=>{
         if (element.checked !== v) {
             element.checked = !!v;
@@ -120,7 +126,7 @@ export const checkedRef = (element)=>{
 // for string inputs
 export const valueRef = (element)=>{
     const val = makeReactive({ value: element?.value || "" });
-    element?.addEventListener?.("change", (ev) => { if (val.value != element?.value) { val.value = element?.value; } });
+    (element?.self ?? element)?.addEventListener?.("change", (ev) => { if (val.value != element?.value) { val.value = element?.value; } });
     subscribe(val, (v)=>{
         if (element.value != v) {
             element.value = v;
@@ -135,7 +141,7 @@ export const valueRef = (element)=>{
 // for numeric inputs
 export const valueAsNumberRef = (element)=>{
     const val = makeReactive({ value: element?.valueAsNumber || 0 });
-    element?.addEventListener?.("change", (ev)=>{
+    (element?.self ?? element)?.addEventListener?.("change", (ev)=>{
         if (val.value != element?.value) { val.value = element?.valueAsNumber; }
     });
     subscribe(val, (v)=>{
