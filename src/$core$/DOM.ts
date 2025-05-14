@@ -56,7 +56,7 @@ export const attrRef = (element, attribute: string, initial?: any)=>{
     //
     const onMutation = (mutation: any)=>{
         if (mutation.type == "attributes") {
-            const value = mutation.target.getAttribute(mutation.attributeName);
+            const value = mutation?.target?.getAttribute?.(mutation.attributeName);
             if (mutation.oldValue != value && (val != null && (val?.value != null || (typeof val == "object" || typeof val == "function")))) {
                 if (val?.value !== value) { val.value = value; }
             }
