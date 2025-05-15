@@ -11,7 +11,8 @@ export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
 
 //
 export const ref  = (initial?: any)=>{ return makeReactive({value: deref(initial)}); }
-export const weak = (initial?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj}); }
+export const weak = (initial?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj}); };
+export const propRef =  (src: any, prop: string, initial?: any)=>{ const r = ref(src[prop]); subscribe([src,prop], (val,p) => (r.value = val||initial)); return r; };
 
 //
 export const promised = (promise: any)=>{
