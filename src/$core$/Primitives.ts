@@ -10,9 +10,47 @@ export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
 }
 
 //
+const $value = Symbol.for("@value");
+
+// very hard type
+export const numberRef  = (initial?: any)=>{
+    const $r = {
+        [$value]: Number(deref(initial) || 0) || 0,
+        set value(v) { this[$value] = Number(v) || 0; },
+        get value() { return Number(this[$value] || 0) || 0; }
+    };
+    return makeReactive($r);
+}
+
+// very hard type
+export const stringRef  = (initial?: any)=>{
+    const $r = {
+        [$value]: String(deref(initial) ?? "") || "",
+        set value(v) { this[$value] = String(v ?? "") || ""; },
+        get value() { return String(this[$value] || "") || ""; }
+    };
+    return makeReactive($r);
+}
+
+// very hard type
+export const booleanRef  = (initial?: any)=>{
+    const $r = {
+        [$value]: Boolean(!!deref(initial) || false) || false,
+        set value(v) { this[$value] = Boolean(!!v || false) || false; },
+        get value() { return Boolean(!!this[$value] || false) || false; }
+    };
+    return makeReactive($r);
+}
+
+//
 export const ref  = (initial?: any)=>{ return makeReactive({value: deref(initial)}); }
 export const weak = (initial?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj}); };
-export const propRef =  (src: any, prop: string, initial?: any)=>{ const r = ref(src[prop]); subscribe([src,prop], (val,p) => (r.value = val||initial)); return r; };
+export const propRef =  (src: any, prop: string, initial?: any)=>{
+    const r = ref(src[prop]);
+    subscribe([src,prop], (val,p) => (r.value = val||initial));
+    subscribe([r,"value"], (val,p) => (src[prop] = val));
+    return r;
+};
 
 //
 export const promised = (promise: any)=>{
