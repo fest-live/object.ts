@@ -13,38 +13,41 @@ export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
 const $value = Symbol.for("@value");
 
 // very hard type
-export const numberRef  = (initial?: any)=>{
+export const numberRef  = (initial?: any, behaviour?: any)=>{
     const $r = {
         [$value]: Number(deref(initial) || 0) || 0,
         set value(v) { this[$value] = Number(v) || 0; },
-        get value() { return Number(this[$value] || 0) || 0; }
+        get value() { return Number(this[$value] || 0) || 0; },
+        behaviour
     };
     return makeReactive($r);
 }
 
 // very hard type
-export const stringRef  = (initial?: any)=>{
+export const stringRef  = (initial?: any, behaviour?: any)=>{
     const $r = {
         [$value]: String(deref(initial) ?? "") || "",
         set value(v) { this[$value] = String(v ?? "") || ""; },
-        get value() { return String(this[$value] || "") || ""; }
+        get value() { return String(this[$value] || "") || ""; },
+        behaviour
     };
     return makeReactive($r);
 }
 
 // very hard type
-export const booleanRef  = (initial?: any)=>{
+export const booleanRef  = (initial?: any, behaviour?: any)=>{
     const $r = {
         [$value]: Boolean(!!deref(initial) || false) || false,
         set value(v) { this[$value] = Boolean(!!v || false) || false; },
-        get value() { return Boolean(!!this[$value] || false) || false; }
+        get value() { return Boolean(!!this[$value] || false) || false; },
+        behaviour
     };
     return makeReactive($r);
 }
 
 //
-export const ref  = (initial?: any)=>{ return makeReactive({value: deref(initial)}); }
-export const weak = (initial?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj}); };
+export const ref  = (initial?: any, behaviour?: any)=>{ return makeReactive({value: deref(initial), behaviour}); }
+export const weak = (initial?: any, behaviour?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj, behaviour}); };
 export const propRef =  (src: any, prop: string, initial?: any)=>{
     const r = ref(src[prop]);
     subscribe([src,prop], (val,p) => (r.value = val||initial));
@@ -53,8 +56,8 @@ export const propRef =  (src: any, prop: string, initial?: any)=>{
 };
 
 //
-export const promised = (promise: any)=>{
-    const ref = makeReactive({value: promise});
+export const promised = (promise: any, behaviour?: any)=>{
+    const ref = makeReactive({value: promise, behaviour});
     promise?.then?.((v)=>ref.value = v);
     return ref;
 }
