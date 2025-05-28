@@ -1,7 +1,4 @@
-// @ts-ignore /* @vite-ignore */
 import { subscribe } from "./Mainline";
-import {importCdn} from "/externals/modules/cdnImport.mjs";
-export {importCdn};
 
 // @ts-ignore /* @vite-ignore */
 const observeMaps = new WeakMap<any[], ObserveArray>();
