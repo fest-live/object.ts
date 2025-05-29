@@ -53,7 +53,7 @@ export const propRef =  (src: any, prop: string, initial?: any)=>{
     subscribe([src,prop], (val,p) => (r.value = val||initial));
     subscribe([r,"value"], (val,p) => (src[prop] = val));
     return r;
-};
+}
 
 //
 export const promised = (promise: any, behaviour?: any)=>{
@@ -100,13 +100,24 @@ export const unified = (...subs: any[])=>{
 
 //
 export const assign = (a, b, prop = "value")=>{
-    if (b?.[prop||="value"] != null) { b.value ||= a?.value; subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
-    return a;
+    if (b?.[prop||="value"] != null) { b[prop] ||= a?.[prop]; return subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
 }
 
 //
 export const link = (a, b, prop = "value")=>{
-    if (b?.[prop||="value"] != null) { b.value ||= a?.value; subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
-    if (a?.[prop]           != null) { a.value ||= b?.value; subscribe([a,prop],(v,p)=>(b[p] = a[p])); };
-    return a;
+    const usub = [
+        (b?.[prop||="value"] != null) ? subscribe([b,prop],(v,p)=>(a[p] = b[p])) : null,
+        (a?.[prop]           != null) ? subscribe([a,prop],(v,p)=>(b[p] = a[p])) : null
+    ];
+    return ()=>usub?.map?.((a)=>a?.());
+}
+
+//
+export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] = [null,null])=>{
+    const prop = "value";
+    const usub = [
+        subscribe([a, prop], (value, prop, old) => { b[prop] = asb?.(value, prop, old)??b[prop]; }),
+        subscribe([b, prop], (value, prop, old) => { a[prop] = bsb?.(value, prop, old)??a[prop]; })
+    ];
+    return ()=>usub?.map?.((a)=>a?.());
 }

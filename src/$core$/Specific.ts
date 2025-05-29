@@ -1,5 +1,9 @@
 import { $extractKey$, $originalKey$, $registryKey$, bindCtx, type keyType } from "./Keys";
+import { subscribe } from "./Mainline";
 import { deref, subscriptRegistry, wrapWith } from "./Subscript";
+
+// @ts-ignore
+Symbol.u2sub = Symbol.for("u2sub");
 
 //
 export class ReactiveMap {
@@ -15,6 +19,9 @@ export class ReactiveMap {
 
         // @ts-ignore
         if (name == Symbol.observable) { return registry?.deref?.()?.compatible; }
+
+        // @ts-ignore
+        if (name == Symbol.u2sub) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
 
         // get reactive primitives (if native iterator is available, use it)
         if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
@@ -102,6 +109,9 @@ export class ReactiveSet {
         // @ts-ignore
         if (name == Symbol.observable) { return registry?.deref?.()?.compatible; }
 
+        // @ts-ignore
+        if (name == Symbol.u2sub) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
+
         // get reactive primitives (if native iterator is available, use it)
         if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
         if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=> registry?.deref?.()?.iterator); }
@@ -184,6 +194,9 @@ export class ReactiveObject {
 
         // @ts-ignore
         if (name == Symbol.observable ) { return registry?.deref?.()?.compatible; }
+
+        // @ts-ignore
+        if (name == Symbol.u2sub) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
         if (name == Symbol.toPrimitive) { return () => {
             if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
             return target?.[Symbol.toPrimitive]?.();
