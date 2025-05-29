@@ -13,14 +13,26 @@ const associateWith = (cb, name)=>{
 export class Subscript {
     compatible: any;
     #listeners: Set<(value: any, prop: keyType, oldValue?: any) => void>;
+    #flags = new WeakSet();
     #native: any;
     #iterator: any;
     //#caller: any;
 
     //
+    async $safeExec(cb, args) {
+        if (cb && this.#flags.has(cb)) return this;
+        this.#flags.add(cb);
+        if (Array.isArray(args)) // @ts-ignore
+            { await Promise?.try?.(cb, ...args as [any, any, any])?.catch?.(console.error.bind(console)); } else // @ts-ignore
+            { await Promise?.try?.(cb, args)?.catch?.(console.error.bind(console)); }
+        this.#flags.delete(cb); return this;
+    }
+
+    //
     constructor(withWeak?: any) {
         const weak = new WeakRef(this);
         this.#listeners = new Set();
+        this.#flags = new WeakSet();
 
         //
         const listeners = new WeakRef(this.#listeners);
@@ -44,14 +56,12 @@ export class Subscript {
         //
         const generator = function*() {
             while (weak?.deref?.() && listeners?.deref?.()) {
-                const args: any = yield;
-                if (Array.isArray(args)) { caller(...args as [any, any, any]); } else { caller(args); }
+                weak?.deref?.()?.$safeExec?.(caller, yield);
             }
         }
 
         // @ts-ignore
-        this.#native = (typeof Observable != "undefined" ? (new Observable(subscribe)) : { [Symbol.observable]() { return this },
-            subscribe })
+        this.#native = (typeof Observable != "undefined" ? (new Observable(subscribe)) : { [Symbol.observable]() { return this }, subscribe })
 
         // initiate generator, and do next
         this.#iterator = generator();
@@ -76,7 +86,7 @@ export class Subscript {
     trigger(name, value = null, oldValue?: any) {
 
         // @ts-ignore
-        return Promise.try(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(console.warn.bind(console));
+        return Promise.try(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(console.error.bind(console));
     }
 
     //
