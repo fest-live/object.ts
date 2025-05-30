@@ -63,6 +63,26 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
     });
 }
 
+
+
+//
+export const unsubscribe = (tg: any, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null)=>{
+    return withPromise(tg, (target: any)=>{
+        const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
+        const prop = isPair ? target?.[1] : null;
+
+        // hard and advanced definition
+        target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
+
+        //
+        const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
+        let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
+        self?.unsubscribe?.(cb, prop);
+    });
+}
+
+
+
 //
 export const bindByKey = (target, reactive, key = ()=>"")=> subscribe(reactive, (value, id)=>{ if (id == key()) { objectAssign(target, value, null, true); } });
 export const derivate  = (from, reactFn, watch?) => bindWith(reactFn(safe(from)), from, watch);

@@ -69,11 +69,13 @@ export class Subscript {
         return ()=> this.unsubscribe(cb, prop);
     }
 
-    //
-    unsubscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
-        if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb) ?? cb; }
-        if (this.#listeners.has(cb)) { this.#listeners.delete(cb); }
-        return ()=> this.subscribe(cb, prop);
+    unsubscribe(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
+        if (cb != null && typeof cb == "function") {
+            if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb) ?? cb; } // @ts-ignore
+            if (this.#listeners.has(cb)) { this.#listeners.delete(cb); } // @ts-ignore
+            return () => this.subscribe(cb, prop);
+        } // otherwise, clear everyone
+        this.#listeners.clear();
     }
 
     // try execute immediatly, if already running, try delayed action in callstack

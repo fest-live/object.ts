@@ -5,7 +5,7 @@ Symbol.observable ||= Symbol.for('observable')
 Symbol.subscribe ||= Symbol.for("subscribe");
 
 // @ts-ignore
-Symbol.unsubcribe ||= Symbol.for("unsubcribe");
+Symbol.unsubscribe ||= Symbol.for("unsubscribe");
 
 //
 export const $value = Symbol.for("@value");

@@ -1,5 +1,5 @@
 import { bindCtx, deref, type keyType } from "./Utils";
-import { subscribe } from "./Mainline";
+import { subscribe, unsubscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
@@ -8,7 +8,8 @@ const systemGet = (target, name, registry)=>{
     if (name == $registryKey$) { return registry?.deref?.(); }
     if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; } // @ts-ignore
     if (name == Symbol.observable) { return registry?.deref?.()?.compatible; } // @ts-ignore
-    if (name == Symbol.subscribe) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
+    if (name == Symbol.subscribe) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); } // @ts-ignore
+    if (name == Symbol.unsubscribe) { return (cb, prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
     if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
     if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
 }
