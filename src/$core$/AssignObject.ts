@@ -99,29 +99,11 @@ export class AssignObjectHandler {
     }
 
     //
-    construct(target, args, newT) {
-        return Reflect.construct(target, args, newT);
-    }
-
-    //
-    has(target, prop: keyType) {
-        return Reflect.has(target, prop);
-    }
-
-    //
-    apply(target, ctx, args) {
-        return Reflect.apply(target, ctx, args);
-    }
-
-    //
-    set(target, name: keyType, value) {
-        objectAssign(target, value, name); return true;
-    }
-
-    //
-    deleteProperty(target, name: keyType) {
-        const result = Reflect.deleteProperty(target, name); return result;
-    }
+    apply(target, ctx, args) { return Reflect.apply(target, ctx, args); }
+    has(target, prop: keyType) { return Reflect.has(target, prop); }
+    set(target, name: keyType, value) { objectAssign(target, value, name); return true; }
+    deleteProperty(target, name: keyType) { const result = Reflect.deleteProperty(target, name); return result; }
+    construct(target, args, newT) { return Reflect.construct(target, args, newT); }
 }
 
 //
@@ -131,4 +113,4 @@ export const makeObjectAssignable = (obj) => {
     // @ts-ignore
     const px = new Proxy(obj, new AssignObjectHandler());
     $originalObjects$.set(px, obj); return px;
-};
+}

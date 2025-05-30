@@ -77,7 +77,7 @@ export const safe = (target)=>{
 
 //
 export const unwrap = (arr)=>{ return arr?.["@target"] ?? arr; }
-export const deref = (target?: any, discountValue?: boolean|null)=>{
+export const deref  = (target?: any, discountValue?: boolean|null)=>{
     let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function") && !discountValue) ? target?.value : target;
     if (from instanceof WeakRef) { from = deref(from.deref(), discountValue); }; return from;
 }

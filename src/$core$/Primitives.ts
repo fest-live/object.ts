@@ -55,8 +55,7 @@ export const propRef =  (src: any, prop: string, initial?: any)=>{
 //
 export const promised = (promise: any, behaviour?: any)=>{
     const ref = makeReactive({value: promise, behaviour});
-    promise?.then?.((v)=>ref.value = v);
-    return ref;
+    promise?.then?.((v)=>ref.value = v); return ref;
 }
 
 //
@@ -117,6 +116,5 @@ export const unified = (...subs: any[])=>{
     const dest = makeReactive({});
     subs?.forEach?.((sub)=>subscribe(sub, (value, prop, _)=>{
         if (dest[prop] !== value) { dest[prop] = value; };
-    }));
-    return dest;
+    })); return dest;
 }

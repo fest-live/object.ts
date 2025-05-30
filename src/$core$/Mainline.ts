@@ -64,9 +64,9 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
 }
 
 //
-export const derivate = (from, reactFn, watch?) => bindWith(reactFn(safe(from)), from, watch);
 export const bindByKey = (target, reactive, key = ()=>"")=> subscribe(reactive, (value, id)=>{ if (id == key()) { objectAssign(target, value, null, true); } });
-export const bindWith = (target, reactive, watch?) => {
+export const derivate  = (from, reactFn, watch?) => bindWith(reactFn(safe(from)), from, watch);
+export const bindWith  = (target, reactive, watch?) => {
     subscribe(reactive, (v,p)=>{ objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); }}, {deep: true});
     return target;

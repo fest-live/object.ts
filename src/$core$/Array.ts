@@ -11,15 +11,13 @@ class ObserveMethod {
         this.#handle = handle;
         this.#self   = self;
     }
+    get(target, name, rec) { return Reflect.get(target, name, rec); }
     apply(target, ctx, args) {
         let removed = null;
         if (this.#name == "splice") { removed = this.#self[args[0]]; };
         const wp = this.#handle.wrap(Reflect.apply(target, ctx || this.#self, args));
         this.#handle.trigger(this.#self || ctx, this.#name, args, wp, removed);
         return wp;
-    }
-    get(target, name, rec) {
-        return Reflect.get(target, name, rec);
     }
 }
 
@@ -92,10 +90,11 @@ export const observe = (arr, cb)=>{
     const orig = arr?.["@target"] ?? arr;
     const obs = observeMaps.get(orig);
     const evt = obs?.events;
-    arr?.forEach?.((val, _)=>{
-        return cb("push", [val])
-    });
-    evt?.get(orig)?.add?.(cb);
+    if (Array.isArray(arr)) {
+        arr?.forEach?.((val, _)=>cb("push", [val]));
+        evt?.get(orig)?.add?.(cb);
+    }
+    return subscribe(arr, cb);
 };
 
 //

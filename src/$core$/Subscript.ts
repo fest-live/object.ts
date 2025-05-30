@@ -64,14 +64,16 @@ export class Subscript {
 
     //
     subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
-        if (prop != null) { cb = associateWith(cb, prop); }
+        if (prop != null) { cb = associateWith(cb, prop) ?? cb; }
         if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }
+        return ()=> this.unsubscribe(cb, prop);
     }
 
     //
     unsubscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
-        if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb); }
+        if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb) ?? cb; }
         if (this.#listeners.has(cb)) { this.#listeners.delete(cb); }
+        return ()=> this.subscribe(cb, prop);
     }
 
     // try execute immediatly, if already running, try delayed action in callstack

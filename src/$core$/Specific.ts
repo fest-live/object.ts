@@ -3,33 +3,29 @@ import { subscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
+// get reactive primitives (if native iterator is available, use it)
+const systemGet = (target, name, registry)=>{
+    if (name == $registryKey$) { return registry?.deref?.(); }
+    if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; } // @ts-ignore
+    if (name == Symbol.observable) { return registry?.deref?.()?.compatible; } // @ts-ignore
+    if (name == Symbol.subscribe) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
+    if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
+    if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
+}
+
 //
 export class ReactiveMap {
     constructor() { }
-    has(target, prop: keyType) { return Reflect.has(target, prop); }
+
+    //
     get(target, name: keyType, ctx) {
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
+        const sys = systemGet(target, name, registry); if (sys != null) return sys;
 
         //
-        if (name == $registryKey$) { return registry?.deref?.(); }
-        if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
-
-        // @ts-ignore
-        if (name == Symbol.observable) { return registry?.deref?.()?.compatible; }
-
-        // @ts-ignore
-        if (name == Symbol.u2sub) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
-
-        // get reactive primitives (if native iterator is available, use it)
-        if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
-        if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
-
-        // redirect to value key
         if ((target = deref(target)) == null) return;
-
-        //
-        const tp = target[$extractKey$] ?? target[$originalKey$] ?? target;
+        const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
         const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/(tp)?.[name]);
 
         //
@@ -68,57 +64,24 @@ export class ReactiveMap {
         return valueOrFx;
     }
 
-    //
-    construct(target, args, newT) {
-        // redirect to value key
-        if ((target = deref(target)) == null) return;
-        return Reflect.construct(target, args, newT);
-    }
-
-    //
-    apply(target, ctx, args) {
-        // redirect to value key
-        if ((target = deref(target)) == null) return;
-        return Reflect.apply(target, ctx, args);
-    }
+    // redirect to value key
+    has(target, prop: keyType) { if ((target = deref(target)) == null) return false; return Reflect.has(target, prop); }
+    apply(target, ctx, args) { if ((target = deref(target)) == null) return; return Reflect.apply(target, ctx, args); }
+    construct(target, args, newT) { if ((target = deref(target)) == null) return; return Reflect.construct(target, args, newT); }
 }
 
 //
 export class ReactiveSet {
-    constructor() {
-    }
-
-    //
-    has(target, prop: keyType) {
-        // redirect to value key
-        if ((target = deref(target)) == null) return;
-        return Reflect.has(target, prop);
-    }
+    constructor() {}
 
     //
     get(target, name: keyType, ctx) {
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
-
-        //
-        if (name == $registryKey$) { return registry?.deref?.(); }
-        if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; }
-
-        // @ts-ignore
-        if (name == Symbol.observable) { return registry?.deref?.()?.compatible; }
-
-        // @ts-ignore
-        if (name == Symbol.u2sub) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
-
-        // get reactive primitives (if native iterator is available, use it)
-        if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
-        if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=> registry?.deref?.()?.iterator); }
+        const sys = systemGet(target, name, registry); if (sys != null) return sys;
 
         // redirect to value key
         if ((target = deref(target)) == null) return;
-
-        //
-        //const valueOrFx = bindCtx(target, Reflect.get(target, name, ctx));
         const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
         const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/tp?.[name]);
 
@@ -156,79 +119,46 @@ export class ReactiveSet {
         return valueOrFx;
     }
 
-    //
-    construct(target, args, newT) {
-        // redirect to value key
-        if ((target = deref(target)) == null) return;
-        return Reflect.construct(target, args, newT);
-    }
-
-    //
-    apply(target, ctx, args) {
-        // redirect to value key
-        if ((target = deref(target)) == null) return;
-        return Reflect.apply(target, ctx, args);
-    }
+    // redirect to value key i
+    has(target, prop: keyType) { if ((target = deref(target)) == null) return; return Reflect.has(target, prop); }
+    apply(target, ctx, args) { if ((target = deref(target)) == null) return; return Reflect.apply(target, ctx, args); }
+    construct(target, args, newT) { if ((target = deref(target)) == null) return; return Reflect.construct(target, args, newT); }
 }
 
 //
 export class ReactiveObject {
-    constructor() {
-    }
+    constructor() {}
 
     // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
+        const sys = systemGet(target, name, registry); if (sys != null) return sys;
 
-        //
+        // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
-        if (name == $registryKey$) { return registry?.deref?.(); }
-        if (name == $originalKey$ || name == $extractKey$) { return target?.[name] ?? target; }
-
-        // get reactive primitives (if native iterator is available, use it)
-        if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
-        if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=> registry?.deref?.()?.iterator); }
-
-        // @ts-ignore
-        if (name == Symbol.observable ) { return registry?.deref?.()?.compatible; }
-
-        // @ts-ignore
-        if (name == Symbol.u2sub) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
         if (name == Symbol.toPrimitive) { return () => {
             if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
             return target?.[Symbol.toPrimitive]?.();
         }};
-        if (name == "toString") {
-            return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || "");
-        }
-        if (name == "valueOf") {
-            return () => {
-                if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
-                return target?.valueOf?.();
-            }
-        }
-
-        //
+        if (name == "toString") { return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || ""); }
+        if (name == "valueOf") { return () => { if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
         return bindCtx(target, Reflect.get(target, name, ctx));
     }
 
     //
-    construct(target, args, newT) {
+    apply(target, ctx, args) { if ((target = deref(target)) == null) return; return Reflect.apply(target, ctx, args); }
+    ownKeys(target) { if ((target = deref(target)) == null) return; return Reflect.ownKeys(target); }
+    construct(target, args, newT) { if ((target = deref(target)) == null) return; return Reflect.construct(target, args, newT); }
+    isExtensible(target) { if ((target = deref(target)) == null) return; return Reflect.isExtensible(target); }
+    deleteProperty(target, name: keyType) {
+        const registry = (subscriptRegistry).get(target);
         if ((target = deref(target)) == null) return;
-        return Reflect.construct(target, args, newT);
-    }
 
-    //
-    isExtensible(target) {
-        if ((target = deref(target)) == null) return;
-        return Reflect.isExtensible(target);
-    }
-
-    //
-    ownKeys(target) {
-        if ((target = deref(target)) == null) return;
-        return Reflect.ownKeys(target);
+        //
+        const oldValue = target[name];
+        const result = Reflect.deleteProperty(target, name);
+        registry?.trigger?.(name, null, oldValue); return result;
     }
 
     //
@@ -237,19 +167,8 @@ export class ReactiveObject {
         return Reflect.getOwnPropertyDescriptor(target, key);
     }
 
-    //
-    has(target, prop: keyType) {
-        if ((target = deref(target)) == null) return;
-        return Reflect.has(target, prop);
-    }
-
-    //
-    apply(target, ctx, args) {
-        if ((target = deref(target)) == null) return;
-        return Reflect.apply(target, ctx, args);
-    }
-
     // supports nested "value" objects
+    has(target, prop: keyType) { if ((target = deref(target)) == null) return; return Reflect.has(target, prop); }
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
@@ -258,18 +177,6 @@ export class ReactiveObject {
         const oldValue = target[name];
         const result = Reflect.set(target, name, value);
         if (oldValue !== value) { registry?.trigger?.(name, value, oldValue); };
-        return result;
-    }
-
-    //
-    deleteProperty(target, name: keyType) {
-        const registry = (subscriptRegistry).get(target);
-        if ((target = deref(target)) == null) return;
-
-        //
-        const oldValue = target[name];
-        const result = Reflect.deleteProperty(target, name);
-        registry?.trigger?.(name, null, oldValue);
         return result;
     }
 }
