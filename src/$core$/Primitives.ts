@@ -1,6 +1,7 @@
 import { isValidObj, objectAssignNotEqual } from "./AssignObject";
 import { makeReactive, subscribe } from "./Mainline";
-import { deref } from "./Subscript";
+import { $value } from "./Symbol";
+import {  deref } from "./Subscript";
 
 //
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
@@ -8,9 +9,6 @@ export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
     subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
     return cond;
 }
-
-//
-const $value = Symbol.for("@value");
 
 // very hard type
 export const numberRef  = (initial?: any, behaviour?: any)=>{
@@ -62,6 +60,33 @@ export const promised = (promise: any, behaviour?: any)=>{
     return ref;
 }
 
+//
+export const assign = (a, b, prop = "value")=>{
+    if (b?.[prop||="value"] != null) { b[prop] ||= a?.[prop]; return subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
+}
+
+//
+export const link = (a, b, prop = "value")=>{
+    const usub = [
+        (b?.[prop||="value"] != null) ? subscribe([b,prop],(v,p)=>(a[p] = b[p])) : null,
+        (a?.[prop]           != null) ? subscribe([a,prop],(v,p)=>(b[p] = a[p])) : null
+    ];
+    return ()=>usub?.map?.((a)=>a?.());
+}
+
+//
+export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] = [null,null])=>{
+    const prop = "value";
+    const usub = [
+        subscribe([a, prop], (value, prop, old) => { b[prop] = asb?.(value, prop, old)??b[prop]; }),
+        subscribe([b, prop], (value, prop, old) => { a[prop] = bsb?.(value, prop, old)??a[prop]; })
+    ];
+    return ()=>usub?.map?.((a)=>a?.());
+}
+
+
+
+
 // used for conditional reaction
 // !one-directional
 export const computed = (sub, cb?: Function|null, dest?: [any, string|number|symbol]|null)=>{
@@ -96,28 +121,4 @@ export const unified = (...subs: any[])=>{
         if (dest[prop] !== value) { dest[prop] = value; };
     }));
     return dest;
-}
-
-//
-export const assign = (a, b, prop = "value")=>{
-    if (b?.[prop||="value"] != null) { b[prop] ||= a?.[prop]; return subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
-}
-
-//
-export const link = (a, b, prop = "value")=>{
-    const usub = [
-        (b?.[prop||="value"] != null) ? subscribe([b,prop],(v,p)=>(a[p] = b[p])) : null,
-        (a?.[prop]           != null) ? subscribe([a,prop],(v,p)=>(b[p] = a[p])) : null
-    ];
-    return ()=>usub?.map?.((a)=>a?.());
-}
-
-//
-export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] = [null,null])=>{
-    const prop = "value";
-    const usub = [
-        subscribe([a, prop], (value, prop, old) => { b[prop] = asb?.(value, prop, old)??b[prop]; }),
-        subscribe([b, prop], (value, prop, old) => { a[prop] = bsb?.(value, prop, old)??a[prop]; })
-    ];
-    return ()=>usub?.map?.((a)=>a?.());
 }

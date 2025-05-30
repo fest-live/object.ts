@@ -1,7 +1,8 @@
 import { objectAssign } from "./AssignObject";
-import { $extractKey$, $registryKey$, callByAllProp, callByProp, isKeyType, safe, type keyType } from "./Keys";
+import { callByAllProp, callByProp, isKeyType, safe, type keyType } from "./Keys";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
+import { $extractKey$, $registryKey$ } from "./Symbol";
 
 //
 export const makeReactive: any = (target: any, stateName = ""): any => {
@@ -63,22 +64,12 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
 }
 
 //
-export const bindByKey = (target, reactive, key = ()=>"")=>{
-    subscribe(reactive, (value, id)=>{
-        if (id == key()) { objectAssign(target, value, null, true); }
-    });
-}
-
-//
+export const derivate = (from, reactFn, watch?) => bindWith(reactFn(safe(from)), from, watch);
+export const bindByKey = (target, reactive, key = ()=>"")=> subscribe(reactive, (value, id)=>{ if (id == key()) { objectAssign(target, value, null, true); } });
 export const bindWith = (target, reactive, watch?) => {
     subscribe(reactive, (v,p)=>{ objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); }}, {deep: true});
     return target;
-}
-
-//
-export const derivate = (from, reactFn, watch?) => {
-    return bindWith(reactFn(safe(from)), from, watch);
 }
 
 // experimental promise support

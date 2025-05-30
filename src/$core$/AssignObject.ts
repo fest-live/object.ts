@@ -1,7 +1,5 @@
-import { $extractKey$, $originalKey$, $originalObjects$, $registryKey$, isIterable, type keyType } from "./Keys.js";
-
-//
-export const isValidObj  = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
+import { $originalObjects$, isIterable, type keyType } from "./Keys.js";
+import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol.js";
 
 //
 export const objectAssignNotEqual = (dst, src = {})=>{
@@ -10,6 +8,7 @@ export const objectAssignNotEqual = (dst, src = {})=>{
 }
 
 //
+export const isValidObj  = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
 export const removeExtra = (target, value, name: keyType | null = null)=>{
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
 

@@ -1,9 +1,7 @@
-import { $extractKey$, $originalKey$, $registryKey$, bindCtx, type keyType } from "./Keys";
+import { bindCtx, type keyType } from "./Keys";
 import { subscribe } from "./Mainline";
 import { deref, subscriptRegistry, wrapWith } from "./Subscript";
-
-// @ts-ignore
-Symbol.u2sub = Symbol.for("u2sub");
+import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
 //
 export class ReactiveMap {

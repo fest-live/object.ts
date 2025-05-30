@@ -1,6 +1,6 @@
-export const $extractKey$  = Symbol.for("$@extract@$");//"$@extract@$";//Symbol("@extract");
-export const $originalKey$ = Symbol.for("$@origin@$"); //"$@origin@$";//Symbol("@origin");
-export const $registryKey$ = Symbol.for("$@registry@$"); //"$@registry@$";
+import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
+
+//
 export const $originalObjects$ = new WeakMap();
 
 //
@@ -22,24 +22,10 @@ export const bindFx = (target, fx)=>{
 }
 
 //
-export const bindCtx = (target, fx) => {
-    return (typeof fx == "function" ? bindFx(target, fx) : fx) ?? fx;
-}
-
-//
-export type keyType = string | number | symbol;
-
-// TODO! WeakMap or WeakSet support
-export const isKeyType = (prop: any)=>{
-    return ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
-}
-
-//
-export const isIterable = (obj) => {
-    return (typeof obj?.[Symbol.iterator] == "function");
-}
-
-//
+export type  keyType    = string | number | symbol;
+export const isKeyType  = (prop: any)=> ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
+export const bindCtx    = (target, fx) => ((typeof fx == "function" ? bindFx(target, fx) : fx) ?? fx);
+export const isIterable = (obj) => (typeof obj?.[Symbol.iterator] == "function");
 export const callByProp = (unwrap, prop, cb, ctx)=>{
     if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$) return;
 

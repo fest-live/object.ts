@@ -1,4 +1,5 @@
-import { $extractKey$, type keyType, safe } from "./Keys.js";
+import { type keyType, safe } from "./Keys.js";
+import { $extractKey$ } from "./Symbol.js";
 
 //
 const propCbMap = new WeakMap();
@@ -36,7 +37,7 @@ export class Subscript {
 
         //
         const listeners = new WeakRef(this.#listeners);
-        const caller = (name, value = null, oldValue?: any)=>listeners?.deref()?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => cb(value, name, oldValue));
+        const caller = (name, value = null, oldValue?: any)=>listeners?.deref()?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue]));
         //this.#caller = caller;
 
         // compatible with https://github.com/WICG/observable
@@ -56,7 +57,8 @@ export class Subscript {
         //
         const generator = function*() {
             while (weak?.deref?.() && listeners?.deref?.()) {
-                weak?.deref?.()?.$safeExec?.(caller, yield);
+                const args: any = yield;
+                if (Array.isArray(args)) { caller(...args as [any, any, any]); } else { caller(args); }
             }
         }
 
@@ -115,6 +117,3 @@ export const deref = (target?: any, discountValue?: boolean|null)=>{
     if (from instanceof WeakRef) { from = deref(from.deref(), discountValue); }
     return from;
 }
-
-// @ts-ignore
-Symbol.observable ||= Symbol.for('observable')
