@@ -88,7 +88,6 @@ export const observableArray = (arr: any[])=>{
 };
 
 //
-export const unwrap = (arr)=>{ return arr?.["@target"] ?? arr; }
 export const observe = (arr, cb)=>{
     const orig = arr?.["@target"] ?? arr;
     const obs = observeMaps.get(orig);

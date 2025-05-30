@@ -76,7 +76,15 @@ export const safe = (target)=>{
 }
 
 //
+export const unwrap = (arr)=>{ return arr?.["@target"] ?? arr; }
 export const deref = (target?: any, discountValue?: boolean|null)=>{
     let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function") && !discountValue) ? target?.value : target;
     if (from instanceof WeakRef) { from = deref(from.deref(), discountValue); }; return from;
+}
+
+// experimental promise support
+export const withPromise = (target, cb)=>{
+    if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
+    if (typeof target?.then == "function") return target?.then?.(cb);
+    return cb(target);
 }

@@ -1,5 +1,5 @@
 import { objectAssign } from "./AssignObject";
-import { callByAllProp, callByProp, isKeyType, safe, type keyType } from "./Utils";
+import { callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 import { $extractKey$, $registryKey$ } from "./Symbol";
@@ -70,11 +70,4 @@ export const bindWith = (target, reactive, watch?) => {
     subscribe(reactive, (v,p)=>{ objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); }}, {deep: true});
     return target;
-}
-
-// experimental promise support
-export const withPromise = (target, cb)=>{
-    if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
-    if (typeof target?.then == "function") return target?.then?.(cb);
-    return cb(target);
 }
