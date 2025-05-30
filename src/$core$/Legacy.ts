@@ -1,9 +1,9 @@
 import { makeReactiveObject, ReactiveMap, ReactiveSet } from "./Specific";
 import { wrapWith } from "./Subscript";
 import { $extractKey$ } from "./Symbol";
+import { UUIDv4 } from "./Utils";
 
 //
-export const UUIDv4 = () => (crypto?.randomUUID ? crypto?.randomUUID() : ("10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))).toString(16))));
 export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => wrapWith(new Map(map), new ReactiveMap());
 export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) => wrapWith(new Set(set), new ReactiveSet());
 export const createReactive: any = (target: any, stateName = ""): any => {

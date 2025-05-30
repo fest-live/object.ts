@@ -1,42 +1,27 @@
-import { $originalObjects$, isIterable, type keyType } from "./Keys.js";
-import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol.js";
+import { $originalObjects$, isIterable, type keyType } from "./Utils.js";
+import { $extractKey$, $originalKey$, $registryKey$  } from "./Symbol.js";
 
 //
-export const objectAssignNotEqual = (dst, src = {})=>{
-    Object.entries(src)?.forEach?.(([k,v])=>{ if (v !== dst[k]) { dst[k] = v; }; });
-    return dst;
-}
-
-//
-export const isValidObj  = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
 export const removeExtra = (target, value, name: keyType | null = null)=>{
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
 
     //
     let entries: any = [];
-    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value)) {
-        entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []);
-    } else
-    if (typeof value == "object" || typeof value == "function") {
-        entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value);
-    }
+    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value))
+        { entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []); } else
+    if (typeof value == "object" || typeof value == "function")
+        { entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value); }
 
     //
     let exEntries: any = [];
-    if (Array.isArray(exists)) {
-        exEntries = exists.entries();
-    } else
-    if (exists instanceof Map || exists instanceof WeakMap) {
-        // @ts-ignore
-        exEntries = exists?.entries?.();
-    } else
-    if (exists instanceof Set || exists instanceof WeakSet) {
-        // @ts-ignore
-        exEntries = exists?.values?.();
-    } else
-    if (typeof exists == "object" || typeof exists == "function") {
-        exEntries = Object.entries(exists);
-    }
+    if (Array.isArray(exists))
+        { exEntries = exists.entries(); } else
+    if (exists instanceof Map || exists instanceof WeakMap) // @ts-ignore
+        { exEntries = exists?.entries?.(); } else
+    if (exists instanceof Set || exists instanceof WeakSet) // @ts-ignore
+        { exEntries = exists?.values?.(); } else
+    if (typeof exists == "object" || typeof exists == "function")
+        { exEntries = Object.entries(exists); }
 
     // REQUIRES NEW ECMASCRIPT!!!
     const keys = new Set(Array.from(entries).map((e)=>e?.[0]));
@@ -46,28 +31,15 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
     //
     if (Array.isArray(exists)) {
         const nw = exists.filter((_,I)=>!exclude.has(I));
-        exists.splice(0, exists.length);
-        exists.push(...nw);
+        exists.splice(0, exists.length); exists.push(...nw);
     } else
-    if (exists instanceof Map || exists instanceof WeakMap) {
-        for (const k of exclude) { exists.delete(k); };
-    } else
-    if (exists instanceof Set || exists instanceof WeakSet) {
-        for (const k of exclude) { exists.delete(k); };
-    } else
-    if (typeof exists == "function" || typeof exists == "object") {
-        for (const k of exclude) { delete exists[k]; };
-    }
+    if ((exists instanceof Map || exists instanceof Set) || (exists instanceof WeakMap || exists instanceof WeakSet))
+        { for (const k of exclude) { exists.delete(k); }; } else
+    if (typeof exists == "function" || typeof exists == "object")
+        { for (const k of exclude) { delete exists[k]; }; }
 
     //
     return exists;
-}
-
-//
-export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
-    const entries = Array.from(items?.values?.()).map((I)=>[I?.[key],I]);
-    const map = new Map(entries as any);
-    return Array.from(map?.values?.() || []);
 }
 
 //
@@ -79,32 +51,22 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
     if (removeNotExists) { removeExtra(exists, value); }
 
     //
-    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value)) {
-        entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []);
-    } else
-    if (typeof value == "object" || typeof value == "function") {
-        entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value);
-    }
+    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value))
+        { entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []); } else
+    if (typeof value == "object" || typeof value == "function")
+        { entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value); }
 
     //
     if (exists && entries && (typeof entries == "object" || typeof entries == "function")) {
-        if (exists instanceof Map || exists instanceof WeakMap) {
-            for (const E of entries) {
-                // @ts-ignore
-                exists.set(...E);
-            }
-            return exists;
-        }
+        if (exists instanceof Map || exists instanceof WeakMap) // @ts-ignore
+            { for (const E of entries) { exists.set(...E); }; return exists; }
 
         //
-        if (exists instanceof Set || exists instanceof WeakSet) {
-            for (const E of entries) {
-                // @ts-ignore
+        if (exists instanceof Set || exists instanceof WeakSet)
+            { for (const E of entries) { // @ts-ignore
                 const mergeObj = E?.[mergeKey] ? Array.from(exists?.values?.() || []).find((I)=>I?.[mergeKey]===E?.[mergeKey]) : null;
                 if (mergeObj != null) { objectAssign(mergeObj, E, null, removeNotExists, mergeKey); } else { exists.add(E); }
-            }
-            return exists;
-        }
+            } return exists; }
 
         //
         if (typeof exists == "object" || typeof exists == "function") {
@@ -120,32 +82,19 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
     }
 
     //
-    if (name != null) {
-        Reflect.set(target, name, value);
-        return target;
-    } else
-    if (typeof value == "object" || typeof value == "function") {
-        return Object.assign(target, value);
-    }
-
-    //
+    if (name != null) { Reflect.set(target, name, value); return target; } else
+    if (typeof value == "object" || typeof value == "function") { return Object.assign(target, value); }
     return value;
 }
 
 //
 export class AssignObjectHandler {
-    //
-    constructor() {
-    }
+    constructor() { }
 
     //
     get(target, name: keyType, ctx) {
-        /*if (name == $registryKey$) {
-            return (subscriptRegistry).get(target);
-        }*/
-        if (name == $originalKey$ || name == $extractKey$ || name == $registryKey$) {
-            return (name == $extractKey$ || name == $registryKey$) ? target?.[name] : (target?.[name] ?? target);
-        }
+        if (name == $originalKey$ || name == $extractKey$ || name == $registryKey$)
+            { return (name == $extractKey$ || name == $registryKey$) ? target?.[name] : (target?.[name] ?? target); }
         return Reflect.get(target, name, ctx);
     }
 
@@ -166,14 +115,12 @@ export class AssignObjectHandler {
 
     //
     set(target, name: keyType, value) {
-        objectAssign(target, value, name);
-        return true;
+        objectAssign(target, value, name); return true;
     }
 
     //
     deleteProperty(target, name: keyType) {
-        const result = Reflect.deleteProperty(target, name);
-        return result;
+        const result = Reflect.deleteProperty(target, name); return result;
     }
 }
 
@@ -183,6 +130,5 @@ export const makeObjectAssignable = (obj) => {
 
     // @ts-ignore
     const px = new Proxy(obj, new AssignObjectHandler());
-    $originalObjects$.set(px, obj);
-    return px;
+    $originalObjects$.set(px, obj); return px;
 };

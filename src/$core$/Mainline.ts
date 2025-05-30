@@ -1,5 +1,5 @@
 import { objectAssign } from "./AssignObject";
-import { callByAllProp, callByProp, isKeyType, safe, type keyType } from "./Keys";
+import { callByAllProp, callByProp, isKeyType, safe, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 import { $extractKey$, $registryKey$ } from "./Symbol";

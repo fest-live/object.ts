@@ -1,14 +1,5 @@
-import { type keyType, safe } from "./Keys.js";
+import { associateWith, deref, type keyType, propCbMap } from "./Utils.js";
 import { $extractKey$ } from "./Symbol.js";
-
-//
-const propCbMap = new WeakMap();
-const associateWith = (cb, name)=>{
-    if (propCbMap.has(cb)) return propCbMap.get(cb);
-    const nw = (val, prop, old)=>{ if (prop == name) return cb?.(val, prop, old); };
-    propCbMap.set(cb, nw); return nw;
-    //return (val, prop, old)=>{ if (prop == name) return cb(val, prop, old); };
-}
 
 //
 export class Subscript {
@@ -97,23 +88,11 @@ export class Subscript {
 
 //
 export const subscriptRegistry = new WeakMap<any, Subscript>();
+export const wrapWith = (what, handle)=>{ what = deref(what?.[$extractKey$] ?? what); return new Proxy(what, register(what, handle)); }
 export const register = (what: any, handle: any): any => {
     const unwrap = what?.[$extractKey$] ?? what;
     if (!subscriptRegistry.has(unwrap)) {
         subscriptRegistry.set(unwrap, new Subscript());
     }
     return handle;
-}
-
-//
-export const wrapWith = (what, handle)=>{
-    what = deref(what?.[$extractKey$] ?? what);
-    return new Proxy(what, register(what, handle));
-}
-
-//
-export const deref = (target?: any, discountValue?: boolean|null)=>{
-    let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function") && !discountValue) ? target?.value : target;
-    if (from instanceof WeakRef) { from = deref(from.deref(), discountValue); }
-    return from;
 }

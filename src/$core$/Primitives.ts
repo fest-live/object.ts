@@ -1,7 +1,6 @@
-import { isValidObj, objectAssignNotEqual } from "./AssignObject";
 import { makeReactive, subscribe } from "./Mainline";
 import { $value } from "./Symbol";
-import {  deref } from "./Subscript";
+import { isValidObj, objectAssignNotEqual, deref } from "./Utils";
 
 //
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
@@ -83,7 +82,6 @@ export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] 
     ];
     return ()=>usub?.map?.((a)=>a?.());
 }
-
 
 
 

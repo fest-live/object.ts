@@ -1,6 +1,6 @@
-import { bindCtx, type keyType } from "./Keys";
+import { bindCtx, deref, type keyType } from "./Utils";
 import { subscribe } from "./Mainline";
-import { deref, subscriptRegistry, wrapWith } from "./Subscript";
+import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
 //
