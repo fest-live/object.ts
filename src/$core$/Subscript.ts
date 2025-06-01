@@ -28,7 +28,7 @@ export class Subscript {
 
         //
         const listeners = new WeakRef(this.#listeners);
-        const caller = (name, value = null, oldValue?: any)=>listeners?.deref()?.forEach((cb: (value: any, prop: keyType, oldValue?: any) => void) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue]));
+        const caller = (name, value = null, oldValue?: any)=>Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb: (value: any, prop: keyType, oldValue?: any) => void) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue]))||[]);
         //this.#caller = caller;
 
         // compatible with https://github.com/WICG/observable
