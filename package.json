@@ -6,13 +6,13 @@
     "type": "module",
     "index": "./dist/object.js",
     "scripts": {
-        "dev": "vite",
+        "test": "vite --host 0.0.0.0",
+        "dev": "vite --host 0.0.0.0",
         "worker": "vite build",
         "watch": "vite build --watch",
         "build": "vite build --config vite.config.js",
         "build-wp": "webpack build --mode=production",
-        "preview": "vite preview",
-        "test": "deno run --allow-all ./test/Subscribe.ts"
+        "preview": "vite preview"
     },
     "browserslist": [
         "last 1 chrome version",

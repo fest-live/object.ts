@@ -1,7 +1,11 @@
 {
     "include": ["./src/**/*"],
-    "exclude": ["./test/**/*", "./dist/**/*", "./externals/**/*", "./src/$polyfill$/*"],
+    "exclude": ["./test/**/*", "./dist/**/*", "./u2re/**/*", "./src/$polyfill$/*"],
     "compilerOptions": {
+        "paths": {
+            "u2re/*": ["./externals/modules/*"],
+            "u2re-src/*": ["../*"],
+        },
         "target": "ESNext",
         "module": "ESNext",
         "lib": ["ESNext", "DOM", "WebWorker"],
