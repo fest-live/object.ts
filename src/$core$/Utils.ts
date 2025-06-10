@@ -39,39 +39,27 @@ export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
 //
 export const callByProp = (unwrap, prop, cb, ctx)=>{
     if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$) return;
-
-    //
-    if (unwrap instanceof Map || unwrap instanceof WeakMap)
-        { if (prop != null && unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); } } else
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) // @ts-ignore
-        { if (prop != null && unwrap.has(prop as any)) { return cb?.(prop, prop); } } else
-
-    //
-    if (typeof unwrap == "function" || typeof unwrap == "object")
-        { return cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop); }
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { if (prop != null && unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); } } else
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { if (prop != null && unwrap.has(prop as any)) { return cb?.(prop, prop); } } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { return cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop); }
 }
 
 //
 export const objectAssignNotEqual = (dst, src = {})=>{ Object.entries(src)?.forEach?.(([k,v])=>{ if (v !== dst[k]) { dst[k] = v; }; }); return dst; }
 export const callByAllProp = (unwrap, cb, ctx)=>{
-    let keys: any = [];
-    if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") // @ts-ignore
-        { keys = unwrap?.keys?.() || []; } else
-    if ((typeof unwrap == "object" || typeof unwrap == "function") && unwrap != null)
-        { keys = Object.keys(unwrap) || []; }
+    let keys: any = []; // @ts-ignore
+    if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") { keys = unwrap?.keys?.() || []; } else
+    if ((typeof unwrap == "object" || typeof unwrap == "function") && unwrap != null) { keys = Object.keys(unwrap) || []; }
     return keys != null ? Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx)) : [];
 }
 
 //
 export const safe = (target)=>{
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target, mapped = (e)=>safe(e);
-    if (Array.isArray(unwrap)) { return unwrap?.map?.(mapped) || Array.from(unwrap || [])?.map?.(mapped) || []; } else
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) // @ts-ignore
-        { return new Map(Array.from(unwrap?.entries?.() || [])?.map?.(([K,V])=>[K,safe(V)])); } else
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) // @ts-ignore
-        { return new Set(Array.from(unwrap?.values?.() || [])?.map?.(mapped)); } else
-    if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") // @ts-ignore
-        { return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$ && K != $registryKey$))?.map?.(([K,V])=>[K,safe(V)])); }
+    if (Array.isArray(unwrap)) { return unwrap?.map?.(mapped) || Array.from(unwrap || [])?.map?.(mapped) || []; } else // @ts-ignore
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { return new Map(Array.from(unwrap?.entries?.() || [])?.map?.(([K,V])=>[K,safe(V)])); } else  // @ts-ignore
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { return new Set(Array.from(unwrap?.values?.() || [])?.map?.(mapped)); } else  // @ts-ignore
+    if (unwrap != null && typeof unwrap == "function" || typeof unwrap == "object") { return Object.fromEntries(Array.from(Object.entries(unwrap || {}) || [])?.filter?.(([K])=>(K != $extractKey$ && K != $originalKey$ && K != $registryKey$))?.map?.(([K,V])=>[K,safe(V)])); }
     return unwrap;
 }
 
