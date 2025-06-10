@@ -7,21 +7,15 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
 
     //
     let entries: any = [];
-    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value))
-        { entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []); } else
-    if (typeof value == "object" || typeof value == "function")
-        { entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value); }
+    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value)) { entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []); } else
+    if (typeof value == "object" || typeof value == "function") { entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value); }
 
     //
     let exEntries: any = [];
-    if (Array.isArray(exists))
-        { exEntries = exists.entries(); } else
-    if (exists instanceof Map || exists instanceof WeakMap) // @ts-ignore
-        { exEntries = exists?.entries?.(); } else
-    if (exists instanceof Set || exists instanceof WeakSet) // @ts-ignore
-        { exEntries = exists?.values?.(); } else
-    if (typeof exists == "object" || typeof exists == "function")
-        { exEntries = Object.entries(exists); }
+    if (Array.isArray(exists)) { exEntries = exists.entries(); } else // @ts-ignore
+    if (exists instanceof Map || exists instanceof WeakMap) { exEntries = exists?.entries?.(); } else // @ts-ignore
+    if (exists instanceof Set || exists instanceof WeakSet) { exEntries = exists?.values?.(); } else
+    if (typeof exists == "object" || typeof exists == "function") { exEntries = Object.entries(exists); }
 
     // REQUIRES NEW ECMASCRIPT!!!
     const keys = new Set(Array.from(entries).map((e)=>e?.[0]));
@@ -29,14 +23,9 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
     const exclude = keys?.difference?.(exe);
 
     //
-    if (Array.isArray(exists)) {
-        const nw = exists.filter((_,I)=>!exclude.has(I));
-        exists.splice(0, exists.length); exists.push(...nw);
-    } else
-    if ((exists instanceof Map || exists instanceof Set) || (exists instanceof WeakMap || exists instanceof WeakSet))
-        { for (const k of exclude) { exists.delete(k); }; } else
-    if (typeof exists == "function" || typeof exists == "object")
-        { for (const k of exclude) { delete exists[k]; }; }
+    if (Array.isArray(exists)) { const nw = exists.filter((_,I)=>!exclude.has(I)); exists.splice(0, exists.length); exists.push(...nw); } else
+    if ((exists instanceof Map || exists instanceof Set) || (exists instanceof WeakMap || exists instanceof WeakSet)) { for (const k of exclude) { exists.delete(k); }; } else
+    if (typeof exists == "function" || typeof exists == "object") { for (const k of exclude) { delete exists[k]; }; }
 
     //
     return exists;
@@ -51,10 +40,8 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
     if (removeNotExists) { removeExtra(exists, value); }
 
     //
-    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value))
-        { entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []); } else
-    if (typeof value == "object" || typeof value == "function")
-        { entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value); }
+    if (value instanceof Set || value instanceof Map || Array.isArray(value) || isIterable(value)) { entries = ((exists instanceof Set || exists instanceof WeakSet) ? value?.values?.() : value?.entries?.()) || ((Array.isArray(value) || isIterable(value)) ? value : []); } else
+    if (typeof value == "object" || typeof value == "function") { entries = (exists instanceof Set || exists instanceof WeakSet) ? Object.values(value) : Object.entries(value); }
 
     //
     if (exists && entries && (typeof entries == "object" || typeof entries == "function")) {
@@ -93,8 +80,7 @@ export class AssignObjectHandler {
 
     //
     get(target, name: keyType, ctx) {
-        if (name == $originalKey$ || name == $extractKey$ || name == $registryKey$)
-            { return (name == $extractKey$ || name == $registryKey$) ? target?.[name] : (target?.[name] ?? target); }
+        if (name == $originalKey$ || name == $extractKey$ || name == $registryKey$) { return (name == $extractKey$ || name == $registryKey$) ? target?.[name] : (target?.[name] ?? target); }
         return Reflect.get(target, name, ctx);
     }
 
