@@ -1,6 +1,5 @@
 import { subscribe } from "./Mainline";
 
-// @ts-ignore /* @vite-ignore */
 const observeMaps = new WeakMap<any[], ObserveArray>();
 
 //
