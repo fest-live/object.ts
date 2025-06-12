@@ -7,21 +7,18 @@ export const boundCtx  = new WeakMap();
 
 //
 export const associateWith = (cb, name)=>{
-    if (propCbMap.has(cb)) return propCbMap.get(cb);
-    const nw = (val, prop, old)=>{ if (prop == name) return cb?.(val, prop, old); };
-    propCbMap.set(cb, nw); return nw;
-    //return (val, prop, old)=>{ if (prop == name) return cb(val, prop, old); };
+    // !experimental `getOrInsert` feature!
+    return propCbMap.getOrInsertComputed(cb, ()=>{
+        return (val, prop, old)=>{ if (prop == name) return cb?.(val, prop, old); };
+    });
 }
 
 //
 export const UUIDv4 = () => (crypto?.randomUUID ? crypto?.randomUUID() : ("10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))).toString(16))));
 export const bindFx = (target, fx)=>{
-    if (!boundCtx.has(target)) { boundCtx.set(target, new WeakMap()); }
-
-    //
-    const be = boundCtx.get(target);
-    if (!be.has(fx)) { const bfx = fx?.bind?.(target); be.set(fx, bfx); }
-    return be.get(fx);
+    // !experimental `getOrInsert` feature!
+    const be = boundCtx.getOrInsert(target, new WeakMap());
+    return be.getOrInsert(fx, fx?.bind?.(target));
 }
 
 //

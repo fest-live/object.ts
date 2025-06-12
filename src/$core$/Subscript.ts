@@ -95,8 +95,7 @@ export const subscriptRegistry = new WeakMap<any, Subscript>();
 export const wrapWith = (what, handle)=>{ what = deref(what?.[$extractKey$] ?? what); return new Proxy(what, register(what, handle)); }
 export const register = (what: any, handle: any): any => {
     const unwrap = what?.[$extractKey$] ?? what;
-    if (!subscriptRegistry.has(unwrap)) {
-        subscriptRegistry.set(unwrap, new Subscript());
-    }
+    // !experimental `getOrInsert` feature!
+    subscriptRegistry.getOrInsert(unwrap, new Subscript());
     return handle;
 }
