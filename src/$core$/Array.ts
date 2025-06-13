@@ -1,4 +1,5 @@
 import { subscribe } from "./Mainline";
+import { $target } from "./Symbol";
 
 const observeMaps = new WeakMap<any[], ObserveArray>();
 
@@ -86,9 +87,9 @@ export const observableArray = (arr: any[])=>{
 
 //
 export const observe = (arr, cb)=>{
-    const orig = arr?.["@target"] ?? arr;
-    const obs = observeMaps.get(orig);
-    const evt = obs?.events;
+    const orig = arr?.[$target] ?? arr;
+    const obs  = observeMaps.get(orig);
+    const evt  = obs?.events;
     if (Array.isArray(arr)) {
         arr?.forEach?.((val, _)=>cb("push", [val]));
         evt?.get(orig)?.add?.(cb);
