@@ -2,14 +2,27 @@ import { makeReactive, subscribe } from "./Mainline";
 import { $value, $behavior, $promise } from "./Symbol";
 import { isValidObj, objectAssignNotEqual, deref } from "./Utils";
 
-//
+/**
+ * Создаёт реактивное условное значение.
+ *
+ * @param {any} ref - Реактивная ссылка или значение, определяющее условие.
+ * @param {any} ifTrue - Значение, возвращаемое при истинном условии.
+ * @param {any} ifFalse - Значение, возвращаемое при ложном условии.
+ * @returns {any} - Реактивная ссылка, которая меняет значение между ifTrue и ifFalse.
+ */
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
     const cond = ref((ref?.value ?? ref) ? ifTrue : ifFalse);
     subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
     return cond;
 }
 
-// very hard type
+/**
+ * Создаёт реактивную ссылку для числового значения.
+ *
+ * @param {any} [initial] - Начальное значение или Promise.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
+ * @returns {any} - Реактивная ссылка с геттером и сеттером для .value (число).
+ */
 export const numberRef  = (initial?: any, behavior?: any)=>{
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r = makeReactive({
@@ -21,7 +34,13 @@ export const numberRef  = (initial?: any, behavior?: any)=>{
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-// very hard type
+/**
+ * Создаёт реактивную ссылку для строкового значения.
+ *
+ * @param {any} [initial] - Начальное значение или Promise.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
+ * @returns {any} - Реактивная ссылка с геттером и сеттером для .value (строка).
+ */
 export const stringRef  = (initial?: any, behavior?: any)=>{
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r = makeReactive({
@@ -33,7 +52,13 @@ export const stringRef  = (initial?: any, behavior?: any)=>{
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-// very hard type
+/**
+ * Создаёт реактивную ссылку для булевого значения.
+ *
+ * @param {any} [initial] - Начальное значение или Promise.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
+ * @returns {any} - Реактивная ссылка с геттером и сеттером для .value (boolean).
+ */
 export const booleanRef  = (initial?: any, behavior?: any)=>{
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r = makeReactive({
@@ -45,7 +70,13 @@ export const booleanRef  = (initial?: any, behavior?: any)=>{
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-//
+/**
+ * Создаёт универсальную реактивную ссылку.
+ *
+ * @param {any} [initial] - Начальное значение или Promise.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
+ * @returns {any} - Реактивная ссылка с полем .value произвольного типа.
+ */
 export const ref  = (initial?: any, behavior?: any)=>{
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r = makeReactive({
@@ -55,8 +86,23 @@ export const ref  = (initial?: any, behavior?: any)=>{
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-//
+/**
+ * Создаёт слабую реактивную ссылку на объект.
+ *
+ * @param {any} [initial] - Объект для обёртки или реактив.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
+ * @returns {any} - Реактивная ссылка или WeakRef.
+ */
 export const weak = (initial?: any, behavior?: any)=>{ const obj = deref(initial); return ref(isValidObj(obj) ? new WeakRef(obj) : obj, behavior); };
+
+/**
+ * Создаёт реактивную ссылку на свойство объекта.
+ *
+ * @param {any} src - Исходный объект.
+ * @param {string} prop - Имя свойства.
+ * @param {any} [initial] - Значение по умолчанию.
+ * @returns {any} - Реактивная ссылка, синхронизированная с полем объекта.
+ */
 export const propRef =  (src: any, prop: string, initial?: any)=>{
     const r = ref(src[prop]);
     subscribe([src,prop], (val,p) => (r.value = val||initial));
@@ -64,17 +110,39 @@ export const propRef =  (src: any, prop: string, initial?: any)=>{
     return r;
 }
 
-// !deprecated?
+/**
+ * Оборачивает Promise в реактивную ссылку.
+ *
+ * @deprecated Используйте ref(promise) напрямую.
+ * @param {any} promise - Promise, результат которого станет значением .value.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
+ * @returns {any} - Реактивная ссылка.
+ */
 export const promised = (promise: any, behavior?: any)=>{
     return ref(promise, behavior);
 }
 
-//
+/**
+ * Односторонняя синхронизация значений двух реактивных ссылок.
+ * Значение a[prop] будет меняться при изменении b[prop].
+ *
+ * @param {any} a - Получатель значения.
+ * @param {any} b - Источник значения.
+ * @param {string} [prop="value"] - Имя синхронизируемого поля.
+ * @returns {Function|undefined} - Функция для отписки или undefined.
+ */
 export const assign = (a, b, prop = "value")=>{
     if (b?.[prop||="value"] != null) { b[prop] ||= a?.[prop]; return subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
 }
 
-//
+/**
+ * Двунаправленный "лайв-синк" между двумя реактивами/объектами по prop.
+ *
+ * @param {any} a - Первая ссылка.
+ * @param {any} b - Вторая ссылка.
+ * @param {string} [prop="value"] - Имя синхронизируемого поля.
+ * @returns {Function} - Функция для прекращения синхронизации.
+ */
 export const link = (a, b, prop = "value")=>{
     const usub = [
         (b?.[prop||="value"] != null) ? subscribe([b,prop],(v,p)=>(a[p] = b[p])) : null,
@@ -83,7 +151,14 @@ export const link = (a, b, prop = "value")=>{
     return ()=>usub?.map?.((a)=>a?.());
 }
 
-//
+/**
+ * Двунаправленный "лайв-синк" между двумя реактивами с возможностью задать преобразование (map).
+ *
+ * @param {[any, any]} param0 - Кортеж из двух реактивных ссылок.
+ * @param {[Function|null, Function|null]} [fns] - Массив функций-трансформеров: [asb, bsb],
+ *        для направления a->b и b->a, соответственно.
+ * @returns {Function} - Функция для прекращения синхронизации.
+ */
 export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] = [null,null])=>{
     const prop = "value";
     const usub = [

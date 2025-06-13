@@ -1,15 +1,16 @@
 import { subscribe } from "./Mainline";
 import { $target } from "./Symbol";
 
+//
 const observeMaps = new WeakMap<any[], ObserveArray>();
 
 //
 class ObserveMethod {
     #handle: any; #name: string; #self: any;
     constructor(name, handle, self) {
-        this.#name   = name;
+        this.#name = name;
         this.#handle = handle;
-        this.#self   = self;
+        this.#self = self;
     }
     get(target, name, rec) { return Reflect.get(target, name, rec); }
     apply(target, ctx, args) {
@@ -30,10 +31,10 @@ class ObserveArray {
         this.#events.set(arr, new Set<Function>([]));
         const events = this.#events;
         this.#handle = {
-            trigger(target: any[], name: number|string, ...args) {
+            trigger(target: any[], name: number | string, ...args) {
                 events?.get?.(target)?.values().forEach(ev => ev?.(name, ...args));
             },
-            wrap(nw: any[]|unknown) {
+            wrap(nw: any[] | unknown) {
                 if (Array.isArray(nw)) {
                     const obs = new ObserveArray(nw);
                     observeMaps.set(nw, obs);
@@ -75,8 +76,13 @@ class ObserveArray {
     }
 }
 
-//
-export const observableArray = (arr: any[])=>{
+/**
+ * Создает observable-обертку для массива.
+ *
+ * @param {any[]} arr - Исходный массив.
+ * @returns {any[]} Observable-массив или исходный массив.
+ */
+export const observableArray = (arr: any[]) => {
     if (Array.isArray(arr)) {
         const obs = new ObserveArray(arr);
         observeMaps.set(arr, obs);
@@ -85,48 +91,64 @@ export const observableArray = (arr: any[])=>{
     return arr;
 };
 
-//
-export const observe = (arr, cb)=>{
+/**
+ * Подписывает callback на изменения массива или объекта.
+ *
+ * @param {any[]} arr - Массив или объект для наблюдения.
+ * @param {Function} cb - Callback, вызываемый при изменениях.
+ * @returns {any} Результат вызова функции subscribe.
+ */
+export const observe = (arr, cb) => {
     const orig = arr?.[$target] ?? arr;
-    const obs  = observeMaps.get(orig);
-    const evt  = obs?.events;
+    const obs = observeMaps.get(orig);
+    const evt = obs?.events;
     if (Array.isArray(arr)) {
-        arr?.forEach?.((val, _)=>cb("push", [val]));
+        arr?.forEach?.((val, _) => cb("push", [val]));
         evt?.get(orig)?.add?.(cb);
     }
     return subscribe(arr, cb);
 };
 
-//
-export const observableBySet = (set)=>{
+/**
+ * Создает observable-массив, синхронизированный с Set.
+ *
+ * @param {Set<any>} set - Наблюдаемый Set.
+ * @returns {any[]} Observable-массив, отражающий состояние Set.
+ */
+export const observableBySet = (set) => {
     const obs = observableArray([]);
-    subscribe(set, (value, _, old)=>{
+    subscribe(set, (value, _, old) => {
         if (value !== old) {
             if (old == null && value != null) {
                 obs.push(value);
             } else
-            if (old != null && value == null) {
-                const idx = obs.indexOf(old);
-                if (idx >= 0) obs.splice(idx, 1);
-            } else {
-                const idx = obs.indexOf(old);
-                if (idx >= 0 && obs[idx] !== value) obs[idx] = value;
-            }
+                if (old != null && value == null) {
+                    const idx = obs.indexOf(old);
+                    if (idx >= 0) obs.splice(idx, 1);
+                } else {
+                    const idx = obs.indexOf(old);
+                    if (idx >= 0 && obs[idx] !== value) obs[idx] = value;
+                }
         }
     });
     return obs;
 }
 
-//
-export const observableByMap = (map)=>{
+/**
+ * Создает observable-массив, синхронизированный с Map.
+ *
+ * @param {Map<any, any>} map - Наблюдаемый Map.
+ * @returns {Array<[any, any]>} Observable-массив пар [ключ, значение].
+ */
+export const observableByMap = (map) => {
     const obs = observableArray([]);
-    subscribe(map, (value, prop, old)=>{
+    subscribe(map, (value, prop, old) => {
         if (value !== old) {
             if (old != null && value == null) {
-                const idx = obs.findIndex(([name, _])=>(name == prop));
+                const idx = obs.findIndex(([name, _]) => (name == prop));
                 if (idx >= 0) obs.splice(idx, 1);
             } else {
-                const idx = obs.findIndex(([name, _])=>{
+                const idx = obs.findIndex(([name, _]) => {
                     return (name == prop)
                 });
                 if (idx >= 0) { if (obs[idx]?.[1] !== value) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
@@ -136,5 +158,9 @@ export const observableByMap = (map)=>{
     return obs;
 }
 
-//
+/**
+ * Экспорт по умолчанию: observableArray.
+ *
+ * @type {typeof observableArray}
+ */
 export default observableArray;
