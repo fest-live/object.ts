@@ -15,6 +15,26 @@ const systemGet = (target, name, registry)=>{
 }
 
 //
+const pontetiallyAsync = (obj, name, promise, cb)=>{
+    const oldVal = obj?.[name];
+    if (promise instanceof Promise || typeof promise?.then == "function") {
+        return promise?.then?.((v)=>{ if (oldVal === obj?.[name]) { return cb?.(v); }; }); // @ts-ignore
+    } else {
+        return cb?.(promise);
+    }
+}
+
+//
+const pontetiallyAsyncMap = (obj, name, promise, cb)=>{
+    const oldVal = obj?.get?.(name);
+    if (promise instanceof Promise || typeof promise?.then == "function") {
+        return promise?.then?.((v)=>{ if (oldVal === obj?.get?.(name)) { return cb?.(v); }; }); // @ts-ignore
+    } else {
+        return cb?.(promise);
+    }
+}
+
+//
 export class ReactiveMap {
     constructor() { }
 
@@ -53,12 +73,12 @@ export class ReactiveMap {
 
         //
         if (name == "set") {
-            return (prop, value) => {
+            return (prop, value) => pontetiallyAsyncMap(target, name, value, (v)=>{
                 const oldValue = target.get(prop);
                 const result = valueOrFx(prop, value);
                 if (oldValue !== value) { registry?.deref()?.trigger?.(prop, value, oldValue); };
                 return result;
-            };
+            });
         }
 
         //
@@ -108,6 +128,7 @@ export class ReactiveSet {
 
         //
         if (name == "add") {
+            // TODO: add potentially async set
             return (value) => {
                 const oldValue = target.has(value) ? value : null;
                 const result   = valueOrFx(value);
@@ -173,12 +194,12 @@ export class ReactiveObject {
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
-
-        //
-        const oldValue = target[name];
-        const result = Reflect.set(target, name, value);
-        if (oldValue !== value) { registry?.trigger?.(name, value, oldValue); };
-        return result;
+        pontetiallyAsync(target, name, value, (v)=>{
+            const oldValue = target[name];
+            const result = Reflect.set(target, name, v);
+            if (oldValue !== v) { registry?.trigger?.(name, v, oldValue); };
+            return result;
+        })
     }
 }
 
