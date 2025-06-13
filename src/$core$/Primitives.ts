@@ -1,50 +1,62 @@
 import { makeReactive, subscribe } from "./Mainline";
-import { $value } from "./Symbol";
+import { $value, $behavior, $promise } from "./Symbol";
 import { isValidObj, objectAssignNotEqual, deref } from "./Utils";
 
 //
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
-    const cond = makeReactive({value: ref.value ? ifTrue : ifFalse});
+    const cond = ref((ref?.value ?? ref) ? ifTrue : ifFalse);
     subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
     return cond;
 }
 
 // very hard type
-export const numberRef  = (initial?: any, behaviour?: any)=>{
-    const $r = {
-        [$value]: Number(deref(initial) || 0) || 0,
+export const numberRef  = (initial?: any, behavior?: any)=>{
+    const isPromise = initial instanceof Promise || typeof initial?.then == "function";
+    const $r = makeReactive({
+        [$promise]: isPromise ? initial : null,
+        [$value]: isPromise ? 0 : (Number(deref(initial) || 0) || 0),
+        [$behavior]: behavior,
         set value(v) { this[$value] = Number(v) || 0; },
-        get value() { return Number(this[$value] || 0) || 0; },
-        behaviour
-    };
-    return makeReactive($r);
+        get value() { return Number(this[$value] || 0) || 0; }
+    }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
 // very hard type
-export const stringRef  = (initial?: any, behaviour?: any)=>{
-    const $r = {
-        [$value]: String(deref(initial) ?? "") || "",
+export const stringRef  = (initial?: any, behavior?: any)=>{
+    const isPromise = initial instanceof Promise || typeof initial?.then == "function";
+    const $r = makeReactive({
+        [$promise]: isPromise ? initial : null,
+        [$value]: isPromise ? "" : String(deref(initial) ?? "") || "",
+        [$behavior]: behavior,
         set value(v) { this[$value] = String(v ?? "") || ""; },
         get value() { return String(this[$value] || "") || ""; },
-        behaviour
-    };
-    return makeReactive($r);
+    }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
 // very hard type
-export const booleanRef  = (initial?: any, behaviour?: any)=>{
-    const $r = {
-        [$value]: Boolean(!!deref(initial) || false) || false,
+export const booleanRef  = (initial?: any, behavior?: any)=>{
+    const isPromise = initial instanceof Promise || typeof initial?.then == "function";
+    const $r = makeReactive({
+        [$promise]: isPromise ? initial : null,
+        [$value]: isPromise ? false : Boolean(!!deref(initial) || false) || false,
+        [$behavior]: behavior,
         set value(v) { this[$value] = Boolean(!!v || false) || false; },
-        get value() { return Boolean(!!this[$value] || false) || false; },
-        behaviour
-    };
-    return makeReactive($r);
+        get value() { return Boolean(!!this[$value] || false) || false; }
+    }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
 //
-export const ref  = (initial?: any, behaviour?: any)=>{ return makeReactive({value: deref(initial), behaviour}); }
-export const weak = (initial?: any, behaviour?: any)=>{ const obj = deref(initial); return makeReactive({value: isValidObj(obj) ? new WeakRef(obj) : obj, behaviour}); };
+export const ref  = (initial?: any, behavior?: any)=>{
+    const isPromise = initial instanceof Promise || typeof initial?.then == "function";
+    const $r = makeReactive({
+        [$promise]: isPromise ? initial : null,
+        [$behavior]: behavior,
+        value: isPromise ? null : deref(initial)
+    }); initial?.then?.((v)=>$r.value = v); return $r;
+}
+
+//
+export const weak = (initial?: any, behavior?: any)=>{ const obj = deref(initial); return ref(isValidObj(obj) ? new WeakRef(obj) : obj, behavior); };
 export const propRef =  (src: any, prop: string, initial?: any)=>{
     const r = ref(src[prop]);
     subscribe([src,prop], (val,p) => (r.value = val||initial));
@@ -52,10 +64,9 @@ export const propRef =  (src: any, prop: string, initial?: any)=>{
     return r;
 }
 
-//
-export const promised = (promise: any, behaviour?: any)=>{
-    const ref = makeReactive({value: promise, behaviour});
-    promise?.then?.((v)=>ref.value = v); return ref;
+// !deprecated?
+export const promised = (promise: any, behavior?: any)=>{
+    return ref(promise, behavior);
 }
 
 //

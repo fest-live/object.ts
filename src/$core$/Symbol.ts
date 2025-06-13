@@ -10,3 +10,5 @@ export const $originalKey$ = Symbol.for("@origin");
 export const $registryKey$ = Symbol.for("@registry");
 export const $rootKey$     = Symbol.for("@root");
 export const $nodeKey$     = Symbol.for("@node");
+export const $behavior     = Symbol.for("@behavior");
+export const $promise      = Symbol.for("@promise");
