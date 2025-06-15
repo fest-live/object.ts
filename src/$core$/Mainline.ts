@@ -145,11 +145,12 @@ export const bindWith = (target, reactive, watch?) => {
  */
 export const observe = (arr, cb) => {
     const orig = arr?.[$target] ?? arr;
-    if (Array.isArray(arr)) {
+    if (Array.isArray(orig)) {
         const obs = observeMaps.get(orig);
         const evt = obs?.events;
-        arr?.forEach?.((val, _) => cb("push", [val]));
+        arr?.forEach?.((val, I) => cb?.(val, I, null, "push"));
         evt?.get(orig)?.add?.(cb);
+        return;
     }
     return subscribe(arr, cb);
 };
