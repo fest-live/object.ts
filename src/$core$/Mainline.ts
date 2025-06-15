@@ -2,7 +2,8 @@ import { objectAssign } from "./AssignObject";
 import { callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
-import { $extractKey$, $registryKey$ } from "./Symbol";
+import { $extractKey$, $registryKey$, $target } from "./Symbol";
+import observableArray, { observeMaps } from "./Array";
 
 /**
  * Преобразует целевой объект, функцию или коллекцию в реактивную сущность.
@@ -43,8 +44,9 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         // Для пары — извлекается цель
         target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
 
-        // Извлекается сырой объект
+        // Извлекается сырой объект, если массив, используем другой метод
         const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
+        if (typeof unwrap == "object" && typeof unwrap == "function" && Array.isArray(unwrap)) { return observe(unwrap, cb); }
 
         // Реактивная подписка
         if (prop != null) { callByProp(unwrap, prop, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
@@ -60,6 +62,7 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
             self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
         }
 
+        //
         self?.subscribe?.(cb, prop);
 
         // Отписка, поддержка Symbol.dispose и Symbol.asyncDispose (ES2022+)
@@ -69,7 +72,6 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
 
         // @ts-ignore
         try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
-
         return unsub;
     });
 }
@@ -80,7 +82,7 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
  * @param {any} tg - Реактивный объект или пара [объект, ключ]
  * @param {(value: any, prop: keyType, old?: any) => void} [cb] - Колбэк для удаления, если не задан — удаляются все
  * @param {any | null} [ctx=null] - Контекст (необязательно)
- */
+ */ // !TODO! support for arrays
 export const unsubscribe = (tg: any, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     return withPromise(tg, (target: any) => {
         // Определение, является ли аргумент парой [объект, ключ]
@@ -133,3 +135,70 @@ export const bindWith = (target, reactive, watch?) => {
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); } }, { deep: true });
     return target;
 };
+
+/**
+ * Подписывает callback на изменения массива или объекта.
+ *
+ * @param {any[]} arr - Массив или объект для наблюдения.
+ * @param {Function} cb - Callback, вызываемый при изменениях.
+ * @returns {any} Результат вызова функции subscribe.
+ */
+export const observe = (arr, cb) => {
+    const orig = arr?.[$target] ?? arr;
+    if (Array.isArray(arr)) {
+        const obs = observeMaps.get(orig);
+        const evt = obs?.events;
+        arr?.forEach?.((val, _) => cb("push", [val]));
+        evt?.get(orig)?.add?.(cb);
+    }
+    return subscribe(arr, cb);
+};
+
+/**
+ * Создает observable-массив, синхронизированный с Set.
+ *
+ * @param {Set<any>} set - Наблюдаемый Set.
+ * @returns {any[]} Observable-массив, отражающий состояние Set.
+ */
+export const observableBySet = (set) => {
+    const obs = observableArray([]);
+    subscribe(set, (value, _, old) => {
+        if (value !== old) {
+            if (old == null && value != null) {
+                obs.push(value);
+            } else
+                if (old != null && value == null) {
+                    const idx = obs.indexOf(old);
+                    if (idx >= 0) obs.splice(idx, 1);
+                } else {
+                    const idx = obs.indexOf(old);
+                    if (idx >= 0 && obs[idx] !== value) obs[idx] = value;
+                }
+        }
+    });
+    return obs;
+}
+
+/**
+ * Создает observable-массив, синхронизированный с Map.
+ *
+ * @param {Map<any, any>} map - Наблюдаемый Map.
+ * @returns {Array<[any, any]>} Observable-массив пар [ключ, значение].
+ */
+export const observableByMap = (map) => {
+    const obs = observableArray([]);
+    subscribe(map, (value, prop, old) => {
+        if (value !== old) {
+            if (old != null && value == null) {
+                const idx = obs.findIndex(([name, _]) => (name == prop));
+                if (idx >= 0) obs.splice(idx, 1);
+            } else {
+                const idx = obs.findIndex(([name, _]) => {
+                    return (name == prop)
+                });
+                if (idx >= 0) { if (obs[idx]?.[1] !== value) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
+            }
+        }
+    });
+    return obs;
+}

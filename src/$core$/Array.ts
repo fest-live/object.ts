@@ -1,8 +1,4 @@
-import { subscribe } from "./Mainline";
-import { $target } from "./Symbol";
-
-//
-const observeMaps = new WeakMap<any[], ObserveArray>();
+export const observeMaps = new WeakMap<any[], ObserveArray>();
 
 //
 class ObserveMethod {
@@ -90,73 +86,6 @@ export const observableArray = (arr: any[]) => {
     }
     return arr;
 };
-
-/**
- * Подписывает callback на изменения массива или объекта.
- *
- * @param {any[]} arr - Массив или объект для наблюдения.
- * @param {Function} cb - Callback, вызываемый при изменениях.
- * @returns {any} Результат вызова функции subscribe.
- */
-export const observe = (arr, cb) => {
-    const orig = arr?.[$target] ?? arr;
-    const obs = observeMaps.get(orig);
-    const evt = obs?.events;
-    if (Array.isArray(arr)) {
-        arr?.forEach?.((val, _) => cb("push", [val]));
-        evt?.get(orig)?.add?.(cb);
-    }
-    return subscribe(arr, cb);
-};
-
-/**
- * Создает observable-массив, синхронизированный с Set.
- *
- * @param {Set<any>} set - Наблюдаемый Set.
- * @returns {any[]} Observable-массив, отражающий состояние Set.
- */
-export const observableBySet = (set) => {
-    const obs = observableArray([]);
-    subscribe(set, (value, _, old) => {
-        if (value !== old) {
-            if (old == null && value != null) {
-                obs.push(value);
-            } else
-                if (old != null && value == null) {
-                    const idx = obs.indexOf(old);
-                    if (idx >= 0) obs.splice(idx, 1);
-                } else {
-                    const idx = obs.indexOf(old);
-                    if (idx >= 0 && obs[idx] !== value) obs[idx] = value;
-                }
-        }
-    });
-    return obs;
-}
-
-/**
- * Создает observable-массив, синхронизированный с Map.
- *
- * @param {Map<any, any>} map - Наблюдаемый Map.
- * @returns {Array<[any, any]>} Observable-массив пар [ключ, значение].
- */
-export const observableByMap = (map) => {
-    const obs = observableArray([]);
-    subscribe(map, (value, prop, old) => {
-        if (value !== old) {
-            if (old != null && value == null) {
-                const idx = obs.findIndex(([name, _]) => (name == prop));
-                if (idx >= 0) obs.splice(idx, 1);
-            } else {
-                const idx = obs.findIndex(([name, _]) => {
-                    return (name == prop)
-                });
-                if (idx >= 0) { if (obs[idx]?.[1] !== value) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
-            }
-        }
-    });
-    return obs;
-}
 
 /**
  * Экспорт по умолчанию: observableArray.
