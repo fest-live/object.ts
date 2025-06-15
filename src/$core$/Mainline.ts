@@ -39,10 +39,10 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
     return withPromise(tg, (target: any) => {
         // Определение, является ли аргумент парой [объект, ключ]
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
-        const prop = isPair ? target?.[1] : null;
+        const prop   = isPair && (typeof target?.[1] != "object" && typeof target?.[1] != "function") ? target?.[1] : null;
 
         // Для пары — извлекается цель
-        target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
+        target = (isPair && (prop != null)) ? (target?.[0] ?? target) : target;
 
         // Извлекается сырой объект, если массив, используем другой метод
         const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
