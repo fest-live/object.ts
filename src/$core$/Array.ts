@@ -10,11 +10,19 @@ class ObserveMethod {
     }
     get(target, name, rec) { return Reflect.get(target, name, rec); }
     apply(target, ctx, args) {
-        let removed = null;
-        if (this.#name == "splice") { removed = this.#self[args[0]]; };
-        const wp = this.#handle.wrap(Reflect.apply(target, ctx || this.#self, args));
-        this.#handle.trigger(this.#self || ctx, this.#name, args, wp, removed);
-        return wp;
+        // TODO! propertly interpret removed and added
+        let removed = null, added = null, idx = -1, last = this.#self?.length - 1;
+        if (this.#name == "splice") { idx = args?.[0]; removed = this.#self[idx]; };
+        if (this.#name == "pop")    { idx = last; removed = this.#self[idx]; };
+        if (this.#name == "shift")  { idx = 0; removed = this.#self[idx]; };
+        if (this.#name == "push")   { idx = 0; added = args?.[0]; };
+        removed ??= this.#handle.wrap(Reflect.apply(target, ctx || this.#self, args));
+
+        // TODO! needs fully reinterpet actions
+        // !support multiple push, splice or pop/shift as "push into [last/index]" and "remove of [last/index]"
+        if (["shift", "pop", "splice", "push"].includes(this.#name)) { this.#handle.trigger(this.#self || ctx, this.#name, ...[added, idx, removed]); } else
+            { this.#handle.trigger(this.#self || ctx, this.#name, ...args); }
+        return removed;
     }
 }
 
@@ -28,7 +36,7 @@ class ObserveArray {
         const events = this.#events;
         this.#handle = {
             trigger(target: any[], name: number | string, ...args) {
-                events?.get?.(target)?.values().forEach(ev => ev?.(name, ...args));
+                events?.get?.(target)?.values().forEach(ev => ev?.(...args, name));
             },
             wrap(nw: any[] | unknown) {
                 if (Array.isArray(nw)) {
@@ -61,13 +69,13 @@ class ObserveArray {
         name = parseInt(name);
         const old = target?.[name];
         const got = Reflect.set(target, name, value);
-        this.#handle.trigger(target, "@set", name, value, old);
+        this.#handle.trigger(target, "@set", value, name, old);
         return got;
     }
     deleteProperty(target, name) {
         const old = target?.[name];
         const got = Reflect.deleteProperty(target, name);
-        this.#handle.trigger(target, "@delete", name, old);
+        this.#handle.trigger(target, "@delete", null, name, old);
         return got;
     }
 }
