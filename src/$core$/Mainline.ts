@@ -148,7 +148,7 @@ export const observe = (arr, cb) => {
     if (Array.isArray(orig)) {
         const obs = observeMaps.get(orig);
         const evt = obs?.events;
-        arr?.forEach?.((val, I) => cb?.(val, I, null, "push"));
+        arr?.forEach?.((val, I) => cb?.(val, I, null, "@add"));
         evt?.get(orig)?.add?.(cb);
         return;
     }

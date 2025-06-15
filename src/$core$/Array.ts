@@ -8,21 +8,81 @@ class ObserveMethod {
         this.#handle = handle;
         this.#self = self;
     }
+
+    //
     get(target, name, rec) { return Reflect.get(target, name, rec); }
     apply(target, ctx, args) {
-        // TODO! propertly interpret removed and added
-        let removed = null, added = null, idx = -1, last = this.#self?.length - 1;
-        if (this.#name == "splice") { idx = args?.[0]; removed = this.#self[idx]; };
-        if (this.#name == "pop")    { idx = last; removed = this.#self[idx]; };
-        if (this.#name == "shift")  { idx = 0; removed = this.#self[idx]; };
-        if (this.#name == "push")   { idx = 0; added = args?.[0]; };
-        removed ??= this.#handle.wrap(Reflect.apply(target, ctx || this.#self, args));
+        let added: any[] = [], removed: any[] = [];
+        let setPairs: [any, number, any][] = [];
+        let oldState: any[] = [...this.#self];
+        let idx: number = -1;
 
-        // TODO! needs fully reinterpet actions
-        // !support multiple push, splice or pop/shift as "push into [last/index]" and "remove of [last/index]"
-        if (["shift", "pop", "splice", "push"].includes(this.#name)) { this.#handle.trigger(this.#self || ctx, this.#name, ...[added, idx, removed]); } else
-            { this.#handle.trigger(this.#self || ctx, this.#name, ...args); }
-        return removed;
+        //
+        switch (this.#name) {
+            case "push"   : idx = this.#self?.length; added = args; break;
+            case "unshift": idx = 0; added = args; break;
+            case "pop":
+                idx = this.#self?.length - 1;
+                if (this.#self.length > 0) { removed = [this.#self[idx - 1]]; }
+                break;
+            case "shift":
+                idx = 0;
+                if (this.#self.length > 0) removed = [this.#self[idx]];
+                break;
+            case "splice":
+                const [start, deleteCount, ...items] = args; idx = start;
+                removed = this.#self.slice(start, start + deleteCount);
+                added   = items.slice(deleteCount); // если добавлено больше, чем удалено
+                // Если есть замена элементов (deleteCount > 0 && items.length > 0)
+                if (deleteCount > 0 && items.length > 0) {
+                    for (let i = 0; i < Math.min(deleteCount, items.length); i++) {
+                        setPairs.push([items[i], start + i, oldState[start + i]]);
+                    }
+                }
+                break;
+            case "sort":
+            case "fill":
+            case "reverse":
+            case "copyWithin":
+                // Сравниваем старое и новое состояние, находим изменённые элементы
+                idx = 0; for (let i = 0; i < this.#self.length; i++) {
+                    if (oldState[i] !== this.#self[i])
+                        {setPairs.push([this.#self[i], idx+i, oldState?.[idx+i]]); }
+                }
+                break;
+             // Индексное присваивание, args: [value, index]
+            case "set": idx = args[1]; setPairs.push([args[0], idx, oldState?.[idx]]); break;
+        }
+
+        // Выполнить операцию
+        const result = Reflect.apply(target, ctx || this.#self, args);
+
+        // Триггеры на добавление
+        if (added?.length === 1) {
+            this.#handle.trigger(this.#self || ctx, "@add", added[0]);
+        } else if (added?.length > 1) {
+            this.#handle.trigger(this.#self || ctx, "@addAll", added);
+            removed.forEach((item, I)=>this.#handle.trigger(this.#self || ctx, "@add", item, idx+I));
+        }
+
+        // Триггеры на удаление
+        if (removed?.length === 1) {
+            this.#handle.trigger(this.#self || ctx, "@remove", null, idx, removed[0]);
+        } else if (removed?.length > 1) {
+            this.#handle.trigger(this.#self || ctx, "@removeAll",  idx, removed);
+            removed.forEach((item, I)=>this.#handle.trigger(this.#self || ctx, "@remove", null, idx+I, item));
+        }
+
+        // Триггеры на изменение
+        if (setPairs?.length === 1) {
+            this.#handle.trigger(this.#self || ctx, "@set", ...setPairs[0]);
+        } else if (setPairs?.length > 1) {
+            this.#handle.trigger(this.#self || ctx, "@setAll", setPairs, idx);
+            removed.forEach((pair, I)=>this.#handle.trigger(this.#self || ctx, "@set", ...pair));
+        }
+
+        //
+        return result;
     }
 }
 
