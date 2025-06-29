@@ -17,22 +17,18 @@ const systemGet = (target, name, registry)=>{
 //
 const pontetiallyAsync = (obj, name, promise, cb)=>{
     const oldVal = obj?.[name];
-    if (promise instanceof Promise || typeof promise?.then == "function") {
-        return promise?.then?.((v)=>{ if (oldVal === obj?.[name]) { return cb?.(v); }; }); // @ts-ignore
-    } else {
-        return cb?.(promise) ?? promise;
-    }
+    if (promise instanceof Promise || typeof promise?.then == "function")
+        { return promise?.then?.((v)=>{ if (oldVal === obj?.[name]) { return cb?.(v); }; }); } else
+        { return cb?.(promise) ?? promise; }
     return promise;
 }
 
 //
 const pontetiallyAsyncMap = (obj, name, promise, cb)=>{
     const oldVal = obj?.get?.(name);
-    if (promise instanceof Promise || typeof promise?.then == "function") {
-        return promise?.then?.((v)=>{ if (oldVal === obj?.get?.(name)) { return cb?.(v); }; }); // @ts-ignore
-    } else {
-        return cb?.(promise) ?? promise;
-    }
+    if (promise instanceof Promise || typeof promise?.then == "function")
+        { return promise?.then?.((v)=>{ if (oldVal === obj?.get?.(name)) { return cb?.(v); }; }); } else
+        { return cb?.(promise) ?? promise; }
     return promise;
 }
 

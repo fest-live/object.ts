@@ -1,6 +1,6 @@
 import { makeReactive, subscribe } from "./Mainline";
 import { $value, $behavior, $promise } from "./Symbol";
-import { isValidObj, objectAssignNotEqual, deref } from "./Utils";
+import { deref, isValidObj, objectAssignNotEqual } from "./Utils";
 
 /**
  * Создаёт реактивное условное значение.
@@ -12,8 +12,8 @@ import { isValidObj, objectAssignNotEqual, deref } from "./Utils";
  */
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
     const cond = ref((ref?.value ?? ref) ? ifTrue : ifFalse);
-    subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
-    return cond;
+    const usb = subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
+    cond[Symbol.dispose] = usb; return cond;
 }
 
 /**
@@ -105,9 +105,9 @@ export const weak = (initial?: any, behavior?: any)=>{ const obj = deref(initial
  */
 export const propRef =  (src: any, prop: string, initial?: any)=>{
     const r = ref(src[prop]);
-    subscribe([src,prop], (val,p) => (r.value = val||initial));
-    subscribe([r,"value"], (val,p) => (src[prop] = val));
-    return r;
+    const u1 = subscribe([src,prop], (val,p) => (r.value = val||initial));
+    const u2 = subscribe([r,"value"], (val,p) => (src[prop] = val));
+    r[Symbol.dispose] = ()=>{ u1?.(); u2?.(); }; return r;
 }
 
 /**
@@ -174,12 +174,12 @@ export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] 
 // !one-directional
 export const computed = (sub, cb?: Function|null, dest?: [any, string|number|symbol]|null)=>{
     if (!dest) dest = [makeReactive({}), "value"];
-    subscribe(sub, (value, prop, old) => {
+    const usb = subscribe(sub, (value, prop, old) => {
         const got = cb?.(value, prop, old);
-        if (got !== dest[0]?.[dest[1] ?? "value"]) {
-            dest[0][dest[1] ?? "value"] = got;
-        }
+        if (got !== dest[0]?.[dest[1] ?? "value"])
+            { dest[0][dest[1] ?? "value"] = got; };
     });
+    if (dest?.[0]) { dest[0][Symbol.dispose] = ()=>usb?.(); }
     return dest?.[0]; // return reactive value
 }
 
@@ -187,14 +187,12 @@ export const computed = (sub, cb?: Function|null, dest?: [any, string|number|sym
 // !one-directional
 export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
     if (!dest) dest = makeReactive({});
-    subscribe(sub, (value, prop, old)=> {
+    const usb = subscribe(sub, (value, prop, old)=> {
         const got = cb?.(value, prop, old);
-        if (typeof got == "object") {
-            objectAssignNotEqual(dest, got);
-        } else
+        if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
         if (dest[prop] !== got) dest[prop] = got;
     });
-    return dest; // return reactive value
+    if (dest) { dest[Symbol.dispose] = ()=>usb?.(); }; return dest; // return reactive value
 }
 
 // !one-directional
