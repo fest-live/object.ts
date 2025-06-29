@@ -2,8 +2,8 @@ import { objectAssign } from "./AssignObject";
 import { callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
+import { observableArray, observeMaps } from "./Array";
 import { $extractKey$, $registryKey$, $target } from "./Symbol";
-import observableArray, { observeMaps } from "./Array";
 
 /**
  * Преобразует целевой объект, функцию или коллекцию в реактивную сущность.
