@@ -7,13 +7,13 @@ import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 const systemGet = (target, name, registry)=>{
     if (name == $registryKey$) { return registry?.deref?.(); }
     if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; } // @ts-ignore
-    if (name == Symbol.observable) { return registry?.deref?.()?.compatible; } // @ts-ignore
-    if (name == Symbol.subscribe) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); } // @ts-ignore
-    if (name == Symbol.unsubscribe) { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
-    if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
-    if (name == Symbol.dispose) { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+    if (name == Symbol.observable)    { return registry?.deref?.()?.compatible; } // @ts-ignore
+    if (name == Symbol.subscribe)     { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
+    if (name == Symbol.iterator)      { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
     if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
-    if (name == Symbol.asyncDispose) { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+    if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
+    if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
+    if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
 }
 
 //
