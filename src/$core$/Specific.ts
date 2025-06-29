@@ -9,9 +9,11 @@ const systemGet = (target, name, registry)=>{
     if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; } // @ts-ignore
     if (name == Symbol.observable) { return registry?.deref?.()?.compatible; } // @ts-ignore
     if (name == Symbol.subscribe) { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); } // @ts-ignore
-    if (name == Symbol.unsubscribe) { return (cb, prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
-    if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
+    if (name == Symbol.unsubscribe) { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
     if (name == Symbol.iterator) { return target[name]?.bind?.(target) ?? (()=>registry?.deref?.()?.iterator); }
+    if (name == Symbol.dispose) { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+    if (name == Symbol.asyncIterator) { return target[name]?.bind?.(target) ?? (() => registry?.deref?.()?.iterator); }
+    if (name == Symbol.asyncDispose) { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
 }
 
 //
@@ -50,8 +52,7 @@ export class ReactiveMap {
         //
         if (name == "clear") {
             return () => {
-                const oldValues: any = Array.from(target?.entries?.() || []);
-                const result = valueOrFx();
+                const oldValues: any = Array.from(target?.entries?.() || []), result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
                     registry?.deref()?.trigger?.(prop, null, oldValue);
                 });
@@ -62,8 +63,7 @@ export class ReactiveMap {
         //
         if (name == "delete") {
             return (prop, _ = null) => {
-                const oldValue = target.get(prop);
-                const result = valueOrFx(prop);
+                const oldValue = target.get(prop), result = valueOrFx(prop);
                 registry?.deref()?.trigger?.(prop, null, oldValue);
                 return result;
             };
@@ -72,8 +72,7 @@ export class ReactiveMap {
         //
         if (name == "set") {
             return (prop, value) => pontetiallyAsyncMap(target, name, value, (v)=>{
-                const oldValue = target.get(prop);
-                const result = valueOrFx(prop, value);
+                const oldValue = target.get(prop), result = valueOrFx(prop, value);
                 if (oldValue !== value) { registry?.deref()?.trigger?.(prop, value, oldValue); };
                 return result;
             });
@@ -107,8 +106,7 @@ export class ReactiveSet {
         //
         if (name == "clear") {
             return () => {
-                const oldValues = Array.from(target?.values?.() || []);
-                const result = valueOrFx();
+                const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
                 oldValues.forEach((oldValue)=>{ registry?.deref?.()?.trigger?.(null, null, oldValue); });
                 return result;
             };
@@ -117,8 +115,7 @@ export class ReactiveSet {
         //
         if (name == "delete") {
             return (value) => {
-                const oldValue = target.has(value) ? value : null;
-                const result   = valueOrFx(value);
+                const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
                 registry?.deref()?.trigger?.(value, null, oldValue);
                 return result;
             };
@@ -128,8 +125,7 @@ export class ReactiveSet {
         if (name == "add") {
             // TODO: add potentially async set
             return (value) => {
-                const oldValue = target.has(value) ? value : null;
-                const result   = valueOrFx(value);
+                const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
                 if (oldValue !== value) { registry?.deref()?.trigger?.(value, value, oldValue); };
                 return result;
             };
@@ -162,7 +158,7 @@ export class ReactiveObject {
             return target?.[Symbol.toPrimitive]?.();
         }};
         if (name == "toString") { return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || ""); }
-        if (name == "valueOf") { return () => { if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
+        if (name == "valueOf" ) { return () => { if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
         return bindCtx(target, Reflect.get(target, name, ctx));
     }
 
