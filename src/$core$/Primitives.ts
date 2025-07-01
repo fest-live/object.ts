@@ -13,7 +13,7 @@ import { deref, isValidObj, objectAssignNotEqual } from "./Utils";
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
     const cond = ref((ref?.value ?? ref) ? ifTrue : ifFalse);
     const usb = subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
-    cond[Symbol.dispose] ??= usb; return cond;
+    if (usb) cond[Symbol.dispose] ??= usb; return cond;
 }
 
 /**

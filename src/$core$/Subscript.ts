@@ -69,6 +69,7 @@ export class Subscript {
         return ()=> this.unsubscribe(cb, prop);
     }
 
+    //
     unsubscribe(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (cb != null && typeof cb == "function") {
             if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb) ?? cb; } // @ts-ignore
@@ -81,6 +82,7 @@ export class Subscript {
     // try execute immediatly, if already running, try delayed action in callstack
     // if catch will also fail, will cause another unhandled reject (will no repeating)
     trigger(name, value = null, oldValue?: any) {
+        if (typeof name == "symbol") return;
 
         // @ts-ignore
         return Promise.try(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(console.error.bind(console));
@@ -95,4 +97,7 @@ export const subscriptRegistry = new WeakMap<any, Subscript>();
 
 // @ts-ignore
 export const register = (what: any, handle: any): any => { const unwrap = what?.[$extractKey$] ?? what; subscriptRegistry.getOrInsert(unwrap, new Subscript()); return handle; }
-export const wrapWith = (what, handle)=>{ what = deref(what?.[$extractKey$] ?? what); return new Proxy(what, register(what, handle)); }; // !experimental `getOrInsert` feature!
+export const wrapWith = (what, handle)=>{ what = deref(what?.[$extractKey$] ?? what);
+    if (typeof what == "symbol" || !(typeof what == "object" || typeof what == "function") || what == null) return what;
+    return new Proxy(what, register(what, handle));
+}; // !experimental `getOrInsert` feature!

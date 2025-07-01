@@ -125,8 +125,10 @@ class ObserveArray {
         return got;
     }
     set(target, name, value) {
-        if (!Number.isInteger(parseInt(name))) { return Reflect.set(target, name, value); };
-        name = parseInt(name);
+        if (typeof name != "symbol") {
+            if (!Number.isInteger(parseInt(name))) { return Reflect.set(target, name, value); };
+            name = parseInt(name);
+        }
         const old = target?.[name];
         const got = Reflect.set(target, name, value);
         this.#handle.trigger(target, "@set", value, name, old);

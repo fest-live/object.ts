@@ -48,6 +48,7 @@ export class ReactiveMap {
         if ((target = deref(target)) == null) return;
         const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
         const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/(tp)?.[name]);
+        if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
         if (name == "clear") {
@@ -102,6 +103,7 @@ export class ReactiveSet {
         if ((target = deref(target)) == null) return;
         const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
         const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/tp?.[name]);
+        if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
         if (name == "clear") {
@@ -153,6 +155,7 @@ export class ReactiveObject {
 
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
+        if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
         if (name == Symbol.toPrimitive) { return () => {
             if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
             return target?.[Symbol.toPrimitive]?.();
@@ -189,8 +192,8 @@ export class ReactiveObject {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
         return pontetiallyAsync(target, name, value, (v)=>{
-            const oldValue = target[name];
-            const result = Reflect.set(target, name, v);
+            if (typeof name == "symbol" && (name in target || target?.[name] != null)) return;
+            const oldValue = target[name], result = Reflect.set(target, name, v);
             if (oldValue !== v) { registry?.trigger?.(name, v, oldValue); };
             return result;
         })

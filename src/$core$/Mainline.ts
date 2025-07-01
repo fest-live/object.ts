@@ -13,17 +13,21 @@ import { $extractKey$, $registryKey$, $target } from "./Symbol";
  * @returns {any} - Реактивная версия переданного значения
  */
 export const makeReactive: any = (target: any, stateName = ""): any => {
-    if (target?.[$extractKey$]) { return target; }
+    if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null || target?.[$extractKey$]) return target;
+    if (target instanceof Promise || target instanceof WeakRef) return target; // promise forbidden
 
-    // Извлекается сырой объект, если уже реактивный
+    //
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
-    let reactive = target;
+    if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return target;
+    if (unwrap instanceof Promise || unwrap instanceof WeakRef) return target; // promise forbidden
 
-    // Заворачивает различные коллекции с их специфической реактивностью
+    //
+    let reactive = target;
     if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target); } else
         if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target); } else
             if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
 
+    //
     return reactive;
 }
 
@@ -36,36 +40,35 @@ export const makeReactive: any = (target: any, stateName = ""): any => {
  * @returns {Function} - Функция отписки, поддерживает также Symbol.dispose и Symbol.asyncDispose
  */
 export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
-    return withPromise(tg, (target: any) => {
-        // Определение, является ли аргумент парой [объект, ключ]
-        const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
-        const prop   = isPair && (typeof target?.[1] != "object" && typeof target?.[1] != "function") ? target?.[1] : null;
+    if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) return;
 
-        // Для пары — извлекается цель
-        target = (isPair && (prop != null)) ? (target?.[0] ?? target) : target;
+    //
+    const isPair = Array.isArray(tg) && tg?.length == 2 && ["object", "function"].indexOf(typeof tg?.[0]) >= 0 && isKeyType(tg?.[1]);
+    const prop   = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
+    tg = (isPair && (prop != null)) ? (tg?.[0] ?? tg) : tg; if (!tg) return;
 
-        // Извлекается сырой объект, если массив, используем другой метод
-        const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
-        if (typeof unwrap == "object" && typeof unwrap == "function" && Array.isArray(unwrap)) { return observe(unwrap, cb); }
-
-        // Реактивная подписка
-        if (prop != null) { callByProp(unwrap, prop, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
-        let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
-
-        // Экспериментальная поддержка "наблюдаемых" объектов (backward compatible)
-        // @ts-ignore
-        if (!self && unwrap?.[Symbol.observable]) {
-            target = makeReactive(unwrap);
-
-            // @ts-ignore
-            unwrap?.[Symbol.observable]?.()?.subscribe?.((value, prop?: any) => (target[prop ?? "value"] = value));
-            self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
-        }
+    // temp ban with dispose
+    return withPromise(tg, (target: any) => { if (!target) return;
+        if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null) return;
+        let unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target; if (!unwrap) return;
+        if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return;
 
         //
-        self?.subscribe?.(cb, prop);
+        if ((typeof unwrap == "object" && typeof unwrap == "function") && Array.isArray(unwrap) && !unwrap[Symbol.dispose]) { return observe(unwrap, cb); }
 
-        // Отписка, поддержка Symbol.dispose и Symbol.asyncDispose (ES2022+)
+        //
+        if (prop != null) { callByProp(unwrap, prop, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
+        let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap); if (self?.[Symbol.dispose]) return;
+
+        // @ts-ignore
+        if (!self && unwrap?.[Symbol.observable]) {
+            unwrap = makeReactive(unwrap); // @ts-ignore
+            unwrap?.[Symbol.observable]?.()?.subscribe?.((value, prop?: any) => (unwrap[prop ?? "value"] = value));
+            self ??= unwrap?.[$registryKey$] ?? (subscriptRegistry).get(unwrap) ?? self;
+        }
+        if (!self) return; self?.subscribe?.(cb, prop);
+
+        //
         const unsub = () => { return self?.unsubscribe?.(cb, prop); }
         if (Symbol?.dispose != null) { unsub[Symbol.dispose] ??= () => { return self?.unsubscribe?.(cb, prop); } }
         if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] ??= () => { return self?.unsubscribe?.(cb, prop); } }

@@ -37,7 +37,7 @@ export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
 
 //
 export const callByProp = (unwrap, prop, cb, ctx)=>{
-    if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$) return;
+    if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$ || (typeof prop == "symbol" || typeof prop == "object" || typeof prop == "function")) return;
     if (unwrap instanceof Map || unwrap instanceof WeakMap) { if (prop != null && unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); } } else
     if (unwrap instanceof Set || unwrap instanceof WeakSet) { if (prop != null && unwrap.has(prop as any)) { return cb?.(prop, prop); } } else
     if (typeof unwrap == "function" || typeof unwrap == "object") { return cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop); }
@@ -71,7 +71,7 @@ export const deref  = (target?: any, discountValue?: boolean|null)=>{
 
 // experimental promise support
 export const withPromise = (target, cb)=>{
-    if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
     if (typeof target?.then == "function") return target?.then?.(cb);
+    if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
     return cb(target);
 }
