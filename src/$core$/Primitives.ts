@@ -13,7 +13,7 @@ import { deref, isValidObj, objectAssignNotEqual } from "./Utils";
 export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
     const cond = ref((ref?.value ?? ref) ? ifTrue : ifFalse);
     const usb = subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
-    cond[Symbol.dispose] = usb; return cond;
+    cond[Symbol.dispose] ??= usb; return cond;
 }
 
 /**
@@ -107,7 +107,7 @@ export const propRef =  (src: any, prop: string, initial?: any)=>{
     const r = ref(src[prop]);
     const u1 = subscribe([src,prop], (val,p) => (r.value = val||initial));
     const u2 = subscribe([r,"value"], (val,p) => (src[prop] = val));
-    r[Symbol.dispose] = ()=>{ u1?.(); u2?.(); }; return r;
+    r[Symbol.dispose] ??= ()=>{ u1?.(); u2?.(); }; return r;
 }
 
 /**
@@ -179,7 +179,7 @@ export const computed = (sub, cb?: Function|null, dest?: [any, string|number|sym
         if (got !== dest[0]?.[dest[1] ?? "value"])
             { dest[0][dest[1] ?? "value"] = got; };
     });
-    if (dest?.[0]) { dest[0][Symbol.dispose] = ()=>usb?.(); }
+    if (dest?.[0]) { dest[0][Symbol.dispose] ??= ()=>usb?.(); }
     return dest?.[0]; // return reactive value
 }
 
@@ -192,7 +192,7 @@ export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
         if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
         if (dest[prop] !== got) dest[prop] = got;
     });
-    if (dest) { dest[Symbol.dispose] = ()=>usb?.(); }; return dest; // return reactive value
+    if (dest) { dest[Symbol.dispose] ??= ()=>usb?.(); }; return dest; // return reactive value
 }
 
 // !one-directional

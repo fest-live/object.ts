@@ -67,8 +67,8 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
 
         // Отписка, поддержка Symbol.dispose и Symbol.asyncDispose (ES2022+)
         const unsub = () => { return self?.unsubscribe?.(cb, prop); }
-        if (Symbol?.dispose != null) { unsub[Symbol.dispose] = () => { return self?.unsubscribe?.(cb, prop); } }
-        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] = () => { return self?.unsubscribe?.(cb, prop); } }
+        if (Symbol?.dispose != null) { unsub[Symbol.dispose] ??= () => { return self?.unsubscribe?.(cb, prop); } }
+        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] ??= () => { return self?.unsubscribe?.(cb, prop); } }
 
         // @ts-ignore
         try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
