@@ -202,3 +202,24 @@ export const unified = (...subs: any[])=>{
         if (dest[prop] !== value) { dest[prop] = value; };
     })); return dest;
 }
+
+//
+export const conditionalIndex = (condList: any[] = []) => { return computed(condList, () => condList.findIndex(cb => cb?.())); }
+export const delayedSubscribe = (ref, cb, delay = 100) => {
+    let tm: any; //= triggerWithDelay(ref, cb, delay);
+    return subscribe([ref, "value"], (v)=>{
+        if (!v && tm) { clearTimeout(tm); tm = null; } else
+        if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
+    });
+}
+
+// usable for delayed trigger when come true, but NOT when come false
+export const triggerWithDelay = (ref, cb, delay = 100)=>{ if (ref?.value ?? ref) { return setTimeout(()=>{ if (ref.value) cb?.(); }, delay); } }
+export const delayedBehavior  = (delay = 100) => {
+    return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); };
+}
+
+// usable for delayed visible but instant hiding
+export const delayedOrInstantBehavior = (delay = 100) => {
+    return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
+}
