@@ -117,11 +117,11 @@ export const plugins = [
     compression(),
     createExternal({
         interop: 'auto',
-        externals: {externals: "externals", dist: "dist", "u2re": "u2re"},
+        externals: {externals: "externals", dist: "dist", "fest": "fest"},
         externalizeDeps: [
             "externals", "/externals", "./externals",
             "dist", "/dist", "./dist",
-            "u2re", "../"
+            "fest", "../"
         ]
     }),
 ];
@@ -133,7 +133,7 @@ export const rollupOptions = {
     external: [
         "externals", "/externals", "./externals",
         "dist", "/dist", "./dist",
-        "u2re", "../"
+        "fest", "../"
     ],
     input: "./src/index.ts",
     output: {
