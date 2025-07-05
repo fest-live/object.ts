@@ -1,6 +1,16 @@
 import { associateWith, deref, type keyType, propCbMap } from "./Utils.js";
 import { $extractKey$ } from "./Symbol.js";
 
+
+/*
+const cbStats = new Map();
+
+function recordCbStat(name, duration) {
+    if (!cbStats.has(name)) cbStats.set(name, []);
+    cbStats.get(name).push(duration);
+}
+*/
+
 //
 export class Subscript {
     compatible: any;
@@ -11,6 +21,7 @@ export class Subscript {
     //#caller: any;
 
     //
+/*
     async $safeExec(cb, args) {
         if (cb && this.#flags.has(cb)) return this;
         this.#flags.add(cb);
@@ -19,6 +30,57 @@ export class Subscript {
             { await Promise?.try?.(cb, args)?.catch?.(console.error.bind(console)); }
         this.#flags.delete(cb); return this;
     }
+*/
+
+
+    async $safeExec(cb, args) {
+        const cbName    = cb.name || '[anonymous]';
+        const markTime  = (performance.now()*1000)|0;
+        const markStart = `cb_start_${cbName}_on_[${args?.[1]||"<?>"}]_@[${markTime}]_[${Math.random()}]`;
+        const markEnd   = `cb_end_${cbName}_on_[${args?.[1]||"<?>"}]_@[${markTime}]_[${Math.random()}]`;
+        const markName  = `cb_exec_${cbName}_on_[${args?.[1]||"<?>"}]_@[${markTime}]_[${Math.random()}]`;
+
+        //
+        if (cb && this.#flags.has(cb)) return this;
+
+        //
+        performance.mark(markStart);
+
+        //
+        this.#flags.add(cb);
+        try {
+            if (Array.isArray(args))
+                { await Promise?.try?.(cb, ...args as [any, any, any]); } else
+                { await Promise?.try?.(cb, args); }
+        } catch (e) {
+            console.error(e);
+        }
+        this.#flags.delete(cb);
+
+        //
+        performance.mark(markEnd);
+        performance.measure(
+            markName,
+            markStart,
+            markEnd
+        );
+
+        //
+        const measures = performance.getEntriesByName(markName);
+        if (measures.length) {
+            //const duration = measures[measures.length - 1].duration; //recordCbStat(cbName, duration);
+            //console.log(`[${markTime}] exec_time for '${cbName}(...)' on [${args?.[1]||"<?>"}]:`, duration, 'ms');
+        }
+
+        //
+        performance.clearMarks(markStart);
+        performance.clearMarks(markEnd);
+        performance.clearMeasures(markName);
+        return this;
+    }
+
+
+
 
     //
     constructor(withWeak?: any) {
@@ -28,7 +90,17 @@ export class Subscript {
 
         //
         const listeners = new WeakRef(this.#listeners);
-        const caller = (name, value = null, oldValue?: any)=>Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb: (value: any, prop: keyType, oldValue?: any) => void) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue]))||[]);
+        const caller = async (name, value = null, oldValue?: any) => {
+            const callName = ("[" + ((performance.now()*1000)|0) + "]") + ' caller_stack on [' + (name || "<?>") + "]";
+            //console.time(callName);
+            const result = await Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb) =>
+                weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue])
+            )||[]);
+            //console.timeEnd(callName);
+            return result;
+        };
+
+        //const caller = (name, value = null, oldValue?: any)=>Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb: (value: any, prop: keyType, oldValue?: any) => void) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue]))||[]);
         //this.#caller = caller;
 
         // compatible with https://github.com/WICG/observable
