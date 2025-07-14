@@ -29,7 +29,7 @@ export const numberRef  = (initial?: any, behavior?: any)=>{
         [$promise]: isPromise ? initial : null,
         [$value]: isPromise ? 0 : (Number(deref(initial) || 0) || 0),
         [$behavior]: behavior,
-        set value(v) { this[$value] = Number(v) || 0; },
+        set value(v) { this[$value] = (v != null ? Number(v) : this[$value]) || 0; },
         get value() { return Number(this[$value] || 0) || 0; }
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
