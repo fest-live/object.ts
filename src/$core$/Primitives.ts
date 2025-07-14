@@ -164,24 +164,24 @@ export const link = (a, b)=>{
  * @returns {Function} - Функция для прекращения синхронизации.
  */
 export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] = [null,null])=>{
-    const prop = "value";
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); if (!isAProp) { a = [a, "value"]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); if (!isBProp) { b = [b, "value"]; };
     const usub = [
-        subscribe([a, prop], (value, prop, old) => { b[prop] = asb?.(value, prop, old)??b[prop]; }),
-        subscribe([b, prop], (value, prop, old) => { a[prop] = bsb?.(value, prop, old)??a[prop]; })
+        subscribe(a, (value, prop, old) => { b[prop] = asb?.(value, prop, old)??b[prop]; }),
+        subscribe(b, (value, prop, old) => { a[prop] = bsb?.(value, prop, old)??a[prop]; })
     ];
     return ()=>usub?.map?.((a)=>a?.());
 }
 
-
-
 // used for conditional reaction
 // !one-directional
 export const computed = (sub, cb?: Function|null, dest?: [any, string|number|symbol]|null)=>{
-    if (!dest) dest = [makeReactive({}), "value"];
+    const inProp = "value", outProp = "value";
+    const isProp = (isKeyType(sub?.[1]) || sub?.[1] == Symbol.iterator); if (!isProp) { sub = [sub, inProp]; };
+    if (!dest) dest = [ref(cb?.(sub?.[inProp], inProp, null)), outProp];
     const usb = subscribe(sub, (value, prop, old) => {
         const got = cb?.(value, prop, old);
-        if (got !== dest[0]?.[dest[1] ?? "value"])
-            { dest[0][dest[1] ?? "value"] = got; };
+        if (got !== dest[0]?.[dest[1]]) { dest[0][dest[1]] = got; };
     });
     if (dest?.[0]) { dest[0][Symbol.dispose] ??= ()=>usb?.(); }
     return dest?.[0]; // return reactive value
