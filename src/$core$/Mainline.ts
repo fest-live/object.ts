@@ -139,17 +139,18 @@ export const bindByKey = (target, reactive, key = () => "") =>
  * @param {Function} [watch] - Необязательный watch-функция для наблюдения
  * @returns {any} - Новое реактивное значение
  */
-export const derivate = (from, reactFn, watch?) => bindWith(reactFn(safe(from)), from, watch);
+export const derivate = (from, reactFn, watch?) => bindBy(reactFn(safe(from)), from, watch);
 
 /**
  * Связывает состояния между целевым объектом и реактивным объектом (двусторонняя синхронизация).
+ * Renamed due of LUR.E framework similar name method.
  *
  * @param {object} target - Целевой объект для синхронизации
  * @param {any} reactive - Реактивный объект
  * @param {Function} [watch] - Необязательная функция наблюдения за изменениями target
  * @returns {object} - Ссылка на target (для цепочек вызовов)
  */
-export const bindWith = (target, reactive, watch?) => {
+export const bindBy = (target, reactive, watch?) => {
     // Синхронизация from reactive → target
     subscribe(reactive, (v, p) => { objectAssign(target, v, p, true); });
     // Если есть watch — синхронизация target → reactive
