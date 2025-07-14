@@ -63,7 +63,9 @@ export class ObserveArrayMethod {
     }
 
     //
-    get(target, name, rec) { return Reflect.get(target, name, rec); }
+    get(target, name, rec) {
+        return Reflect.get(target, name, rec);
+    }
     apply(target, ctx, args) {
         let added: any[] = [], removed: any[] = [];
         let setPairs: [any, number, any][] = [];
@@ -152,6 +154,11 @@ export class ReactiveArray {
     // TODO: some target with target[n] may has also reactive target[n]?.value, which (sometimes) needs to observe too...
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
+        const $reg = (subscriptRegistry).get(target), registry = $reg ? new WeakRef($reg) : null;
+        const sys = systemGet(target, name, registry); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
+
+        //
         if (name == "@target" || name == $extractKey$) return target;
         if (name == "silentForwardByIndex") {
             return (index: number) => {
@@ -164,7 +171,7 @@ export class ReactiveArray {
         }
 
         // that case: target[n]?.(?{.?value})?
-        const $reg = (subscriptRegistry).get(target), got = Reflect.get(target, name, rec);
+        const got = Reflect.get(target, name, rec);
         if (typeof got == "function") { return new Proxy(got, new ObserveArrayMethod(name, $reg, target)); };
         return got;
     }
@@ -201,6 +208,7 @@ export class ReactiveMap {
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
         if ((target = deref(target)) == null) return;
@@ -256,6 +264,7 @@ export class ReactiveSet {
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         // redirect to value key
         if ((target = deref(target)) == null) return;
