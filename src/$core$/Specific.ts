@@ -135,7 +135,7 @@ export class ReactiveArray {
     // TODO: some target with target[n] may has also reactive target[n]?.value, which (sometimes) needs to observe too...
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
-        if (name == "@target") return target;
+        if (name == "@target" || name == $extractKey$) return target;
         if (name == "silentForwardByIndex") {
             return (index: number) => {
                 if (index < target.length) {
