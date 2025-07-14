@@ -1,6 +1,6 @@
 import { makeReactive, subscribe } from "./Mainline";
 import { $value, $behavior, $promise } from "./Symbol";
-import { deref, isKeyType, isValidObj, objectAssignNotEqual } from "./Utils";
+import { deref, isKeyType, objectAssignNotEqual } from "./Utils";
 
 /**
  * Создаёт реактивное условное значение.
@@ -85,15 +85,6 @@ export const ref  = (initial?: any, behavior?: any)=>{
         value: isPromise ? null : deref(initial)
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
-
-/**
- * Создаёт слабую реактивную ссылку на объект.
- *
- * @param {any} [initial] - Объект для обёртки или реактив.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @returns {any} - Реактивная ссылка или WeakRef.
- */
-export const weak = (initial?: any, behavior?: any)=>{ const obj = deref(initial); return ref(isValidObj(obj) ? new WeakRef(obj) : obj, behavior); };
 
 /**
  * Создаёт реактивную ссылку на свойство объекта.
