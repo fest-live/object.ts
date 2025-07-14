@@ -1,6 +1,6 @@
 import { makeReactive, subscribe } from "./Mainline";
 import { $value, $behavior, $promise } from "./Symbol";
-import { deref, isValidObj, objectAssignNotEqual } from "./Utils";
+import { deref, isKeyType, isValidObj, objectAssignNotEqual } from "./Utils";
 
 /**
  * Создаёт реактивное условное значение.
@@ -132,7 +132,9 @@ export const promised = (promise: any, behavior?: any)=>{
  * @returns {Function|undefined} - Функция для отписки или undefined.
  */
 export const assign = (a, b, prop = "value")=>{
-    if (b?.[prop||="value"] != null) { b[prop] ||= a?.[prop]; return subscribe([b,prop],(v,p)=>(a[p] = b[p])); };
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [a, prop]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [b, prop]; };
+    b[b_prop] ??= a?.[a_prop]; return subscribe(b, (v,p)=>(a[p] = v));
 }
 
 /**
@@ -143,10 +145,12 @@ export const assign = (a, b, prop = "value")=>{
  * @param {string} [prop="value"] - Имя синхронизируемого поля.
  * @returns {Function} - Функция для прекращения синхронизации.
  */
-export const link = (a, b, prop = "value")=>{
+export const link = (a, b)=>{
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); if (!isAProp) { a = [a, "value"]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); if (!isBProp) { b = [b, "value"]; };
     const usub = [
-        (b?.[prop||="value"] != null) ? subscribe([b,prop],(v,p)=>(a[p] = b[p])) : null,
-        (a?.[prop]           != null) ? subscribe([a,prop],(v,p)=>(b[p] = a[p])) : null
+        subscribe(b,(v,p)=>(a[p] = v)),
+        subscribe(a,(v,p)=>(b[p] = v))
     ];
     return ()=>usub?.map?.((a)=>a?.());
 }
