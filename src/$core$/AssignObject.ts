@@ -32,7 +32,7 @@ export const removeExtra = (target, value, name: keyType | null = null)=>{
 }
 
 //
-export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = true, mergeKey = "id")=>{
+export const objectAssign = (target, value, name: keyType | null = null, removeNotExists = true, mergeKey = "id") => {
     const exists = name != null && (typeof target == "object" || typeof target == "function") ? (target?.[name] ?? target) : target;
     let entries: any = null;
 
@@ -77,19 +77,15 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
 //
 export class AssignObjectHandler {
     constructor() { }
-
-    //
+    deleteProperty(target, name: keyType) { const result = Reflect.deleteProperty(target, name); return result; }
+    construct(target, args, newT) { return Reflect.construct(target, args, newT); }
+    apply(target, ctx, args) { return Reflect.apply(target, ctx, args); }
+    has(target, prop: keyType) { return Reflect.has(target, prop); }
+    set(target, name: keyType, value) { objectAssign(target, value, name); return true; }
     get(target, name: keyType, ctx) {
         if (name == $originalKey$ || name == $extractKey$ || name == $registryKey$) { return (name == $extractKey$ || name == $registryKey$) ? target?.[name] : (target?.[name] ?? target); }
         return Reflect.get(target, name, ctx);
     }
-
-    //
-    apply(target, ctx, args) { return Reflect.apply(target, ctx, args); }
-    has(target, prop: keyType) { return Reflect.has(target, prop); }
-    set(target, name: keyType, value) { objectAssign(target, value, name); return true; }
-    deleteProperty(target, name: keyType) { const result = Reflect.deleteProperty(target, name); return result; }
-    construct(target, args, newT) { return Reflect.construct(target, args, newT); }
 }
 
 //
