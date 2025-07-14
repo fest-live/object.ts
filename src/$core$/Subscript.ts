@@ -81,7 +81,6 @@ export class Subscript {
 
 
 
-
     //
     constructor(withWeak?: any) {
         const weak = new WeakRef(this);
@@ -90,11 +89,11 @@ export class Subscript {
 
         //
         const listeners = new WeakRef(this.#listeners);
-        const caller = async (name, value = null, oldValue?: any) => {
+        const caller = async (name, value = null, oldValue?: any, ...etc: any[]) => {
             const callName = ("[" + ((performance.now()*1000)|0) + "]") + ' caller_stack on [' + (name || "<?>") + "]";
             //console.time(callName);
             const result = await Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb) =>
-                weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue])
+                weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue, ...etc])
             )||[]);
             //console.timeEnd(callName);
             return result;
@@ -135,6 +134,14 @@ export class Subscript {
     }
 
     //
+    wrap(nw: any[] | unknown) {
+        if (Array.isArray(nw)) {
+            return wrapWith(nw, this);
+        }
+        return nw;
+    }
+
+    //
     subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (prop != null) { cb = associateWith(cb, prop) ?? cb; }
         if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }
@@ -153,11 +160,11 @@ export class Subscript {
 
     // try execute immediatly, if already running, try delayed action in callstack
     // if catch will also fail, will cause another unhandled reject (will no repeating)
-    trigger(name, value = null, oldValue?: any) {
+    trigger(name, value: any = null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
 
         // @ts-ignore
-        return Promise.try(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(()=>this.#iterator.next([name, value, oldValue]))?.catch?.(console.error.bind(console));
+        return Promise.try(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(console.error.bind(console));
     }
 
     //

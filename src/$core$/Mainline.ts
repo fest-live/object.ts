@@ -1,8 +1,7 @@
 import { objectAssign } from "./AssignObject";
 import { callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
-import { makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
-import { observableArray, observeMaps } from "./Array";
+import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 import { $extractKey$, $registryKey$, $target } from "./Symbol";
 
 /**
@@ -23,9 +22,10 @@ export const makeReactive: any = (target: any, stateName = ""): any => {
 
     //
     let reactive = target;
+    if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target); } else
     if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target); } else
-        if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target); } else
-            if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target); } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
 
     //
     return reactive;
@@ -52,9 +52,6 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null) return;
         let unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target; if (!unwrap) return;
         if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return;
-
-        //
-        if ((typeof unwrap == "object" && typeof unwrap == "function") && Array.isArray(unwrap) && !unwrap[Symbol.dispose]) { return observe(unwrap, cb); }
 
         //
         if (prop != null) { callByProp(unwrap, prop, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
@@ -140,32 +137,13 @@ export const bindWith = (target, reactive, watch?) => {
 };
 
 /**
- * Подписывает callback на изменения массива или объекта.
- *
- * @param {any[]} arr - Массив или объект для наблюдения.
- * @param {Function} cb - Callback, вызываемый при изменениях.
- * @returns {any} Результат вызова функции subscribe.
- */
-export const observe = (arr, cb) => {
-    const orig = arr?.[$target] ?? arr;
-    if (Array.isArray(orig)) {
-        const obs = observeMaps.get(orig);
-        const evt = obs?.events;
-        arr?.forEach?.((val, I) => cb?.(val, I, null, "@add"));
-        evt?.get(orig)?.add?.(cb);
-        return;
-    }
-    return subscribe(arr, cb);
-};
-
-/**
  * Создает observable-массив, синхронизированный с Set.
  *
  * @param {Set<any>} set - Наблюдаемый Set.
  * @returns {any[]} Observable-массив, отражающий состояние Set.
  */
 export const observableBySet = (set) => {
-    const obs = observableArray([]);
+    const obs = makeReactive([]);
     subscribe(set, (value, _, old) => {
         if (value !== old) {
             if (old == null && value != null) {
@@ -190,7 +168,7 @@ export const observableBySet = (set) => {
  * @returns {Array<[any, any]>} Observable-массив пар [ключ, значение].
  */
 export const observableByMap = (map) => {
-    const obs = observableArray([]);
+    const obs = makeReactive([]);
     subscribe(map, (value, prop, old) => {
         if (value !== old) {
             if (old != null && value == null) {
