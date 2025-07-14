@@ -1,15 +1,22 @@
 import { associateWith, deref, type keyType, propCbMap } from "./Utils.js";
 import { $extractKey$ } from "./Symbol.js";
 
-
-/*
-const cbStats = new Map();
-
-function recordCbStat(name, duration) {
-    if (!cbStats.has(name)) cbStats.set(name, []);
-    cbStats.get(name).push(duration);
+//
+const withUnsub = new WeakMap();
+const completeWithUnsub = (subscriber, weak, handler)=>{
+    // @ts-ignore
+    return withUnsub.getOrInsert(subscriber, ()=>{
+        const registry = weak?.deref?.(); registry?.subscribe?.(handler);
+        const savComplete = subscriber?.complete?.bind?.(subscriber);
+        const unsubscribe = () => { const r = savComplete?.(); registry?.unsubscribe?.(handler); return r; };
+        subscriber.complete = unsubscribe;
+        return {
+            unsubscribe,
+            [Symbol.dispose]: unsubscribe,
+            [Symbol.asyncDispose]: unsubscribe,
+        }
+    });
 }
-*/
 
 //
 export class Subscript {
@@ -79,8 +86,6 @@ export class Subscript {
         return this;
     }
 
-
-
     //
     constructor(withWeak?: any) {
         const weak = new WeakRef(this);
@@ -104,16 +109,9 @@ export class Subscript {
 
         // compatible with https://github.com/WICG/observable
         // mostly, only for subscribers (virtual Observable)
-        const subscribe = function (subscriber) {
-            const self = weak?.deref?.();
+        const controller = function (subscriber) {
             const handler = subscriber?.next?.bind?.(subscriber);
-            self?.subscribe?.(handler);
-            const unsubscribe = () => { const r = subscriber?.complete?.(); self?.unsubscribe?.(handler); return r; };
-            return {
-                unsubscribe,
-                [Symbol.dispose]: unsubscribe,
-                [Symbol.asyncDispose]: unsubscribe,
-            }
+            return completeWithUnsub(subscriber, weak, handler);
         }
 
         //
@@ -125,7 +123,7 @@ export class Subscript {
         }
 
         // @ts-ignore
-        this.#native = (typeof Observable != "undefined" ? (new Observable(subscribe)) : { [Symbol.observable]() { return this }, subscribe })
+        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
 
         // initiate generator, and do next
         this.#iterator = generator();

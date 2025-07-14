@@ -17,6 +17,23 @@ const systemGet = (target, name, registry)=>{
 }
 
 //
+const observableAPIMethods = (target, name, registry)=>{
+    if (name in target || target?.[name] != null) return target?.[name];
+    if (name == "subscribe") {
+        return registry?.deref?.()?.compatible?.[name] ?? ((handler)=>{
+            if (typeof handler == "function") {
+                return subscribe(target, handler);
+            } else
+            if ("next" in handler && handler?.next != null) {
+                const usub = subscribe(target, handler?.next), comp = handler?.["complete"];
+                handler["complete"] = (...args)=>{ usub?.(); return comp?.(...args); };
+                return handler["complete"];
+            }
+        })
+    }
+}
+
+//
 const pontetiallyAsync = (obj, name, promise, cb)=>{
     const oldVal = obj?.[name];
     if (promise instanceof Promise || typeof promise?.then == "function")
@@ -293,6 +310,7 @@ export class ReactiveObject {
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
