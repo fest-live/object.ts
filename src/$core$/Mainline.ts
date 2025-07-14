@@ -43,9 +43,11 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
     if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) return;
 
     //
-    const isPair = Array.isArray(tg) && tg?.length == 2 && ["object", "function"].indexOf(typeof tg?.[0]) >= 0 && isKeyType(tg?.[1]);
+    const isPair = Array.isArray(tg) && tg?.length == 2 && ["object", "function"].indexOf(typeof tg?.[0]) >= 0 && (isKeyType(tg?.[1]) || (Array.isArray(tg?.[0] && tg?.[1] == Symbol.iterator)));
     const prop   = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
-    tg = (isPair && (prop != null)) ? (tg?.[0] ?? tg) : tg; if (!tg) return;
+
+    // tg?.[0] ?? tg now isn't allowed anymore, because it's not safe
+    tg = (isPair && (prop != null)) ? tg?.[0] : tg; if (!tg) return;
 
     // temp ban with dispose
     return withPromise(tg, (target: any) => { if (!target) return;
@@ -54,7 +56,8 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
         if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return;
 
         //
-        if (prop != null) { callByProp(unwrap, prop, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
+        const tProp = prop != Symbol.iterator ? prop : null;
+        if (tProp != null) { callByProp(unwrap, tProp, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
         let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap); if (self?.[Symbol.dispose]) return;
 
         // @ts-ignore
@@ -63,12 +66,12 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
             unwrap?.[Symbol.observable]?.()?.subscribe?.((value, prop?: any) => (unwrap[prop ?? "value"] = value));
             self ??= unwrap?.[$registryKey$] ?? (subscriptRegistry).get(unwrap) ?? self;
         }
-        if (!self) return; self?.subscribe?.(cb, prop);
+        if (!self) return; self?.subscribe?.(cb, tProp);
 
         //
-        const unsub = () => { return self?.unsubscribe?.(cb, prop); }
-        if (Symbol?.dispose != null) { unsub[Symbol.dispose] ??= () => { return self?.unsubscribe?.(cb, prop); } }
-        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] ??= () => { return self?.unsubscribe?.(cb, prop); } }
+        const unsub = () => { return self?.unsubscribe?.(cb, tProp); }
+        if (Symbol?.dispose != null) { unsub[Symbol.dispose] ??= () => { return self?.unsubscribe?.(cb, tProp); } }
+        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] ??= () => { return self?.unsubscribe?.(cb, tProp); } }
 
         // @ts-ignore
         try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
@@ -77,12 +80,30 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
 }
 
 /**
+ * Подписывает колбэк на изменения в реактивном объекте или его отдельном свойстве.
+ * Если передан массив, то подписывается на изменения всех свойств.
+ * Данный метод является более удобным вариантом для работы с массивами.
+ * Legacy for some our frameworks, use subscribe instead.
+ *
+ * @param {any} tg - Целевой реактивный объект или пара [объект, ключ]
+ * @param {(value: any, prop: keyType, old?: any) => void} cb - Колбэк, вызываемый при изменениях
+ * @param {any | null} [ctx=null] - Контекст вызова колбэка
+ * @returns {Function} - Функция отписки, поддерживает также Symbol.dispose и Symbol.asyncDispose
+ */
+export const observe = (tg: any, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null)=>{
+    if (Array.isArray(tg)) {
+        return subscribe([tg, Symbol.iterator], cb, ctx);
+    }
+    return subscribe(tg, cb, ctx);
+}
+
+/**
  * Быстро удаляет подписку колбэка с реактивного объекта или свойства.
  *
  * @param {any} tg - Реактивный объект или пара [объект, ключ]
  * @param {(value: any, prop: keyType, old?: any) => void} [cb] - Колбэк для удаления, если не задан — удаляются все
  * @param {any | null} [ctx=null] - Контекст (необязательно)
- */ // !TODO! support for arrays
+ */
 export const unsubscribe = (tg: any, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     return withPromise(tg, (target: any) => {
         // Определение, является ли аргумент парой [объект, ключ]
