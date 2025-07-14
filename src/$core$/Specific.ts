@@ -147,8 +147,7 @@ export class ReactiveArray {
         }
 
         // that case: target[n]?.(?{.?value})?
-        const got = Reflect.get(target, name, rec);
-        const $reg = (subscriptRegistry).get(target);
+        const $reg = (subscriptRegistry).get(target), got = Reflect.get(target, name, rec);
         if (typeof got == "function") { return new Proxy(got, new ObserveArrayMethod(name, $reg, target)); };
         return got;
     }
