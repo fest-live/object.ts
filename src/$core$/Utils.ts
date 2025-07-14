@@ -40,13 +40,15 @@ export const callByProp = (unwrap, prop, cb, ctx)=>{
     if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$ || (typeof prop == "symbol" || typeof prop == "object" || typeof prop == "function")) return;
     if (unwrap instanceof Map || unwrap instanceof WeakMap) { if (prop != null && unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); } } else
     if (unwrap instanceof Set || unwrap instanceof WeakSet) { if (prop != null && unwrap.has(prop as any)) { return cb?.(prop, prop); } } else
+    if (Array.isArray(unwrap) && Number.isInteger(typeof prop == "string" ? parseInt(prop) : prop)) { return cb?.(unwrap?.[typeof prop == "string" ? parseInt(prop) : prop], prop, null, "@add"); } else
     if (typeof unwrap == "function" || typeof unwrap == "object") { return cb?.(Reflect.get(unwrap, prop, ctx ?? unwrap), prop); }
 }
 
 //
 export const objectAssignNotEqual = (dst, src = {})=>{ Object.entries(src)?.forEach?.(([k,v])=>{ if (v !== dst[k]) { dst[k] = v; }; }); return dst; }
 export const callByAllProp = (unwrap, cb, ctx)=>{
-    let keys: any = []; // @ts-ignore
+    let keys: any = [];
+    if (Array.isArray(unwrap)) { return unwrap?.map?.((v, I)=>callByProp(unwrap, I, cb, ctx)); } else
     if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") { keys = unwrap?.keys?.() || []; } else
     if ((typeof unwrap == "object" || typeof unwrap == "function") && unwrap != null) { keys = Object.keys(unwrap) || []; }
     return keys != null ? Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx)) : [];
