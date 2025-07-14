@@ -166,7 +166,7 @@ export const bindBy = (target, reactive, watch?) => {
  */
 export const observableBySet = (set) => {
     const obs = makeReactive([]);
-    subscribe(set, (value, _, old) => {
+    obs[Symbol.dispose] = subscribe(set, (value, _, old) => {
         if (value !== old) {
             if (old == null && value != null) {
                 obs.push(value);
@@ -191,7 +191,7 @@ export const observableBySet = (set) => {
  */
 export const observableByMap = (map) => {
     const obs = makeReactive([]);
-    subscribe(map, (value, prop, old) => {
+    obs[Symbol.dispose] = subscribe(map, (value, prop, old) => {
         if (value !== old) {
             if (old != null && value == null) {
                 const idx = obs.findIndex(([name, _]) => (name == prop));
