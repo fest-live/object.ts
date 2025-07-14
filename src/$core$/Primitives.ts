@@ -29,7 +29,7 @@ export const numberRef  = (initial?: any, behavior?: any)=>{
         [$promise]: isPromise ? initial : null,
         [$value]: isPromise ? 0 : (Number(deref(initial) || 0) || 0),
         [$behavior]: behavior,
-        set value(v) { this[$value] = (v != null ? Number(v) : this[$value]) || 0; },
+        set value(v) { this[$value] = ((v != null && !Number.isNaN(v)) ? Number(v) : this[$value]) || 0; },
         get value() { return Number(this[$value] || 0) || 0; }
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
@@ -45,10 +45,10 @@ export const stringRef  = (initial?: any, behavior?: any)=>{
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r = makeReactive({
         [$promise]: isPromise ? initial : null,
-        [$value]: isPromise ? "" : String(deref(initial) ?? "") || "",
+        [$value]: isPromise ? "" : String(deref(initial) ?? ""),
         [$behavior]: behavior,
-        set value(v) { this[$value] = String(v ?? "") || ""; },
-        get value() { return String(this[$value] || "") || ""; },
+        set value(v) { this[$value] = String(typeof v == "number" ? v : (v || "")); },
+        get value() { return String(this[$value] || ""); },
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
@@ -65,7 +65,7 @@ export const booleanRef  = (initial?: any, behavior?: any)=>{
         [$promise]: isPromise ? initial : null,
         [$value]: isPromise ? false : Boolean(!!deref(initial) || false) || false,
         [$behavior]: behavior,
-        set value(v) { this[$value] = Boolean(!!v || false) || false; },
+        set value(v) { this[$value] = (v != null ? (typeof v == "string" ? true : Boolean(!!v || false)) : this[$value]) || false; },
         get value() { return Boolean(!!this[$value] || false) || false; }
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
