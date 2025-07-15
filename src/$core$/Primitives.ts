@@ -1,6 +1,6 @@
 import { makeReactive, subscribe } from "./Mainline";
 import { $value, $behavior, $promise } from "./Symbol";
-import { addToCallChain, deref, isKeyType, objectAssignNotEqual } from "./Utils";
+import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual } from "./Utils";
 
 /**
  * Создаёт реактивное условное значение.
@@ -172,7 +172,7 @@ export const computed = (sub, cb?: Function|null, dest?: [any, string|number|sym
     if (!dest) dest = [ref(cb?.(sub?.[inProp], inProp, null)), outProp];
     const usb = subscribe(sub, (value, prop, old) => {
         const got = cb?.(value, prop, old);
-        if (got !== dest[0]?.[dest[1]]) { dest[0][dest[1]] = got; };
+        if (isNotEqual(got, dest[0]?.[dest[1]])) { dest[0][dest[1]] = got; };
     });
     if (dest?.[0]) { addToCallChain(dest[0], Symbol.dispose, usb); }
     return dest?.[0]; // return reactive value
@@ -185,7 +185,7 @@ export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
     const usb = subscribe(sub, (value, prop, old)=> {
         const got = cb?.(value, prop, old);
         if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
-        if (dest[prop] !== got) dest[prop] = got;
+        if (isNotEqual(dest[prop], got)) dest[prop] = got;
     });
     if (dest) { addToCallChain(dest, Symbol.dispose, usb); }; return dest; // return reactive value
 }
@@ -194,7 +194,7 @@ export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
 export const unified = (...subs: any[])=>{
     const dest = makeReactive({});
     subs?.forEach?.((sub)=>subscribe(sub, (value, prop, _)=>{
-        if (dest[prop] !== value) { dest[prop] = value; };
+        if (isNotEqual(dest[prop], value)) { dest[prop] = value; };
     })); return dest;
 }
 

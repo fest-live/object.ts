@@ -45,7 +45,7 @@ export const callByProp = (unwrap, prop, cb, ctx)=>{
 }
 
 //
-export const objectAssignNotEqual = (dst, src = {})=>{ Object.entries(src)?.forEach?.(([k,v])=>{ if (v !== dst[k]) { dst[k] = v; }; }); return dst; }
+export const objectAssignNotEqual = (dst, src = {})=>{ Object.entries(src)?.forEach?.(([k,v])=>{ if (isNotEqual(v, dst[k])) { dst[k] = v; }; }); return dst; }
 export const callByAllProp = (unwrap, cb, ctx)=>{
     let keys: any = [];
     if (Array.isArray(unwrap)) { return unwrap?.map?.((v, I)=>callByProp(unwrap, I, cb, ctx)); } else
@@ -97,4 +97,31 @@ export function addToCallChain(obj, methodKey, callback) {
     } else {
         obj[methodKey] = function(...args) { const original = obj?.[methodKey]; if (typeof original === 'function') { original.apply(this, args); }; callback.apply(this, args); };
     }
+}
+
+//
+export const isObjectNotEqual = (a, b)=>{
+    if (a == null && b == null) return false;
+    if (a == null || b == null) return true; // @ts-ignore
+    if (a instanceof Map || a instanceof WeakMap) { return a.size !== b.size || Array.from(a.entries()).some(([k, v]) => !b.has(k) || !isNotEqual(v, b.get(k))); } // @ts-ignore
+    if (a instanceof Set || a instanceof WeakSet) { return a.size !== b.size || Array.from(a.values()).some((v) => !b.has(v)); } // @ts-ignore
+    if (Array.isArray(a) || Array.isArray(b)) { return a.length !== b.length || a.some((v, i) => !isNotEqual(v, b[i])); }
+    if (typeof a == "object" || typeof b == "object") { return JSON.stringify(a) !== JSON.stringify(b); }
+    return a !== b;
+}
+
+//
+export const isNotEqual = (a, b)=>{
+    if (a == null && b == null) return false;
+    if (a == null || b == null) return true;
+    if (typeof a == "string" && typeof b == "string") {
+        return a !== b;
+    }
+    if (typeof a == "number" && typeof b == "number") {
+        return Math.abs(a - b) > 0.0000000000000001;
+    }
+    if (typeof a == "boolean" && typeof b == "boolean") {
+        return a != b;
+    }
+    return a !== b;
 }

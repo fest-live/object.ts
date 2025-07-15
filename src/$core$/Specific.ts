@@ -1,4 +1,4 @@
-import { bindCtx, deref, type keyType } from "./Utils";
+import { isNotEqual, bindCtx, deref, type keyType } from "./Utils";
 import { subscribe, unsubscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
@@ -101,7 +101,7 @@ export class ObserveArrayMethod {
             case "copyWithin":
                 // Сравниваем старое и новое состояние, находим изменённые элементы
                 idx = 0; for (let i = 0; i < this.#self.length; i++) {
-                    if (oldState[i] !== this.#self[i])
+                    if (isNotEqual(oldState[i], this.#self[i]))
                         {setPairs.push([idx+i, this.#self[i], oldState?.[idx+i]]); }
                 }
                 break;
@@ -240,7 +240,7 @@ export class ReactiveMap {
         if (name == "set") {
             return (prop, value) => pontetiallyAsyncMap(target, name, value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (oldValue !== value) { registry?.deref()?.trigger?.(prop, value, oldValue); };
+                if (isNotEqual(oldValue, value)) { registry?.deref()?.trigger?.(prop, value, oldValue); };
                 return result;
             });
         }
@@ -295,7 +295,7 @@ export class ReactiveSet {
             // TODO: add potentially async set
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (oldValue !== value) { registry?.deref()?.trigger?.(value, value, oldValue); };
+                if (isNotEqual(oldValue, value)) { registry?.deref()?.trigger?.(value, value, oldValue); };
                 return result;
             };
         }
@@ -362,7 +362,7 @@ export class ReactiveObject {
         return pontetiallyAsync(target, name, value, (v)=>{
             if (typeof name == "symbol" && (name in target || target?.[name] != null)) return;
             const oldValue = target[name], result = Reflect.set(target, name, v);
-            if (oldValue !== v) { registry?.trigger?.(name, v, oldValue); };
+            if (isNotEqual(oldValue, v)) { registry?.trigger?.(name, v, oldValue); };
             return result;
         })
     }

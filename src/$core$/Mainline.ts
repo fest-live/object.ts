@@ -1,5 +1,5 @@
 import { objectAssign } from "./AssignObject";
-import { addToCallChain, callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
+import { addToCallChain, callByAllProp, callByProp, isKeyType, isNotEqual, safe, withPromise, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 import { $extractKey$, $registryKey$, $target } from "./Symbol";
@@ -167,7 +167,7 @@ export const bindBy = (target, reactive, watch?) => {
 export const observableBySet = (set) => {
     const obs = makeReactive([]);
     addToCallChain(obs, Symbol.dispose, subscribe(set, (value, _, old) => {
-        if (value !== old) {
+        if (isNotEqual(value, old)) {
             if (old == null && value != null) {
                 obs.push(value);
             } else
@@ -176,7 +176,7 @@ export const observableBySet = (set) => {
                     if (idx >= 0) obs.splice(idx, 1);
                 } else {
                     const idx = obs.indexOf(old);
-                    if (idx >= 0 && obs[idx] !== value) obs[idx] = value;
+                    if (idx >= 0 && isNotEqual(obs[idx], value)) obs[idx] = value;
                 }
         }
     }));
@@ -192,7 +192,7 @@ export const observableBySet = (set) => {
 export const observableByMap = (map) => {
     const obs = makeReactive([]);
     addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => {
-        if (value !== old) {
+        if (isNotEqual(value, old)) {
             if (old != null && value == null) {
                 const idx = obs.findIndex(([name, _]) => (name == prop));
                 if (idx >= 0) obs.splice(idx, 1);
@@ -200,7 +200,7 @@ export const observableByMap = (map) => {
                 const idx = obs.findIndex(([name, _]) => {
                     return (name == prop)
                 });
-                if (idx >= 0) { if (obs[idx]?.[1] !== value) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
+                if (idx >= 0) { if (isNotEqual(obs[idx]?.[1], value)) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
             }
         }
     }));
