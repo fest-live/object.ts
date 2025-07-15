@@ -170,9 +170,8 @@ export const computed = (sub, cb?: Function|null, dest?: [any, string|number|sym
     const inProp = "value", outProp = "value";
     const isProp = (isKeyType(sub?.[1]) || sub?.[1] == Symbol.iterator); if (!isProp) { sub = [sub, inProp]; };
     if (!dest) dest = [ref(cb?.(sub?.[inProp], inProp, null)), outProp];
-    const usb = subscribe(sub, (value, prop, old) => {
-        const got = cb?.(value, prop, old);
-        if (isNotEqual(got, dest[0]?.[dest[1]])) { dest[0][dest[1]] = got; };
+    const usb = subscribe(sub, (value, prop, old) => { const got = cb?.(value, prop, old);
+        if (isNotEqual(got, dest?.[0]?.[dest?.[1]])) { if (dest) { dest[0][dest[1]] = got; }; };
     });
     if (dest?.[0]) { addToCallChain(dest[0], Symbol.dispose, usb); }
     return dest?.[0]; // return reactive value
@@ -225,7 +224,7 @@ export const autoRef = (typed: any) => {
         case "boolean": return booleanRef(typed);
         case "number": return numberRef(typed);
         case "string": return stringRef(typed);
-        case "object": return makeReactive(typed);
+        case "object": if (typed != null) { return makeReactive(typed); }
         default: return ref(typed);
     }
 }
