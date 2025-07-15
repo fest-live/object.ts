@@ -1,5 +1,5 @@
 import { objectAssign } from "./AssignObject";
-import { callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
+import { addToCallChain, callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType } from "./Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 import { $extractKey$, $registryKey$, $target } from "./Symbol";
@@ -166,7 +166,7 @@ export const bindBy = (target, reactive, watch?) => {
  */
 export const observableBySet = (set) => {
     const obs = makeReactive([]);
-    obs[Symbol.dispose] = subscribe(set, (value, _, old) => {
+    addToCallChain(obs, Symbol.dispose, subscribe(set, (value, _, old) => {
         if (value !== old) {
             if (old == null && value != null) {
                 obs.push(value);
@@ -179,7 +179,7 @@ export const observableBySet = (set) => {
                     if (idx >= 0 && obs[idx] !== value) obs[idx] = value;
                 }
         }
-    });
+    }));
     return obs;
 }
 
@@ -191,7 +191,7 @@ export const observableBySet = (set) => {
  */
 export const observableByMap = (map) => {
     const obs = makeReactive([]);
-    obs[Symbol.dispose] = subscribe(map, (value, prop, old) => {
+    addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => {
         if (value !== old) {
             if (old != null && value == null) {
                 const idx = obs.findIndex(([name, _]) => (name == prop));
@@ -203,6 +203,6 @@ export const observableByMap = (map) => {
                 if (idx >= 0) { if (obs[idx]?.[1] !== value) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
             }
         }
-    });
+    }));
     return obs;
 }

@@ -77,3 +77,6 @@ export const withPromise = (target, cb)=>{
     if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
     return cb(target);
 }
+
+//
+export function addToCallChain(obj, methodKey, callback) { if (!callback || typeof callback != "function") return; const original = obj?.[methodKey]; obj[methodKey] = function(...args) { if (typeof original === 'function') { original.apply(this, args); } callback.apply(this, args); }; }
