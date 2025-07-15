@@ -79,4 +79,22 @@ export const withPromise = (target, cb)=>{
 }
 
 //
-export function addToCallChain(obj, methodKey, callback) { if (!callback || typeof callback != "function") return; const original = obj?.[methodKey]; obj[methodKey] = function(...args) { if (typeof original === 'function') { original.apply(this, args); } callback.apply(this, args); }; }
+const disposeMap = new WeakMap();
+const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.forEach?.((cb: any)=>{ cb?.(); }); });
+
+//
+export function addToCallChain(obj, methodKey, callback) {
+    if (!callback || typeof callback != "function") return;
+    if (methodKey == Symbol.dispose) {
+        // @ts-ignore
+        disposeMap?.getOrInsertComputed?.(obj, ()=>{
+            const CallChain = new Set();
+            disposeRegistry.register(obj, CallChain);
+            disposeMap.set(obj, CallChain);
+            obj[Symbol.dispose] ??= ()=>CallChain.forEach((cb: any)=>{ cb?.(); });
+            return CallChain;
+        })?.add?.(callback);
+    } else {
+        obj[methodKey] = function(...args) { const original = obj?.[methodKey]; if (typeof original === 'function') { original.apply(this, args); }; callback.apply(this, args); };
+    }
+}
