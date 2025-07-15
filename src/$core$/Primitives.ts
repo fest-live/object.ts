@@ -218,3 +218,14 @@ export const delayedBehavior  = (delay = 100) => {
 export const delayedOrInstantBehavior = (delay = 100) => {
     return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
 }
+
+//
+export const autoRef = (typed: any) => {
+    switch (typeof typed) {
+        case "boolean": return booleanRef(typed);
+        case "number": return numberRef(typed);
+        case "string": return stringRef(typed);
+        case "object": return makeReactive(typed);
+        default: return ref(typed);
+    }
+}
