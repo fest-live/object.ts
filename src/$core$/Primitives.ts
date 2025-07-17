@@ -92,13 +92,13 @@ export const ref  = (initial?: any, behavior?: any)=>{
  * @param {any} typed - Исходное значение.
  * @returns {any} - Реактивная ссылка.
  */
-export const autoRef = (typed: any) => {
+export const autoRef = (typed: any, behavior?: any) => {
     switch (typeof typed) {
-        case "boolean": return booleanRef(typed);
-        case "number": return numberRef(typed);
-        case "string": return stringRef(typed);
+        case "boolean": return booleanRef(typed, behavior);
+        case "number": return numberRef(typed, behavior);
+        case "string": return stringRef(typed, behavior);
         case "object": if (typed != null) { return makeReactive(typed); }
-        default: return ref(typed);
+        default: return ref(typed, behavior);
     }
 }
 
