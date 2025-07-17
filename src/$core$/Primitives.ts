@@ -135,24 +135,24 @@ export const assign = (a, b, prop = "value") => {
     //
     const compute = (v, p) => {
         if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
-            { a[a_prop] = (isBCompute ? cmpBFnc?.deref?.()?.(bRef?.deref?.()?.value ?? v, p, null) : bRef?.deref?.()?.value ?? v); } else { ret?.(); }
+            { aRef.deref()[a_prop] = (isBCompute ? cmpBFnc?.deref?.()?.(bRef?.deref?.()?.value ?? v, p, null) : bRef?.deref?.()?.value ?? v); } else { ret?.(); }
     };
 
     //
     const bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") ? new WeakRef(b?.[0]) : b?.[0],
           aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") ? new WeakRef(a?.[0]) : a?.[0];
-    if (aRef instanceof WeakRef && assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.()) {
-        // !needs to include unsub, and 'assignMap' use [b, unsub]?
-        // same value, skip, return de-assign only
-        return ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); };
-    };
     if (aRef instanceof WeakRef) {
+        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.()) {
+            // !needs to include unsub, and 'assignMap' use [b, unsub]?
+            // same value, skip, return de-assign only
+            return ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); };
+        };
         assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); // @ts-ignore
         assignMap?.getOrInsert?.(aRef?.deref?.(), new Map())?.set?.(a_prop, bRef?.deref?.());
-    };
+    }
 
     //
-    b[0][b_prop] ??= a?.[0]?.[a_prop] ?? b?.[0]?.[b_prop];
+    bRef.deref()[b_prop] ??= aRef.deref()[a_prop] ?? bRef.deref()[b_prop];
 
     //
     let ret: any, usub: any;
@@ -189,9 +189,9 @@ export const link = (a, b, prop = "value") => {
  * @param {string} [prop="value"] - Имя свойства.
  * @returns {any} - Реактивная ссылка.
  */
-export const computed = (src, cb?: Function|null, prop = "value")=>{
-    const rf = autoRef(cb?.(src?.[prop], prop));
-    assign(rf, [src, cb], prop); return rf;
+export const computed = (src, cb?: Function|null, prop = "value", behavior?: any)=>{
+    const rf = autoRef(cb?.(src?.[prop], prop), behavior);
+    assign([rf, prop], [src, cb], prop); return rf;
 }
 
 /**
