@@ -27,8 +27,7 @@ export class Subscript {
     #iterator: any;
     //#caller: any;
 
-    //
-/*
+    // production version
     async $safeExec(cb, args) {
         if (cb && this.#flags.has(cb)) return this;
         this.#flags.add(cb);
@@ -37,9 +36,8 @@ export class Subscript {
             { await Promise?.try?.(cb, args)?.catch?.(console.error.bind(console)); }
         this.#flags.delete(cb); return this;
     }
-*/
 
-
+/*  // debug version (with performance.mark)
     async $safeExec(cb, args) {
         const cbName    = cb.name || '[anonymous]';
         const markTime  = (performance.now()*1000)|0;
@@ -52,16 +50,12 @@ export class Subscript {
 
         //
         performance.mark(markStart);
-
-        //
         this.#flags.add(cb);
         try {
-            if (Array.isArray(args))
-                { await Promise?.try?.(cb, ...args as [any, any, any]); } else
+            if (Array.isArray(args)) // @ts-ignore
+                { await Promise?.try?.(cb, ...args as [any, any, any]); } else // @ts-ignore
                 { await Promise?.try?.(cb, args); }
-        } catch (e) {
-            console.error(e);
-        }
+        } catch (e) { console.error(e); }
         this.#flags.delete(cb);
 
         //
@@ -84,7 +78,7 @@ export class Subscript {
         performance.clearMarks(markEnd);
         performance.clearMeasures(markName);
         return this;
-    }
+    }*/
 
     //
     constructor(withWeak?: any) {
