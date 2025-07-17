@@ -10,10 +10,10 @@ import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual } fr
  * @param {any} ifFalse - Значение, возвращаемое при ложном условии.
  * @returns {any} - Реактивная ссылка, которая меняет значение между ifTrue и ifFalse.
  */
-export const conditional = (rf: any, ifTrue: any, ifFalse: any)=>{
-    const cond = ref((rf?.value ?? rf) ? ifTrue : ifFalse);
-    const usb = subscribe([rf, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
-    addToCallChain(cond, Symbol.dispose, usb); return cond;
+export const conditional = (cond: any, ifTrue: any, ifFalse: any)=>{
+    const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse);
+    const usb = subscribe([cond, "value"], (val) => { cur.value = val ? ifTrue : ifFalse; });
+    addToCallChain(cur, Symbol.dispose, usb); return cur;
 }
 
 /**
@@ -87,6 +87,22 @@ export const ref  = (initial?: any, behavior?: any)=>{
 }
 
 /**
+ * Создаёт реактивную ссылку на основе типа данных.
+ *
+ * @param {any} typed - Исходное значение.
+ * @returns {any} - Реактивная ссылка.
+ */
+export const autoRef = (typed: any) => {
+    switch (typeof typed) {
+        case "boolean": return booleanRef(typed);
+        case "number": return numberRef(typed);
+        case "string": return stringRef(typed);
+        case "object": if (typed != null) { return makeReactive(typed); }
+        default: return ref(typed);
+    }
+}
+
+/**
  * Оборачивает Promise в реактивную ссылку.
  *
  * @deprecated Используйте ref(promise) напрямую.
@@ -150,21 +166,16 @@ export const link = (a, b, prop = "value")=>{
 }
 
 /**
- * Двунаправленный "лайв-синк" между двумя реактивами с возможностью задать преобразование (map).
+ * Создаёт реактивную ссылку на результат вычисления.
  *
- * @param {[any, any]} param0 - Кортеж из двух реактивных ссылок.
- * @param {[Function|null, Function|null]} [fns] - Массив функций-трансформеров: [asb, bsb],
- *        для направления a->b и b->a, соответственно.
- * @returns {Function} - Функция для прекращения синхронизации.
+ * @param {any} src - Исходный объект.
+ * @param {Function|null} cb - Функция вычисления.
+ * @param {string} [prop="value"] - Имя свойства.
+ * @returns {any} - Реактивная ссылка.
  */
-export const link_computed = (a, b, prop = "value")=>{
-    return link(a, b, prop);
-}
-
-// used for conditional reaction
-export const computed = (sub, cb?: Function|null, prop = "value")=>{
-    const rf = autoRef(cb?.(sub?.[prop], prop));
-    assign(rf, [sub, cb], prop); return rf;
+export const computed = (src, cb?: Function|null, prop = "value")=>{
+    const rf = autoRef(cb?.(src?.[prop], prop));
+    assign(rf, [src, cb], prop); return rf;
 }
 
 /**
@@ -175,11 +186,72 @@ export const computed = (sub, cb?: Function|null, prop = "value")=>{
  * @param {any} [initial] - Значение по умолчанию.
  * @returns {any} - Реактивная ссылка, синхронизированная с полем объекта.
  */
-export const propRef =  (src: any, prop: string = "value", initial?: any)=>{
+export const propRef =  (src: any, prop: any = "value", initial?: any)=>{
     const r = autoRef(src?.[prop] ?? initial);
-    return link([src, prop], [r, "value"]);
+    return link([r, "value"], [src, prop]);
 }
 
+/**
+ * Создаёт реактивную ссылку на индекс первого элемента в массиве, удовлетворяющего условию.
+ *
+ * @param {any[]} condList - Массив условий.
+ * @returns {any} - Реактивная ссылка.
+ */
+export const conditionalIndex = (condList: any[] = []) => { return computed(condList, () => condList.findIndex(cb => cb?.())); }
+
+/**
+ * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
+ *
+ * @param {any} ref - Реактивная ссылка.
+ * @param {Function} cb - Функция для выполнения.
+ * @param {number} [delay=100] - Задержка в миллисекундах.
+ * @returns {any} - Таймер или null.
+ */
+export const delayedSubscribe = (ref, cb, delay = 100) => {
+    let tm: any; //= triggerWithDelay(ref, cb, delay);
+    return subscribe([ref, "value"], (v)=>{
+        if (!v && tm) { clearTimeout(tm); tm = null; } else
+        if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
+    });
+}
+
+/**
+ * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
+ *
+ * @param {any} ref - Реактивная ссылка.
+ * @param {Function} cb - Функция для выполнения.
+ * @param {number} [delay=100] - Задержка в миллисекундах.
+ * @returns {any} - Таймер или null.
+ */
+export const triggerWithDelay = (ref, cb, delay = 100)=>{ if (ref?.value ?? ref) { return setTimeout(()=>{ if (ref.value) cb?.(); }, delay); } }
+
+/**
+ * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
+ *
+ * @param {any} ref - Реактивная ссылка.
+ * @param {Function} cb - Функция для выполнения.
+ * @param {number} [delay=100] - Задержка в миллисекундах.
+ * @returns {any} - Таймер или null.
+ */
+export const delayedBehavior  = (delay = 100) => {
+    return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); };
+}
+
+/**
+ * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
+ *
+ * @param {any} ref - Реактивная ссылка.
+ * @param {Function} cb - Функция для выполнения.
+ * @param {number} [delay=100] - Задержка в миллисекундах.
+ * @returns {any} - Таймер или null.
+ */
+export const delayedOrInstantBehavior = (delay = 100) => {
+    return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
+}
+
+/**
+ * @deprecated Use `computed` instead.
+ */
 // used for redirection properties
 // !one-directional
 export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
@@ -192,42 +264,13 @@ export const remap = (sub, cb?: Function|null, dest?: any|null)=>{
     if (dest) { addToCallChain(dest, Symbol.dispose, usb); }; return dest; // return reactive value
 }
 
+/**
+ * @deprecated Use `computed` instead.
+ */
 // !one-directional
 export const unified = (...subs: any[])=>{
     const dest = makeReactive({});
     subs?.forEach?.((sub)=>subscribe(sub, (value, prop, _)=>{
         if (isNotEqual(dest[prop], value)) { dest[prop] = value; };
     })); return dest;
-}
-
-//
-export const conditionalIndex = (condList: any[] = []) => { return computed(condList, () => condList.findIndex(cb => cb?.())); }
-export const delayedSubscribe = (ref, cb, delay = 100) => {
-    let tm: any; //= triggerWithDelay(ref, cb, delay);
-    return subscribe([ref, "value"], (v)=>{
-        if (!v && tm) { clearTimeout(tm); tm = null; } else
-        if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
-    });
-}
-
-// usable for delayed trigger when come true, but NOT when come false
-export const triggerWithDelay = (ref, cb, delay = 100)=>{ if (ref?.value ?? ref) { return setTimeout(()=>{ if (ref.value) cb?.(); }, delay); } }
-export const delayedBehavior  = (delay = 100) => {
-    return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); };
-}
-
-// usable for delayed visible but instant hiding
-export const delayedOrInstantBehavior = (delay = 100) => {
-    return (cb, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
-}
-
-//
-export const autoRef = (typed: any) => {
-    switch (typeof typed) {
-        case "boolean": return booleanRef(typed);
-        case "number": return numberRef(typed);
-        case "string": return stringRef(typed);
-        case "object": if (typed != null) { return makeReactive(typed); }
-        default: return ref(typed);
-    }
 }
