@@ -84,14 +84,16 @@ const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.
 
 //
 export function addToCallChain(obj, methodKey, callback) {
-    if (!callback || typeof callback != "function") return;
+    if (!callback || typeof callback != "function" || (typeof obj != "object" && typeof obj != "function")) return;
     if (methodKey == Symbol.dispose) {
         // @ts-ignore
         disposeMap?.getOrInsertComputed?.(obj, ()=>{
             const CallChain = new Set();
-            disposeRegistry.register(obj, CallChain);
-            disposeMap.set(obj, CallChain);
-            obj[Symbol.dispose] ??= ()=>CallChain.forEach((cb: any)=>{ cb?.(); });
+            if (typeof obj == "object" || typeof obj == "function") {
+                disposeRegistry.register(obj, CallChain);
+                disposeMap.set(obj, CallChain);
+                obj[Symbol.dispose] ??= ()=>CallChain.forEach((cb: any)=>{ cb?.(); });
+            }
             return CallChain;
         })?.add?.(callback);
     } else {

@@ -126,26 +126,42 @@ export const promised = (promise: any, behavior?: any)=>{
 export const assignMap = new WeakMap();
 export const assign = (a, b, prop = "value") => {
     const isACompute = typeof a?.[1] == "function" && a?.length == 2, isBCompute = typeof b?.[1] == "function" && b?.length == 2, cmpBFnc = isBCompute ? new WeakRef(b?.[1]) : null;
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [isACompute ? a?.[1] : a, a_prop]; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && b?.length == 2; let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [isBCompute ? b?.[1] : b, b_prop]; };
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [isACompute ? a?.[0] : a, a_prop]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && b?.length == 2; let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [isBCompute ? b?.[0] : b, b_prop]; };
+
+    //
+    if (!(typeof b?.[0] == "object" || typeof b?.[0] == "function")) { a[0][a_prop] = b?.[0]; return ()=>{}; };
+
+    //
     const compute = (v, p) => {
         if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
             { a[a_prop] = (isBCompute ? cmpBFnc?.deref?.()?.(bRef?.deref?.()?.value ?? v, p, null) : bRef?.deref?.()?.value ?? v); } else { ret?.(); }
     };
 
     //
-    const bRef = new WeakRef(b?.[0]), aRef = new WeakRef(a?.[0]);
-    if (assignMap?.get?.(a?.[0])?.get?.(a_prop) == b?.[0]) {
+    const bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") ? new WeakRef(b?.[0]) : b?.[0],
+          aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") ? new WeakRef(a?.[0]) : a?.[0];
+    if (aRef instanceof WeakRef && assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.()) {
         // !needs to include unsub, and 'assignMap' use [b, unsub]?
         // same value, skip, return de-assign only
         return ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); };
     };
-    assignMap?.get?.(a?.[0])?.delete?.(a_prop); // @ts-ignore
-    assignMap?.getOrInsert?.(a?.[0], new Map())?.set?.(a_prop, b?.[0]);
-    b[b_prop] ??= a?.[a_prop] ?? b[b_prop]; const usub = subscribe(b, compute);
-    const ret = ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); usub?.(); };
-    addToCallChain(a?.[0], Symbol.dispose, ret);
-    addToCallChain(b?.[0], Symbol.dispose, ret);
+    if (aRef instanceof WeakRef) {
+        assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); // @ts-ignore
+        assignMap?.getOrInsert?.(aRef?.deref?.(), new Map())?.set?.(a_prop, bRef?.deref?.());
+    };
+
+    //
+    b[0][b_prop] ??= a?.[0]?.[a_prop] ?? b?.[0]?.[b_prop];
+
+    //
+    let ret: any, usub: any;
+    ret  = ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); usub?.(); };
+    usub = subscribe(b, compute);
+
+    //
+    addToCallChain(aRef?.deref?.(), Symbol.dispose, ret);
+    addToCallChain(bRef?.deref?.(), Symbol.dispose, ret);
     return ret;
 }
 
@@ -157,10 +173,10 @@ export const assign = (a, b, prop = "value") => {
  * @param {string} [prop="value"] - Имя синхронизируемого поля.
  * @returns {Function} - Функция для прекращения синхронизации.
  */
-export const link = (a, b, prop = "value")=>{
+export const link = (a, b, prop = "value") => {
     const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [isACompute ? a?.[1] : a, a_prop]; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && b?.length == 2; let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [isBCompute ? b?.[1] : b, b_prop]; };
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [isACompute ? a?.[0] : a, a_prop]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && b?.length == 2; let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [isBCompute ? b?.[0] : b, b_prop]; };
     const usub = [ assign(a, b, a_prop), assign(b, a, b_prop) ];
     return ()=>usub?.map?.((a)=>a?.());
 }
