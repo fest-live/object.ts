@@ -10,9 +10,9 @@ import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual } fr
  * @param {any} ifFalse - Значение, возвращаемое при ложном условии.
  * @returns {any} - Реактивная ссылка, которая меняет значение между ifTrue и ifFalse.
  */
-export const conditional = (ref: any, ifTrue: any, ifFalse: any)=>{
-    const cond = ref((ref?.value ?? ref) ? ifTrue : ifFalse);
-    const usb = subscribe([ref, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
+export const conditional = (rf: any, ifTrue: any, ifFalse: any)=>{
+    const cond = ref((rf?.value ?? rf) ? ifTrue : ifFalse);
+    const usb = subscribe([rf, "value"], (val) => { cond.value = val ? ifTrue : ifFalse; });
     addToCallChain(cond, Symbol.dispose, usb); return cond;
 }
 
@@ -87,21 +87,6 @@ export const ref  = (initial?: any, behavior?: any)=>{
 }
 
 /**
- * Создаёт реактивную ссылку на свойство объекта.
- *
- * @param {any} src - Исходный объект.
- * @param {string} prop - Имя свойства.
- * @param {any} [initial] - Значение по умолчанию.
- * @returns {any} - Реактивная ссылка, синхронизированная с полем объекта.
- */
-export const propRef =  (src: any, prop: string, initial?: any)=>{
-    const r = ref(src[prop]);
-    const u1 = subscribe([src,prop], (val,p) => (r.value = val||initial));
-    const u2 = subscribe([r,"value"], (val,p) => (src[prop] = val));
-    addToCallChain(r, Symbol.dispose, ()=>{ u1?.(); u2?.(); }); return r;
-}
-
-/**
  * Оборачивает Promise в реактивную ссылку.
  *
  * @deprecated Используйте ref(promise) напрямую.
@@ -123,9 +108,16 @@ export const promised = (promise: any, behavior?: any)=>{
  * @returns {Function|undefined} - Функция для отписки или undefined.
  */
 export const assignMap = new WeakMap();
-export const assign = (a, b, prop = "value")=>{
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [a, prop]; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [b, prop]; };
+export const assign = (a, b, prop = "value") => {
+    const isACompute = typeof a?.[1] == "function" && a?.length == 2, isBCompute = typeof b?.[1] == "function" && b?.length == 2, cmpBFnc = isBCompute ? new WeakRef(b?.[1]) : null;
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [isACompute ? a?.[1] : a, a_prop]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && b?.length == 2; let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [isBCompute ? b?.[1] : b, b_prop]; };
+    const compute = (v, p) => {
+        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
+            { a[a_prop] = (isBCompute ? cmpBFnc?.deref?.()?.(bRef?.deref?.()?.value ?? v, p, null) : bRef?.deref?.()?.value ?? v); } else { ret?.(); }
+    };
+
+    //
     const bRef = new WeakRef(b?.[0]), aRef = new WeakRef(a?.[0]);
     if (assignMap?.get?.(a?.[0])?.get?.(a_prop) == b?.[0]) {
         // !needs to include unsub, and 'assignMap' use [b, unsub]?
@@ -134,13 +126,11 @@ export const assign = (a, b, prop = "value")=>{
     };
     assignMap?.get?.(a?.[0])?.delete?.(a_prop); // @ts-ignore
     assignMap?.getOrInsert?.(a?.[0], new Map())?.set?.(a_prop, b?.[0]);
-    b[b_prop] ??= a?.[a_prop] ?? b[b_prop];
+    b[b_prop] ??= a?.[a_prop] ?? b[b_prop]; const usub = subscribe(b, compute);
     const ret = ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); usub?.(); };
     addToCallChain(a?.[0], Symbol.dispose, ret);
-    const usub = subscribe(b, (v, p)=>{
-        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
-            { a[p] = bRef?.deref?.()?.value ?? v; } else { ret?.(); }
-    }); return ret;
+    addToCallChain(b?.[0], Symbol.dispose, ret);
+    return ret;
 }
 
 /**
@@ -152,8 +142,9 @@ export const assign = (a, b, prop = "value")=>{
  * @returns {Function} - Функция для прекращения синхронизации.
  */
 export const link = (a, b, prop = "value")=>{
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [a, prop]; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [b, prop]; };
+    const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [isACompute ? a?.[1] : a, a_prop]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && b?.length == 2; let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [isBCompute ? b?.[1] : b, b_prop]; };
     const usub = [ assign(a, b, a_prop), assign(b, a, b_prop) ];
     return ()=>usub?.map?.((a)=>a?.());
 }
@@ -166,27 +157,27 @@ export const link = (a, b, prop = "value")=>{
  *        для направления a->b и b->a, соответственно.
  * @returns {Function} - Функция для прекращения синхронизации.
  */
-export const link_computed = ([a,b], [asb, bsb]: [Function|null, Function|null] = [null,null])=>{
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); if (!isAProp) { a = [a, "value"]; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); if (!isBProp) { b = [b, "value"]; };
-    const usub = [
-        subscribe(a, (value, prop, old) => { b[prop] = asb?.(value, prop, old)??b[prop]; }),
-        subscribe(b, (value, prop, old) => { a[prop] = bsb?.(value, prop, old)??a[prop]; })
-    ];
-    return ()=>usub?.map?.((a)=>a?.());
+export const link_computed = (a, b, prop = "value")=>{
+    return link(a, b, prop);
 }
 
 // used for conditional reaction
-// !one-directional
-export const computed = (sub, cb?: Function|null, dest?: [any, string|number|symbol]|null)=>{
-    const inProp = "value", outProp = "value";
-    const isProp = (isKeyType(sub?.[1]) || sub?.[1] == Symbol.iterator); if (!isProp) { sub = [sub, inProp]; };
-    if (!dest) dest = [ref(cb?.(sub?.[inProp], inProp, null)), outProp];
-    const usb = subscribe(sub, (value, prop, old) => { const got = cb?.(value, prop, old);
-        if (isNotEqual(got, dest?.[0]?.[dest?.[1]])) { if (dest) { dest[0][dest[1]] = got; }; };
-    });
-    if (dest?.[0]) { addToCallChain(dest[0], Symbol.dispose, usb); }
-    return dest?.[0]; // return reactive value
+export const computed = (sub, cb?: Function|null, prop = "value")=>{
+    const rf = autoRef(cb?.(sub?.[prop], prop));
+    assign(rf, [sub, cb], prop); return rf;
+}
+
+/**
+ * Создаёт реактивную ссылку на свойство объекта.
+ *
+ * @param {any} src - Исходный объект.
+ * @param {string} prop - Имя свойства.
+ * @param {any} [initial] - Значение по умолчанию.
+ * @returns {any} - Реактивная ссылка, синхронизированная с полем объекта.
+ */
+export const propRef =  (src: any, prop: string = "value", initial?: any)=>{
+    const r = autoRef(src?.[prop] ?? initial);
+    return link([src, prop], [r, "value"]);
 }
 
 // used for redirection properties
