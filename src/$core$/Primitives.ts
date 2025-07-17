@@ -136,6 +136,7 @@ export const assign = (a, b, prop = "value")=>{
     assignMap?.getOrInsert?.(a?.[0], new Map())?.set?.(a_prop, b?.[0]);
     b[b_prop] ??= a?.[a_prop] ?? b[b_prop];
     const ret = ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); usub?.(); };
+    addToCallChain(a?.[0], Symbol.dispose, ret);
     const usub = subscribe(b, (v, p)=>{
         if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
             { a[p] = bRef?.deref?.()?.value ?? v; } else { ret?.(); }
