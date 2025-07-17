@@ -66,12 +66,14 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
             unwrap?.[Symbol.observable]?.()?.subscribe?.((value, prop?: any) => (unwrap[prop ?? "value"] = value));
             self ??= unwrap?.[$registryKey$] ?? (subscriptRegistry).get(unwrap) ?? self;
         }
-        if (!self) return; self?.subscribe?.(cb, tProp);
+        if (!self) return;
+        let unsub: any = self?.subscribe?.(cb, tProp);
 
         //
-        const unsub = () => { return self?.unsubscribe?.(cb, tProp); }
-        if (Symbol?.dispose != null) { unsub[Symbol.dispose] ??= () => { return self?.unsubscribe?.(cb, tProp); } }
-        if (Symbol?.asyncDispose != null) { unsub[Symbol.asyncDispose] ??= () => { return self?.unsubscribe?.(cb, tProp); } }
+        addToCallChain(unsub, Symbol.dispose, unsub);
+        addToCallChain(unsub, Symbol.asyncDispose, unsub);
+        addToCallChain(unwrap, Symbol.dispose, unsub);
+        addToCallChain(unwrap, Symbol.asyncDispose, unsub);
 
         // @ts-ignore
         try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };

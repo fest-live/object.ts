@@ -80,7 +80,7 @@ export const withPromise = (target, cb)=>{
 
 //
 const disposeMap = new WeakMap();
-const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.forEach?.((cb: any)=>{ cb?.(); }); });
+const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.forEach?.((cb: any)=>cb?.()); });
 
 //
 export function addToCallChain(obj, methodKey, callback) {

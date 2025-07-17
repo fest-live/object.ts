@@ -25,6 +25,7 @@ export class Subscript {
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
+    #subMap?: WeakMap<any, Map<any, any>>|null;
     //#caller: any;
 
     // production version
@@ -85,6 +86,7 @@ export class Subscript {
         const weak = new WeakRef(this);
         this.#listeners = new Set();
         this.#flags = new WeakSet();
+        this.#subMap = new WeakMap();
 
         //
         const listeners = new WeakRef(this.#listeners);
@@ -126,18 +128,11 @@ export class Subscript {
     }
 
     //
-    wrap(nw: any[] | unknown) {
-        if (Array.isArray(nw)) {
-            return wrapWith(nw, this);
-        }
-        return nw;
-    }
-
-    //
+    wrap(nw: any[] | unknown) { if (Array.isArray(nw)) { return wrapWith(nw, this); }; return nw; }
     subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
-        if (prop != null) { cb = associateWith(cb, prop) ?? cb; }
-        if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }
-        return ()=> this.unsubscribe(cb, prop);
+        if (prop != null) { cb = associateWith(cb, prop) ?? cb; };
+        if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }; // @ts-ignore
+        return this.#subMap?.getOrInsert?.(cb)?.getOrInsert?.(prop, () => this.unsubscribe(cb, prop));
     }
 
     //
