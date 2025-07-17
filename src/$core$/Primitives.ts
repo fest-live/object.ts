@@ -122,10 +122,24 @@ export const promised = (promise: any, behavior?: any)=>{
  * @param {string} [prop="value"] - Имя синхронизируемого поля.
  * @returns {Function|undefined} - Функция для отписки или undefined.
  */
+export const assignMap = new WeakMap();
 export const assign = (a, b, prop = "value")=>{
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [a, prop]; };
     const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [b, prop]; };
-    b[b_prop] ??= a?.[a_prop]; return subscribe(b, (v,p)=>(a[p] = v));
+    const bRef = new WeakRef(b?.[0]), aRef = new WeakRef(a?.[0]);
+    if (assignMap?.get?.(a?.[0])?.get?.(a_prop) == b?.[0]) {
+        // !needs to include unsub, and 'assignMap' use [b, unsub]?
+        // same value, skip, return de-assign only
+        return ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); };
+    };
+    assignMap?.get?.(a?.[0])?.delete?.(a_prop); // @ts-ignore
+    assignMap?.getOrInsert?.(a?.[0], new Map())?.set?.(a_prop, b?.[0]);
+    b[b_prop] ??= a?.[a_prop] ?? b[b_prop];
+    const ret = ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); usub?.(); };
+    const usub = subscribe(b, (v, p)=>{
+        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
+            { a[p] = bRef?.deref?.()?.value ?? v; } else { ret?.(); }
+    }); return ret;
 }
 
 /**
@@ -136,13 +150,10 @@ export const assign = (a, b, prop = "value")=>{
  * @param {string} [prop="value"] - Имя синхронизируемого поля.
  * @returns {Function} - Функция для прекращения синхронизации.
  */
-export const link = (a, b)=>{
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); if (!isAProp) { a = [a, "value"]; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); if (!isBProp) { b = [b, "value"]; };
-    const usub = [
-        subscribe(b,(v,p)=>(a[p] = v)),
-        subscribe(a,(v,p)=>(b[p] = v))
-    ];
+export const link = (a, b, prop = "value")=>{
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator); let a_prop = isAProp ? a?.[1] : prop; if (!isAProp) { a = [a, prop]; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator); let b_prop = isBProp ? b?.[1] : prop; if (!isBProp) { b = [b, prop]; };
+    const usub = [ assign(a, b, a_prop), assign(b, a, b_prop) ];
     return ()=>usub?.map?.((a)=>a?.());
 }
 
