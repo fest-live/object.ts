@@ -10,8 +10,8 @@ import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual } fr
  * @param {any} ifFalse - Значение, возвращаемое при ложном условии.
  * @returns {any} - Реактивная ссылка, которая меняет значение между ifTrue и ifFalse.
  */
-export const conditional = (cond: any, ifTrue: any, ifFalse: any)=>{
-    const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse);
+export const conditional = (cond: any, ifTrue: any, ifFalse: any, behavior?: any)=>{
+    const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
     const usb = subscribe([cond, "value"], (val) => { cur.value = val ? ifTrue : ifFalse; });
     addToCallChain(cur, Symbol.dispose, usb); return cur;
 }
@@ -95,9 +95,9 @@ export const ref  = (initial?: any, behavior?: any)=>{
 export const autoRef = (typed: any, behavior?: any) => {
     switch (typeof typed) {
         case "boolean": return booleanRef(typed, behavior);
-        case "number": return numberRef(typed, behavior);
-        case "string": return stringRef(typed, behavior);
-        case "object": if (typed != null) { return makeReactive(typed); }
+        case "number" : return numberRef(typed, behavior);
+        case "string" : return stringRef(typed, behavior);
+        case "object" : if (typed != null) { return makeReactive(typed); }
         default: return ref(typed, behavior);
     }
 }
@@ -189,7 +189,8 @@ export const link = (a, b, prop = "value") => {
  * @param {string} [prop="value"] - Имя свойства.
  * @returns {any} - Реактивная ссылка.
  */
-export const computed = (src, cb?: Function|null, prop = "value", behavior?: any)=>{
+export const computed = (src, cb?: Function|null, behavior?: any, prop = "value")=>{
+    prop ??= "value";
     const rf = autoRef(cb?.(src?.[prop], prop), behavior);
     assign([rf, prop], [src, cb], prop); return rf;
 }
@@ -199,12 +200,13 @@ export const computed = (src, cb?: Function|null, prop = "value", behavior?: any
  *
  * @param {any} src - Исходный объект.
  * @param {string} prop - Имя свойства.
+ * @param {any} [behavior] - Дополнительное поведение реактива.
  * @param {any} [initial] - Значение по умолчанию.
  * @returns {any} - Реактивная ссылка, синхронизированная с полем объекта.
  */
-export const propRef =  (src: any, prop: any = "value", initial?: any)=>{
-    const r = autoRef(src?.[prop] ?? initial);
-    return link([r, "value"], [src, prop]);
+export const propRef =  (src: any, srcProp: any = "value", behavior?: any, initial?: any)=>{
+    const r = autoRef(src?.[srcProp ??= "value"] ?? initial, behavior);
+    link([r, "value"], [src, srcProp]); return r;
 }
 
 /**
@@ -213,7 +215,7 @@ export const propRef =  (src: any, prop: any = "value", initial?: any)=>{
  * @param {any[]} condList - Массив условий.
  * @returns {any} - Реактивная ссылка.
  */
-export const conditionalIndex = (condList: any[] = []) => { return computed(condList, () => condList.findIndex(cb => cb?.())); }
+export const conditionalIndex = (condList: any[] = []) => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); }
 
 /**
  * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
