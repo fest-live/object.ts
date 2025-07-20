@@ -4,6 +4,7 @@ Symbol.subscribe   ||= Symbol.for("subscribe"); // @ts-ignore
 Symbol.unsubscribe ||= Symbol.for("unsubscribe");
 
 //
+export const $fxy          = Symbol.for("@fix");
 export const $value        = Symbol.for("@value");
 export const $extractKey$  = Symbol.for("@extract");
 export const $originalKey$ = Symbol.for("@origin");

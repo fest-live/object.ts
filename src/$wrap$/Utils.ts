@@ -1,4 +1,4 @@
-import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
+import { $extractKey$, $originalKey$, $registryKey$ } from "../$wrap$/Symbol";
 
 //
 export const $originalObjects$ = new WeakMap();

@@ -1,6 +1,6 @@
-import { makeReactive, subscribe } from "./Mainline";
-import { $value, $behavior, $promise } from "./Symbol";
-import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual } from "./Utils";
+import { makeReactive, subscribe } from "../$core$/Mainline";
+import { $value, $behavior, $promise } from "../$wrap$/Symbol";
+import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual } from "../$wrap$/Utils";
 
 /**
  * Создаёт реактивное условное значение.

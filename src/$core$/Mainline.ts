@@ -1,8 +1,8 @@
-import { objectAssign } from "./AssignObject";
-import { addToCallChain, callByAllProp, callByProp, isKeyType, isNotEqual, safe, withPromise, type keyType } from "./Utils";
-import { subscriptRegistry } from "./Subscript";
-import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
-import { $extractKey$, $registryKey$, $target } from "./Symbol";
+import { objectAssign } from "../$wrap$/AssignObject";
+import { $extractKey$, $registryKey$ } from "../$wrap$/Symbol";
+import { addToCallChain, callByAllProp, callByProp, isKeyType, isNotEqual, safe, withPromise, type keyType } from "../$wrap$/Utils";
+import { subscriptRegistry } from "../$core$/Subscript";
+import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "../$core$/Specific";
 
 /**
  * Преобразует целевой объект, функцию или коллекцию в реактивную сущность.

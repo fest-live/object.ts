@@ -1,5 +1,5 @@
-import { associateWith, deref, type keyType, propCbMap } from "./Utils.js";
-import { $extractKey$ } from "./Symbol.js";
+import { $extractKey$ } from "../$wrap$/Symbol";
+import { associateWith, deref, type keyType, propCbMap } from "../$wrap$/Utils";
 
 //
 const withUnsub = new WeakMap();

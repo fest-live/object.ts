@@ -1,7 +1,7 @@
-import { isNotEqual, bindCtx, deref, type keyType } from "./Utils";
-import { subscribe, unsubscribe } from "./Mainline";
-import { subscriptRegistry, wrapWith } from "./Subscript";
-import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
+import { subscribe, unsubscribe } from "../$core$/Mainline";
+import { subscriptRegistry, wrapWith } from "../$core$/Subscript";
+import { $extractKey$, $originalKey$, $registryKey$ } from "../$wrap$/Symbol";
+import { isNotEqual, bindCtx, deref, type keyType } from "../$wrap$/Utils";
 
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target, name, registry)=>{
