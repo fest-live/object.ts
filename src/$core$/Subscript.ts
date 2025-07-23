@@ -93,7 +93,8 @@ export class Subscript {
         const caller = async (name, value = null, oldValue?: any, ...etc: any[]) => {
             const callName = ("[" + ((performance.now()*1000)|0) + "]") + ' caller_stack on [' + (name || "<?>") + "]";
             //console.time(callName);
-            const result = await Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb) =>
+            const arr = [...(listeners?.deref()?.values()||[])];
+            const result = await Promise.all(arr?.map?.((cb) =>
                 weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue, ...etc])
             )||[]);
             //console.timeEnd(callName);

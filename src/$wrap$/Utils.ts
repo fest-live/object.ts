@@ -123,7 +123,7 @@ export const isNotEqual = (a, b)=>{
         return Math.abs(a - b) > 0.0000000000000001;
     }
     if (typeof a == "boolean" && typeof b == "boolean") {
-        return a != b;
+        return a !== b;
     }
     return a !== b;
 }

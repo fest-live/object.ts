@@ -63,10 +63,10 @@ export const booleanRef  = (initial?: any, behavior?: any)=>{
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r = makeReactive({
         [$promise]: isPromise ? initial : null,
-        [$value]: isPromise ? false : Boolean(!!deref(initial) || false) || false,
+        [$value]: (isPromise ? false : !!deref(initial)) || false,
         [$behavior]: behavior,
-        set value(v) { this[$value] = (v != null ? (typeof v == "string" ? true : Boolean(!!v || false)) : this[$value]) || false; },
-        get value() { return Boolean(!!this[$value] || false) || false; }
+        set value(v) { this[$value] = (v != null ? (typeof v == "string" ? true : !!v) : this[$value]) || false; },
+        get value() { return this[$value] || false; }
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
@@ -189,10 +189,11 @@ export const link = (a, b, prop = "value") => {
  * @param {string} [prop="value"] - Имя свойства.
  * @returns {any} - Реактивная ссылка.
  */
-export const computed = (src, cb?: Function|null, behavior?: any, prop = "value")=>{
-    prop ??= "value";
-    const rf = autoRef(cb?.(src?.[prop], prop), behavior);
-    assign([rf, prop], [src, cb], prop); return rf;
+export const computed = (src, cb?: Function|null, behavior?: any, prop = "value")=>{ prop ??= "value";
+    const isACompute = typeof src?.[1] == "function" && src?.length == 2, isBCompute = typeof cb == "function" && cb?.length == 2;
+    const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && src?.length == 2; let a_prop = isAProp ? src?.[1] : prop; if (!isAProp) { src = [isACompute ? src?.[0] : src, a_prop]; };
+    const rf = autoRef(cb?.(src?.[0]?.[prop], prop), behavior);
+    assign([rf, prop], [src?.[0], cb], prop); return rf;
 }
 
 /**
