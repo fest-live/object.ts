@@ -145,7 +145,7 @@ export const assign = (a, b, prop = "value") => {
             { aRef.deref()[a_prop] = (typeof cmpBFnc == "function" ?
                 $getValue(cmpBFnc?.($getValue(bRef?.deref?.()) ?? v, p, null)) :
                 $getValue(bRef?.deref?.()) ?? v
-            ); } //else { ret?.(); }
+            ); } else { ret?.(); }
     };
 
     //
@@ -168,9 +168,9 @@ export const assign = (a, b, prop = "value") => {
     //
     usub = subscribe(b, compute);
 
-    //ssss
-    //addToCallChain(aRef?.deref?.(), Symbol.dispose, ret);
-    //addToCallChain(bRef?.deref?.(), Symbol.dispose, ret);
+    //
+    addToCallChain(aRef?.deref?.(), Symbol.dispose, ret);
+    addToCallChain(bRef?.deref?.(), Symbol.dispose, ret);
     return ret;
 }
 
