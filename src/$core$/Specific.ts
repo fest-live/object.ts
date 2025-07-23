@@ -34,20 +34,18 @@ const observableAPIMethods = (target, name, registry)=>{
 }
 
 //
-const pontetiallyAsync = (obj, name, promise, cb)=>{
-    const oldVal = obj?.[name];
+const pontetiallyAsync = (promise, cb)=>{
     if (promise instanceof Promise || typeof promise?.then == "function")
-        { return promise?.then?.((v)=>{ if (oldVal === v) { return cb?.(v); }; }); } else
-        { return cb?.(promise) ?? promise; }
+        { return promise?.then?.(cb); } else
+        { return cb?.(promise); }
     return promise;
 }
 
 //
-const pontetiallyAsyncMap = (obj, name, promise, cb)=>{
-    const oldVal = obj?.get?.(name);
+const pontetiallyAsyncMap = (promise, cb)=>{
     if (promise instanceof Promise || typeof promise?.then == "function")
-        { return promise?.then?.((v)=>{ if (oldVal === v) { return cb?.(v); }; }); } else
-        { return cb?.(promise) ?? promise; }
+        { return promise?.then?.(cb); } else
+        { return cb?.(promise); }
     return promise;
 }
 
@@ -238,7 +236,7 @@ export class ReactiveMap {
 
         //
         if (name == "set") {
-            return (prop, value) => pontetiallyAsyncMap(target, name, value, (v)=>{
+            return (prop, value) => pontetiallyAsyncMap(value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
                 if (isNotEqual(oldValue, value)) { registry?.deref()?.trigger?.(prop, value, oldValue); };
                 return result;
@@ -359,7 +357,7 @@ export class ReactiveObject {
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
-        return pontetiallyAsync(target, name, value, (v)=>{
+        return pontetiallyAsync(value, (v)=>{
             if (typeof name == "symbol" && (name in target || target?.[name] != null)) return;
             const oldValue = target[name], result = Reflect.set(target, name, v);
             if (isNotEqual(oldValue, v)) { registry?.trigger?.(name, v, oldValue); };

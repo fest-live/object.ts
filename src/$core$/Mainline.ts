@@ -67,6 +67,8 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
             self ??= unwrap?.[$registryKey$] ?? (subscriptRegistry).get(unwrap) ?? self;
         }
         if (!self) return;
+
+        //
         let unsub: any = self?.subscribe?.(cb, tProp);
 
         //
