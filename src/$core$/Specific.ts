@@ -1,11 +1,20 @@
 import { subscribe, unsubscribe } from "../$core$/Mainline";
 import { subscriptRegistry, wrapWith } from "../$core$/Subscript";
-import { $extractKey$, $originalKey$, $registryKey$ } from "../$wrap$/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $value } from "../$wrap$/Symbol";
 import { isNotEqual, bindCtx, deref, type keyType } from "../$wrap$/Utils";
 
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target, name, registry)=>{
-    if (name == $registryKey$) { return registry?.deref?.(); }
+    if (target == null) return null;
+
+    //
+    const exists = target?.[name]?.bind?.(target);
+    if (exists != null) return exists;
+
+    //
+    if (name == $value)               { return target?.[$value] ?? target?.value; }
+    if (name == "value")              { return target?.value ?? target?.[$value]; }
+    if (name == $registryKey$)        { return registry?.deref?.(); }
     if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; } // @ts-ignore
     if (name == Symbol.observable)    { return registry?.deref?.()?.compatible; } // @ts-ignore
     if (name == Symbol.subscribe)     { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
@@ -14,6 +23,8 @@ const systemGet = (target, name, registry)=>{
     if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
     if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+    if (name == Symbol.toPrimitive)   { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "function")) { return target.value; }; return target?.valueOf?.(); } }
+    if (name == Symbol.toStringTag)   { return ()=>String(target?.value ?? "") || ""; }
 }
 
 //
@@ -322,12 +333,9 @@ export class ReactiveObject {
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
-        if (name == Symbol.toPrimitive) { return () => {
-            if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }
-            return target?.[Symbol.toPrimitive]?.();
-        }};
+        if (name == Symbol.toPrimitive) { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.[Symbol.toPrimitive]?.(); } }
         if (name == "toString") { return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || ""); }
-        if (name == "valueOf" ) { return () => { if (target?.value != null && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
+        if (name == "valueOf" ) { return () => { if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
         return bindCtx(target, Reflect.get(target, name, ctx));
     }
 

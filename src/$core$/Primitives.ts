@@ -29,6 +29,8 @@ export const numberRef  = (initial?: any, behavior?: any)=>{
         [$promise]: isPromise ? initial : null,
         [$value]: isPromise ? 0 : (Number(deref(initial) || 0) || 0),
         [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return Number((typeof this?.[$value] != "object" ? this?.[$value] : (this?.[$value]?.value || 0)) ?? 0) || 0; },
         set value(v) { this[$value] = ((v != null && !Number.isNaN(v)) ? Number(v) : this[$value]) || 0; },
         get value() { return Number(this[$value] || 0) || 0; }
     }); initial?.then?.((v)=>$r.value = v); return $r;
@@ -47,6 +49,8 @@ export const stringRef  = (initial?: any, behavior?: any)=>{
         [$promise]: isPromise ? initial : null,
         [$value]: (isPromise ? "" : String(deref(initial || "") || "")) || "",
         [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return String(this?.[$value] ?? "") || ""; }, // TODO: check hint
         set value(v) { this[$value] = String(typeof v == "number" ? v : (v || "")) || ""; },
         get value() { return String(this[$value] || ""); },
     }); initial?.then?.((v)=>$r.value = v); return $r;
@@ -65,6 +69,8 @@ export const booleanRef  = (initial?: any, behavior?: any)=>{
         [$promise]: isPromise ? initial : null,
         [$value]: (isPromise ? false : !!deref(initial)) || false,
         [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return (!!this?.[$value] || false); }, // TODO: check hint
         set value(v) { this[$value] = (v != null ? (typeof v == "string" ? true : !!v) : this[$value]) || false; },
         get value() { return this[$value] || false; }
     }); initial?.then?.((v)=>$r.value = v); return $r;
