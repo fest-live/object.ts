@@ -139,6 +139,7 @@ const $getValue = ($objOrPlain: any)=>{
 interface PropStore {
     unsub?: any;
     bound?: any;
+    cmpfx?: any;
     compute?: any;
     dispose?: any;
 }
@@ -157,8 +158,9 @@ export const assign = (a, b, prop = "value") => {
     const compute = (v, p) => {
         if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.bound == bRef?.deref?.()) {
             let val:any = null;
-            if (typeof cmpBFnc == "function")
-                { val = cmpBFnc?.($getValue(bRef?.deref?.()) ?? v, p, null); } else
+            const cmpfx = assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.cmpfx;
+            if (typeof cmpfx == "function")
+                { val = cmpfx?.($getValue(bRef?.deref?.()) ?? v, p, null); } else
                 { val = bRef?.deref?.() ?? v; };
             aRef.deref()[a_prop] = $getValue(val);
         } else {
@@ -181,7 +183,7 @@ export const assign = (a, b, prop = "value") => {
           aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") && !(a?.[0] instanceof WeakRef || typeof a?.[0]?.deref == "function") ? new WeakRef(a?.[0]) : a?.[0];
 
     //
-    let store: PropStore = { compute, dispose };
+    let store: PropStore = { compute, dispose, cmpfx: cmpBFnc };
 
     //
     const a_tmp = aRef?.deref?.(), b_tmp = bRef?.deref?.();
@@ -192,14 +194,16 @@ export const assign = (a, b, prop = "value") => {
 
         // @ts-ignore
         const map = assignMap?.getOrInsert?.(a_tmp, new Map());
-        store = map?.getOrInsert?.(a_prop, {
+        store = map?.getOrInsertComputed?.(a_prop, ()=>({
             bound: b_tmp,
-            unsub: subscribe(b, store.compute),
-            compute: compute,
-            dispose ,
-        });
+            cmpfx: cmpBFnc,
+            unsub: subscribe(b, compute),
+            compute,
+            dispose,
+        }));
 
         //
+        store.cmpfx = cmpBFnc;
         addToCallChain(a_tmp, Symbol.dispose, store?.dispose);
         addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
     }
