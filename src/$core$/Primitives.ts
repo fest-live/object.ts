@@ -130,7 +130,15 @@ const $getValue = ($objOrPlain: any)=>{
 }
 
 //
-export const assignMap = new WeakMap();
+interface PropStore {
+    unsub?: any;
+    bound?: any;
+    compute?: any;
+    dispose?: any;
+}
+
+//
+export const assignMap = new WeakMap<any, Map<any, PropStore>>();
 export const assign = (a, b, prop = "value") => {
     const isACompute = typeof a?.[1] == "function" && a?.length == 2, isBCompute = typeof b?.[1] == "function" && b?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && a?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
@@ -141,37 +149,60 @@ export const assign = (a, b, prop = "value") => {
 
     //
     const compute = (v, p) => {
-        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) == bRef?.deref?.())
-            { aRef.deref()[a_prop] = (typeof cmpBFnc == "function" ?
-                $getValue(cmpBFnc?.($getValue(bRef?.deref?.()) ?? v, p, null)) :
-                $getValue(bRef?.deref?.()) ?? v
-            ); } else { ret?.(); }
+        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.bound == bRef?.deref?.()) {
+            let val:any = null;
+            if (typeof cmpBFnc == "function")
+                { val = cmpBFnc?.($getValue(bRef?.deref?.()) ?? v, p, null); } else
+                { val = bRef?.deref?.() ?? v; };
+            aRef.deref()[a_prop] = $getValue(val);
+        } else {
+            const map = assignMap?.get?.(aRef?.deref?.());
+            const store = map?.get?.(a_prop);
+            store?.dispose?.();
+        }
+    };
+
+    //
+    const dispose = () => {
+        const map = assignMap?.get?.(aRef?.deref?.());
+        const store = map?.get?.(a_prop);
+        map?.delete?.(a_prop);
+        store?.unsub?.();
     };
 
     //
     const bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") && !(b?.[0] instanceof WeakRef || typeof b?.[0]?.deref == "function") ? new WeakRef(b?.[0]) : b?.[0],
           aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") && !(a?.[0] instanceof WeakRef || typeof a?.[0]?.deref == "function") ? new WeakRef(a?.[0]) : a?.[0];
+
+    //
+    let store: PropStore = { compute, dispose };
+
+    //
+    const a_tmp = aRef?.deref?.(), b_tmp = bRef?.deref?.();
     if (aRef instanceof WeakRef) {
-        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop) != bRef?.deref?.()) {
-            assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); // @ts-ignore
-            assignMap?.getOrInsert?.(aRef?.deref?.(), new Map())?.set?.(a_prop, bRef?.deref?.());
+        if (assignMap?.get?.(a_tmp)?.get?.(a_prop)?.bound != b_tmp) {
+            assignMap?.get?.(a_tmp)?.delete?.(a_prop);
         };
+
+        // @ts-ignore
+        const map = assignMap?.getOrInsert?.(a_tmp, new Map());
+        store = map?.getOrInsert?.(a_prop, {
+            bound: b_tmp,
+            unsub: subscribe(b, store.compute),
+            compute: compute,
+            dispose ,
+        });
+
+        //
+        addToCallChain(a_tmp, Symbol.dispose, store?.dispose);
+        addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
     }
 
     //
-    bRef.deref()[b_prop] ??= aRef.deref()[a_prop] ?? bRef.deref()[b_prop];
+    if (b_tmp) { b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop]; }
 
     //
-    let ret: any, usub: any;
-    ret  = ()=>{ assignMap?.get?.(aRef?.deref?.())?.delete?.(a_prop); usub?.(); };
-
-    //
-    usub = subscribe(b, compute);
-
-    //
-    addToCallChain(aRef?.deref?.(), Symbol.dispose, ret);
-    addToCallChain(bRef?.deref?.(), Symbol.dispose, ret);
-    return ret;
+    return store?.dispose;
 }
 
 /**
