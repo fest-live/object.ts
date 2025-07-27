@@ -15,7 +15,14 @@ export const associateWith = (cb, name)=>{
 }
 
 //
-export const UUIDv4 = () => (crypto?.randomUUID ? crypto?.randomUUID() : ("10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))).toString(16))));
+export const getRandomValues = (array: Uint8Array) => { return crypto?.getRandomValues ? crypto?.getRandomValues?.(array) : (()=>{
+    const values = new Uint8Array(array.length);
+    for (let i = 0; i < array.length; i++) {
+        values[i] = Math.floor(Math.random() * 256);
+    }
+    return values;
+})(); };
+export const UUIDv4 = () => (crypto?.randomUUID ? crypto?.randomUUID?.() : ("10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (+c ^ (getRandomValues?.(new Uint8Array(1))?.[0] & (15 >> (+c / 4)))).toString(16))));
 export const bindFx = (target, fx)=>{
     // !experimental `getOrInsert` feature!
     // @ts-ignore
