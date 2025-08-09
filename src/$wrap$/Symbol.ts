@@ -14,3 +14,5 @@ export const $rootKey$     = Symbol.for("@root");
 export const $nodeKey$     = Symbol.for("@node");
 export const $behavior     = Symbol.for("@behavior");
 export const $promise      = Symbol.for("@promise");
+export const $triggerLess  = Symbol.for("@trigger-less");
+export const $triggerLock  = Symbol.for("@trigger-lock");

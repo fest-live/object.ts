@@ -1,6 +1,6 @@
 import { subscribe, unsubscribe } from "../$core$/Mainline";
 import { subscriptRegistry, wrapWith } from "../$core$/Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $value } from "../$wrap$/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value } from "../$wrap$/Symbol";
 import { isNotEqual, bindCtx, deref, type keyType } from "../$wrap$/Utils";
 
 // get reactive primitives (if native iterator is available, use it)
@@ -45,7 +45,7 @@ const observableAPIMethods = (target, name, registry)=>{
 }
 
 //
-const pontetiallyAsync = (promise, cb)=>{
+const potentiallyAsync = (promise, cb)=>{
     if (promise instanceof Promise || typeof promise?.then == "function")
         { return promise?.then?.(cb); } else
         { return cb?.(promise); }
@@ -53,19 +53,31 @@ const pontetiallyAsync = (promise, cb)=>{
 }
 
 //
-const pontetiallyAsyncMap = (promise, cb)=>{
+const potentiallyAsyncMap = (promise, cb)=>{
     if (promise instanceof Promise || typeof promise?.then == "function")
         { return promise?.then?.(cb); } else
         { return cb?.(promise); }
     return promise;
 }
 
-
+//
+const makeTriggerLess = function(self){
+    return (cb)=>{
+        self[$triggerLock] = true;
+        let result;
+        try {
+            result = cb?.();
+        } finally {
+            self[$triggerLock] = false;
+        }
+        return result;
+    }
+}
 
 //
 export class ObserveArrayMethod {
     #handle: any; #name: string; #self: any;
-    constructor(name, handle, self) {
+    constructor(name, self, handle) {
         this.#name = name;
         this.#handle = handle;
         this.#self = self;
@@ -75,6 +87,8 @@ export class ObserveArrayMethod {
     get(target, name, rec) {
         return Reflect.get(target, name, rec);
     }
+
+    //
     apply(target, ctx, args) {
         let added: any[] = [], removed: any[] = [];
         let setPairs: [any, number, any][] = [];
@@ -121,6 +135,10 @@ export class ObserveArrayMethod {
 
         // Выполнить операцию
         const result = Reflect.apply(target, ctx || this.#self, args);
+        if (this.#handle?.[$triggerLock]) {
+            if (Array.isArray(result)) { return makeReactiveArray(result); }
+            return result;
+        }
 
         // Триггеры на добавление
         const reg = subscriptRegistry.get(target);
@@ -148,12 +166,15 @@ export class ObserveArrayMethod {
         }
 
         //
+        if (result == target) { return new Proxy(result as any, this.#handle); };
+        if (Array.isArray(result)) { return makeReactiveArray(result); }
         return result;
     }
 }
 
 //
 export class ReactiveArray {
+    [$triggerLock]: boolean = false;
     constructor() {
     }
 
@@ -168,20 +189,12 @@ export class ReactiveArray {
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
+        if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == "@target" || name == $extractKey$) return target;
-        if (name == "silentForwardByIndex") {
-            return (index: number) => {
-                if (index < target.length) {
-                    const E = target[index];
-                    target.splice(index, 1);
-                    target.push(E);
-                }
-            }
-        }
 
         // that case: target[n]?.(?{.?value})?
         const got = Reflect.get(target, name, rec);
-        if (typeof got == "function") { return new Proxy(got, new ObserveArrayMethod(name, $reg, target)); };
+        if (typeof got == "function") { return new Proxy(got, new ObserveArrayMethod(name, target, this)); };
         return got;
     }
 
@@ -193,8 +206,12 @@ export class ReactiveArray {
         }
         const old = target?.[name];
         const got = Reflect.set(target, name, value);
-        const $reg = (subscriptRegistry).get(target);
-        $reg?.trigger?.(name, value, old, "@set");
+
+        //
+        if (!this[$triggerLock]) {
+            const $reg = (subscriptRegistry).get(target);
+            $reg?.trigger?.(name, value, old, "@set");
+        }
         return got;
     }
 
@@ -202,8 +219,12 @@ export class ReactiveArray {
     deleteProperty(target, name) {
         const old = target?.[name];
         const got = Reflect.deleteProperty(target, name);
-        const $reg = (subscriptRegistry).get(target);
-        $reg?.trigger?.(name, name, old, "@delete");
+
+        //
+        if (!this[$triggerLock]) {
+            const $reg = (subscriptRegistry).get(target);
+            $reg?.trigger?.(name, name, old, "@delete");
+        }
         return got;
     }
 }
@@ -226,11 +247,14 @@ export class ReactiveMap {
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
+        if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+
+        //
         if (name == "clear") {
             return () => {
                 const oldValues: any = Array.from(target?.entries?.() || []), result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    registry?.deref()?.trigger?.(prop, null, oldValue);
+                    if (!this[$triggerLock]) { registry?.deref()?.trigger?.(prop, null, oldValue); }
                 });
                 return result;
             };
@@ -240,16 +264,16 @@ export class ReactiveMap {
         if (name == "delete") {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop), result = valueOrFx(prop);
-                registry?.deref()?.trigger?.(prop, null, oldValue);
+                if (!this[$triggerLock]) { registry?.deref()?.trigger?.(prop, null, oldValue); }
                 return result;
             };
         }
 
         //
         if (name == "set") {
-            return (prop, value) => pontetiallyAsyncMap(value, (v)=>{
+            return (prop, value) => potentiallyAsyncMap(value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (isNotEqual(oldValue, value)) { registry?.deref()?.trigger?.(prop, value, oldValue); };
+                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock]) { registry?.deref()?.trigger?.(prop, value, oldValue); } };
                 return result;
             });
         }
@@ -266,6 +290,7 @@ export class ReactiveMap {
 
 //
 export class ReactiveSet {
+    [$triggerLock]: boolean = false;
     constructor() {}
 
     //
@@ -282,10 +307,13 @@ export class ReactiveSet {
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
+        if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+
+        //
         if (name == "clear") {
             return () => {
                 const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
-                oldValues.forEach((oldValue)=>{ registry?.deref?.()?.trigger?.(null, null, oldValue); });
+                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock]) { registry?.deref?.()?.trigger?.(null, null, oldValue); } });
                 return result;
             };
         }
@@ -294,7 +322,7 @@ export class ReactiveSet {
         if (name == "delete") {
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                registry?.deref()?.trigger?.(value, null, oldValue);
+                if (!this[$triggerLock]) { registry?.deref()?.trigger?.(value, null, oldValue); }
                 return result;
             };
         }
@@ -304,7 +332,7 @@ export class ReactiveSet {
             // TODO: add potentially async set
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (isNotEqual(oldValue, value)) { registry?.deref()?.trigger?.(value, value, oldValue); };
+                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock]) { registry?.deref()?.trigger?.(value, value, oldValue); } };
                 return result;
             };
         }
@@ -321,6 +349,7 @@ export class ReactiveSet {
 
 //
 export class ReactiveObject {
+    [$triggerLock]: boolean = false;
     constructor() {}
 
     // supports nested "value" objects and values
@@ -330,6 +359,10 @@ export class ReactiveObject {
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
+        //
+        if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+
+        //
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
@@ -351,7 +384,8 @@ export class ReactiveObject {
         //
         const oldValue = target[name];
         const result = Reflect.deleteProperty(target, name);
-        registry?.trigger?.(name, null, oldValue); return result;
+        if (!this[$triggerLock]) { registry?.trigger?.(name, null, oldValue); }
+        return result;
     }
 
     //
@@ -365,10 +399,10 @@ export class ReactiveObject {
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
-        return pontetiallyAsync(value, (v)=>{
+        return potentiallyAsync(value, (v)=>{
             if (typeof name == "symbol" && (name in target || target?.[name] != null)) return;
             const oldValue = target[name], result = Reflect.set(target, name, v);
-            if (isNotEqual(oldValue, v)) { registry?.trigger?.(name, v, oldValue); };
+            if (isNotEqual(oldValue, v)) { if (!this[$triggerLock]) { registry?.trigger?.(name, v, oldValue); } };
             return result;
         })
     }
