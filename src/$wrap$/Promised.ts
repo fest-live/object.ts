@@ -77,7 +77,8 @@ const promiseHandler = {
 const resolvedMap = new WeakMap(), handledMap = new WeakMap();
 
 //
-export function Promised(promise) {
+export type PromiseLike<T=any> = Promise<T>|any;
+export function Promised<T=any>(promise: PromiseLike<T>) {
     if (!handledMap?.has?.(promise)) { promise?.then?.((item)=>resolvedMap?.set?.(promise, item)); } // @ts-ignore
-    return handledMap?.getOrInsertComputed?.(promise, ()=>new Proxy<any>(fixFx(promise), promiseHandler));
+    return handledMap?.getOrInsertComputed?.(promise, ()=>new Proxy<PromiseLike<T>>(fixFx(promise), promiseHandler));
 }

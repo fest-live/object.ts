@@ -1,7 +1,7 @@
 import { subscribe, unsubscribe } from "../$core$/Mainline";
 import { subscriptRegistry, wrapWith } from "../$core$/Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value } from "../$wrap$/Symbol";
-import { isNotEqual, bindCtx, deref, type keyType } from "../$wrap$/Utils";
+import { isNotEqual, bindCtx, deref, type keyType, refValid } from "../$wrap$/Utils";
 
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target, name, registry)=>{
@@ -409,7 +409,7 @@ export class ReactiveObject {
 }
 
 //
-export const makeReactiveArray = (arr: any[]) => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
-export const makeReactiveObject: <T extends object>(map: T) => T = <T extends object>(obj: T) => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
-export const makeReactiveMap: <K, V>(map: Map<K, V>) => Map<K, V> = <K, V>(map: Map<K, V>) =>    { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
-export const makeReactiveSet: <V>(set: Set<V>) => Set<V> = <V>(set: Set<V>) =>                   { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };
+export const makeReactiveArray  = <Under = any>(arr: Under[]): refValid<Under> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
+export const makeReactiveObject = <Under = any>(obj: Under): refValid<Under> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
+export const makeReactiveMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
+export const makeReactiveSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };

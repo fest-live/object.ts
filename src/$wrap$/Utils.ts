@@ -1,6 +1,11 @@
 import { $extractKey$, $originalKey$, $registryKey$ } from "../$wrap$/Symbol";
 
 //
+export type keyType = string | number | symbol;
+export type refValid<Under = any, T=any, K=any> = T|Under[]|Map<K, Under>|Set<any>|WeakMap<K extends WeakKey ? K : never, Under>|WeakSet<Under extends WeakKey ? Under : never>|Function;
+export type subValid<Under = any, T=any, K=any> = refValid<Under,T,K> | [refValid<Under,T,K>, keyType|Function] | [refValid<Under,T,K>, keyType|Function, ...any[]];
+
+//
 export const $originalObjects$ = new WeakMap();
 export const propCbMap = new WeakMap();
 export const boundCtx  = new WeakMap();
@@ -10,7 +15,7 @@ export const associateWith = (cb, name)=>{
     // !experimental `getOrInsert` feature!
     // @ts-ignore
     return propCbMap.getOrInsertComputed(cb, ()=>{
-        return (val, prop, old)=>{ if (prop == name) return cb?.(val, prop, old); };
+        return (val, prop: keyType, old)=>{ if (prop == name) return cb?.(val, prop, old); };
     });
 }
 
@@ -31,9 +36,8 @@ export const bindFx = (target, fx)=>{
 }
 
 //
-export type  keyType    = string | number | symbol;
 export const isIterable = (obj) => (typeof obj?.[Symbol.iterator] == "function");
-export const isKeyType  = (prop: any)=> ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
+export const isKeyType  = (prop: keyType|any)=> ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
 export const bindCtx    = (target, fx) => ((typeof fx == "function" ? bindFx(target, fx) : fx) ?? fx);
 export const isValidObj = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
 export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
@@ -43,7 +47,7 @@ export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
 }
 
 //
-export const callByProp = (unwrap, prop, cb, ctx)=>{
+export const callByProp = (unwrap, prop: keyType, cb, ctx)=>{
     if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$ || (typeof prop == "symbol" || typeof prop == "object" || typeof prop == "function")) return;
     if (unwrap instanceof Map || unwrap instanceof WeakMap) { if (prop != null && unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); } } else
     if (unwrap instanceof Set || unwrap instanceof WeakSet) { if (prop != null && unwrap.has(prop as any)) { return cb?.(prop, prop); } } else
@@ -58,7 +62,7 @@ export const callByAllProp = (unwrap, cb, ctx)=>{
     if (Array.isArray(unwrap)) { return unwrap?.map?.((v, I)=>callByProp(unwrap, I, cb, ctx)); } else
     if (unwrap instanceof Set || unwrap instanceof Map || Array.isArray(unwrap) || isIterable(unwrap) || typeof unwrap?.keys == "function") { keys = unwrap?.keys?.() || []; } else
     if ((typeof unwrap == "object" || typeof unwrap == "function") && unwrap != null) { keys = Object.keys(unwrap) || []; }
-    return keys != null ? Array.from(keys)?.map?.((prop)=>callByProp(unwrap, prop, cb, ctx)) : [];
+    return keys != null ? Array.from(keys)?.map?.((prop: keyType|any)=>callByProp(unwrap, prop, cb, ctx)) : [];
 }
 
 //

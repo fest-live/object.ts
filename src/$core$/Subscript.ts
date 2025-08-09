@@ -1,9 +1,10 @@
 import { $extractKey$ } from "../$wrap$/Symbol";
 import { associateWith, deref, type keyType, propCbMap } from "../$wrap$/Utils";
+import { WR } from "../$wrap$/WRef";
 
 //
 const withUnsub = new WeakMap();
-const completeWithUnsub = (subscriber, weak, handler)=>{
+const completeWithUnsub = (subscriber, weak: WeakRef<any>|WR<any>, handler: Subscript)=>{
     // @ts-ignore
     return withUnsub.getOrInsert(subscriber, ()=>{
         const registry = weak?.deref?.(); registry?.subscribe?.(handler);
@@ -17,6 +18,16 @@ const completeWithUnsub = (subscriber, weak, handler)=>{
         }
     });
 }
+
+//
+export const subscriptRegistry = new WeakMap<any, Subscript>();
+
+// @ts-ignore
+export const register = (what: any, handle: any): any => { const unwrap = what?.[$extractKey$] ?? what; subscriptRegistry.getOrInsert(unwrap, new Subscript()); return handle; }
+export const wrapWith = (what: any, handle: any): any =>{ what = deref(what?.[$extractKey$] ?? what);
+    if (typeof what == "symbol" || !(typeof what == "object" || typeof what == "function") || what == null) return what;
+    return new Proxy(what, register(what, handle));
+}; // !experimental `getOrInsert` feature!
 
 //
 export class Subscript {
@@ -148,7 +159,7 @@ export class Subscript {
 
     // try execute immediatly, if already running, try delayed action in callstack
     // if catch will also fail, will cause another unhandled reject (will no repeating)
-    trigger(name, value: any = null, oldValue?: any, ...etc: any[]) {
+    trigger(name: keyType, value: any = null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
 
         // @ts-ignore
@@ -158,13 +169,3 @@ export class Subscript {
     //
     get iterator() { return this.#iterator; }
 }
-
-//
-export const subscriptRegistry = new WeakMap<any, Subscript>();
-
-// @ts-ignore
-export const register = (what: any, handle: any): any => { const unwrap = what?.[$extractKey$] ?? what; subscriptRegistry.getOrInsert(unwrap, new Subscript()); return handle; }
-export const wrapWith = (what, handle)=>{ what = deref(what?.[$extractKey$] ?? what);
-    if (typeof what == "symbol" || !(typeof what == "object" || typeof what == "function") || what == null) return what;
-    return new Proxy(what, register(what, handle));
-}; // !experimental `getOrInsert` feature!

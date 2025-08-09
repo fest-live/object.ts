@@ -1,6 +1,6 @@
 import { objectAssign } from "../$wrap$/AssignObject";
 import { $extractKey$, $registryKey$ } from "../$wrap$/Symbol";
-import { addToCallChain, callByAllProp, callByProp, isKeyType, isNotEqual, safe, withPromise, type keyType } from "../$wrap$/Utils";
+import { addToCallChain, callByAllProp, callByProp, isKeyType, isNotEqual, safe, withPromise, type keyType, subValid, refValid } from "../$wrap$/Utils";
 import { subscriptRegistry } from "../$core$/Subscript";
 import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "../$core$/Specific";
 
@@ -11,20 +11,20 @@ import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet
  * @param {string} [stateName=""] - Необязательное имя состояния (используется для отладки/логирования)
  * @returns {any} - Реактивная версия переданного значения
  */
-export const makeReactive: any = (target: any, stateName = ""): any => {
-    if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null || target?.[$extractKey$]) return target;
-    if (target instanceof Promise || target instanceof WeakRef) return target; // promise forbidden
+export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Under,T>, stateName = ""): refValid<Under,T> => {
+    if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null || target?.[$extractKey$]) return target as refValid<Under,T>;
+    if (target instanceof Promise || target instanceof WeakRef) return target as refValid<Under,T>; // promise forbidden
 
     //
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
-    if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return target;
-    if (unwrap instanceof Promise || unwrap instanceof WeakRef) return target; // promise forbidden
+    if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return target as refValid<Under,T>;
+    if (unwrap instanceof Promise || unwrap instanceof WeakRef) return target as refValid<Under,T>; // promise forbidden
 
     //
     let reactive = target;
-    if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target); } else
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target); } else
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target); } else
+    if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target as Under[]); } else
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target as Map<any, Under>); } else
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target as Set<Under>); } else
     if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
 
     //
@@ -39,7 +39,7 @@ export const makeReactive: any = (target: any, stateName = ""): any => {
  * @param {any | null} [ctx=null] - Контекст вызова колбэка
  * @returns {Function} - Функция отписки, поддерживает также Symbol.dispose и Symbol.asyncDispose
  */
-export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
+export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) return;
 
     //
@@ -94,7 +94,7 @@ export const subscribe = (tg: any, cb: (value: any, prop: keyType, old?: any) =>
  * @param {any | null} [ctx=null] - Контекст вызова колбэка
  * @returns {Function} - Функция отписки, поддерживает также Symbol.dispose и Symbol.asyncDispose
  */
-export const observe = (tg: any, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null)=>{
+export const observe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null)=>{
     if (Array.isArray(tg)) {
         return subscribe([tg, Symbol.iterator], cb, ctx);
     }
@@ -108,7 +108,7 @@ export const observe = (tg: any, cb: (value: any, prop: keyType, old?: any) => v
  * @param {(value: any, prop: keyType, old?: any) => void} [cb] - Колбэк для удаления, если не задан — удаляются все
  * @param {any | null} [ctx=null] - Контекст (необязательно)
  */
-export const unsubscribe = (tg: any, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
+export const unsubscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     return withPromise(tg, (target: any) => {
         // Определение, является ли аргумент парой [объект, ключ]
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
@@ -132,7 +132,7 @@ export const unsubscribe = (tg: any, cb?: (value: any, prop: keyType, old?: any)
  * @param {() => string} [key=()=>""] - Функция-ключ, какое свойство отслеживать
  * @returns {Function} - Функция отписки
  */
-export const bindByKey = (target, reactive, key = () => "") =>
+export const bindByKey = <Under = any, T=refValid<Under>>(target, reactive: subValid<Under,T>, key = () => "") =>
     subscribe(reactive, (value, id) => { if (id == key()) { objectAssign(target, value, null, true); } });
 
 /**
@@ -143,7 +143,7 @@ export const bindByKey = (target, reactive, key = () => "") =>
  * @param {Function} [watch] - Необязательный watch-функция для наблюдения
  * @returns {any} - Новое реактивное значение
  */
-export const derivate = (from, reactFn, watch?) => bindBy(reactFn(safe(from)), from, watch);
+export const derivate = <Under = any, T=refValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
 
 /**
  * Связывает состояния между целевым объектом и реактивным объектом (двусторонняя синхронизация).
@@ -154,7 +154,7 @@ export const derivate = (from, reactFn, watch?) => bindBy(reactFn(safe(from)), f
  * @param {Function} [watch] - Необязательная функция наблюдения за изменениями target
  * @returns {object} - Ссылка на target (для цепочек вызовов)
  */
-export const bindBy = (target, reactive, watch?) => {
+export const bindBy = <Under = any, T=refValid<Under>>(target, reactive: subValid<Under,T>, watch?) => {
     // Синхронизация from reactive → target
     subscribe(reactive, (v, p) => { objectAssign(target, v, p, true); });
     // Если есть watch — синхронизация target → reactive
@@ -168,9 +168,9 @@ export const bindBy = (target, reactive, watch?) => {
  * @param {Set<any>} set - Наблюдаемый Set.
  * @returns {any[]} Observable-массив, отражающий состояние Set.
  */
-export const observableBySet = (set) => {
-    const obs = makeReactive([]);
-    addToCallChain(obs, Symbol.dispose, subscribe(set, (value, _, old) => {
+export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, Set<Under>> => { // @ts-ignore
+    const obs: Under[] = makeReactive<Under[]>([]) as refValid<Under>; // @ts-ignore
+    addToCallChain(obs, Symbol.dispose, subscribe(set, (value, _, old) => { // @ts-ignore
         if (isNotEqual(value, old)) {
             if (old == null && value != null) {
                 obs.push(value);
@@ -193,9 +193,9 @@ export const observableBySet = (set) => {
  * @param {Map<any, any>} map - Наблюдаемый Map.
  * @returns {Array<[any, any]>} Observable-массив пар [ключ, значение].
  */
-export const observableByMap = (map) => {
-    const obs = makeReactive([]);
-    addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => {
+export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Under, [any, Under][]> => { // @ts-ignore
+    const obs: refValid<Under> = makeReactive<Under[]>([]) as refValid<Under>; // @ts-ignore
+    addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => { // @ts-ignore
         if (isNotEqual(value, old)) {
             if (old != null && value == null) {
                 const idx = obs.findIndex(([name, _]) => (name == prop));

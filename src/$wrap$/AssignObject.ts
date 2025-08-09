@@ -1,5 +1,5 @@
 import { $originalKey$, $extractKey$, $registryKey$  } from "../$wrap$/Symbol";
-import { $originalObjects$, isIterable, type keyType } from "../$wrap$/Utils";
+import { $originalObjects$, isIterable, type keyType, refValid } from "../$wrap$/Utils";
 
 //
 export const removeExtra = (target, value, name: keyType | null = null)=>{
@@ -79,7 +79,8 @@ export class AssignObjectHandler {
 }
 
 //
-export const makeObjectAssignable = (obj) => {
+export const makeObjectAssignable = <Under = any>(obj: Under): refValid<Under> => {
+    // @ts-ignore
     if (obj?.[$originalKey$] || $originalObjects$.has(obj)) { return obj; }
 
     // @ts-ignore
