@@ -5,6 +5,7 @@ export const fixFx = (obj) => { if (typeof obj == "function" || obj == null) ret
 export const $set = (rv, key, val)=>{ if (rv?.deref?.() != null) { return (rv.deref()[key] = val); }; }
 
 //
+const resolvedMap = new WeakMap(), handledMap = new WeakMap();
 const actWith = (promiseOrPlain, cb)=>{
     if (promiseOrPlain instanceof Promise || typeof promiseOrPlain?.then == "function") {
         if (resolvedMap?.has?.(promiseOrPlain)) { return cb(resolvedMap?.get?.(promiseOrPlain)); }
@@ -24,14 +25,14 @@ const unwrap = (obj, fallback?: null|undefined|((...args: any[])=>any))=>{
 }
 
 //
-class promiseHandler {
-    resolve?: (item: any)=>void;
-    reject?: (error: any)=>void;
+class PromiseHandler {
+    #resolve?: ((...args: any[])=>void)|null;
+    #reject?: ((...args: any[])=>void)|null;
 
     //
-    constructor(resolve?: (item: any)=>void, reject?: (error: any)=>void) {
-        this.resolve = resolve;
-        this.reject = reject;
+    constructor(resolve?: ((...args: any[])=>void)|null, reject?: ((...args: any[])=>void)|null) {
+        this.#resolve = resolve;
+        this.#reject = reject;
     }
 
     //
@@ -84,11 +85,10 @@ class promiseHandler {
         target = unwrap(target);
 
         //
-        if (prop == 'promise') { return target; }
-        if (prop == 'resolve' && this.resolve) { return this.resolve; }
-        if (prop == 'reject' && this.reject) { return this.reject; }
-        if (prop == 'then' || prop == 'catch' || prop == 'finally')
-            { return target?.[prop]?.bind?.(target); }
+        if (prop == 'promise') { return target; } // @ts-ignore
+        if (prop == 'resolve' && this.#resolve) { return (...args)=>{ const result = this.#resolve?.(...args); this.#resolve = null; return result; }; } // @ts-ignore
+        if (prop == 'reject'  && this.#reject ) { return (...args)=>{ const result = this.#reject?.(...args);  this.#reject  = null; return result; }; } // @ts-ignore
+        if (prop == 'then' || prop == 'catch' || prop == 'finally') { return target?.[prop]?.bind?.(target); }
 
         // @ts-ignore
         return Promised(actWith(target, async (obj)=>{
@@ -106,16 +106,14 @@ class promiseHandler {
 
     //
     apply(target, thisArg, args) { // @ts-ignore
-        return actWith(unwrap(target, (...args)=>this.resolve?.(...args)), (obj)=>Reflect.apply(obj, thisArg, args));
+        if (this.#resolve) { const result = this.#resolve?.(...args); this.#resolve = null; return result; }
+        return actWith(unwrap(target, this.#resolve), (obj)=>Reflect.apply(obj, thisArg, args));
     }
 }
 
 //
-const resolvedMap = new WeakMap(), handledMap = new WeakMap();
-
-//
 export type PromiseLike<T=any> = Promise<T>|any;
-export function Promised<T=any>(promise: PromiseLike<T>, resolve?: (item: any)=>void, reject?: (error: any)=>void) {
+export function Promised<T=any>(promise: PromiseLike<T>, resolve?: ((...args: any[])=>void)|null, reject?: ((...args: any[])=>void)|null) {
     if (!handledMap?.has?.(promise)) { promise?.then?.((item)=>resolvedMap?.set?.(promise, item)); } // @ts-ignore
-    return handledMap?.getOrInsertComputed?.(promise, ()=>new Proxy<PromiseLike<T>>(fixFx(promise), new promiseHandler(resolve, reject)));
+    return handledMap?.getOrInsertComputed?.(promise, ()=>new Proxy<PromiseLike<T>>(fixFx(promise), new PromiseHandler(resolve, reject)));
 }
