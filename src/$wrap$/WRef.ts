@@ -1,4 +1,12 @@
+//
 const existsMap = new WeakMap<any, WR<any>>();
+
+//
+export type WRef<T> = {
+    [K in keyof T]: T[K] extends (...args: infer A) => infer R
+        ? (...args: A) => WRef<R> | null
+        : T[K] | null;
+};
 
 //
 class WeakRefProxyHandler<T extends object|Function> implements ProxyHandler<object> {

@@ -1,0 +1,6 @@
+= Symbol.ts
+:source_path: modules/object.ts/src/$wrap$/Symbol.ts
+
+Auto-generated documentation.
+
+== Exports

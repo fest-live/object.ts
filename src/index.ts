@@ -1,4 +1,5 @@
 export * from "./$wrap$/AssignObject";
+export * from "./$core$/Assigned";
 export * from "./$core$/Mainline";
 export * from "./$core$/Primitives";
 export * from "./$wrap$/Promised";

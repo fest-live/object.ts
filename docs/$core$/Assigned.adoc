@@ -1,0 +1,8 @@
+= Assigned.ts
+:source_path: modules/object.ts/src/$core$/Assigned.ts
+
+Auto-generated documentation.
+
+== Exports
+- consts: conditionalIndex, conditional, remap, unified, observableBySet, observableByMap, assignMap, assign, link, computed, propRef, delayedSubscribe
+- interfaces: PropStore

@@ -1,0 +1,117 @@
+# Object.ts Library Overview
+
+This document describes the reactive utilities provided in `modules/object.ts/src`. All code examples are TypeScript. The library exposes primitives to wrap objects, arrays, maps, sets and functions into reactive entities and subscribe to their changes.
+
+## Quick Start
+
+```ts
+import { makeReactive, subscribe } from "modules/object.ts/src";
+
+const state = makeReactive({ count: 0 });
+const unsub = subscribe(state, (value, prop, old) => {
+  console.log(prop, old, "->", value);
+});
+
+state.count = 1; // triggers subscriber
+unsub();
+```
+
+## Core Concepts
+
+- Reactive wrappers: Arrays, Maps, Sets, plain objects, and functions become observable via proxies.
+- Subscribe model: `subscribe(target, cb[, ctx])` invokes callbacks with `(value, prop, old)` whenever `prop` changes.
+- Computation helpers: `computed`, `assign`, `link`, `propRef`, `derivate` ease deriving and syncing state.
+
+## Architecture
+
+```mermaid
+flowchart TD
+  subgraph Wrappers
+    RA[ReactiveArray]
+    RM[ReactiveMap]
+    RS[ReactiveSet]
+    RO[ReactiveObject]
+  end
+  S[(Subscript Registry)]
+  U[User Code]
+
+  U -->|makeReactive| Wrappers
+  Wrappers -->|register| S
+  Wrappers -->|"trigger(prop,value,old)"| S
+  S -->|"subscribe(cb)"| U
+```
+
+## API Groups
+
+### Core (`$core$/Mainline.ts`)
+
+- `makeReactive(target)`: Wraps arrays, maps, sets, objects, functions into reactive proxies.
+- `subscribe(tg, cb[, ctx])`: Subscribes to changes; returns unsubscribe function.
+- `observe(tg, cb[, ctx])`: Convenience variant for arrays; auto-iterates when array is passed.
+- `unsubscribe(tg, cb?, ctx?)`: Removes a subscription; with `cb` removes specific, otherwise clears all.
+- `bindByKey(target, reactive, keyFn)`: Mirrors updates for property returned by `keyFn` into `target`.
+- `derivate(from, reactFn, watch?)`: Produces reactive derived value and keeps it in sync.
+- `bindBy(target, reactive, watch?)`: Two-way sync between `target` and `reactive` by properties.
+- `observableBySet(set)`: Reactive array reflecting a `Set`.
+- `observableByMap(map)`: Reactive array of `[key, value]` pairs reflecting a `Map`.
+
+### Primitives (`$core$/Primitives.ts`)
+
+- `conditional(cond, ifTrue, ifFalse[, behavior])`: Reactive switch between two values.
+- `numberRef(initial?, behavior?)`: Reactive number with `.value`.
+- `stringRef(initial?, behavior?)`: Reactive string with `.value`.
+- `booleanRef(initial?, behavior?)`: Reactive boolean with `.value`.
+- `ref(initial?, behavior?)`: Generic reactive reference with `.value`.
+- `autoRef(typed, behavior?)`: Chooses proper ref by type or wraps objects via `makeReactive`.
+- `promised(promise, behavior?)`: Wraps a promise into a reactive reference.
+- `assign([a,objProp], [b, srcProp|compute], prop?)`: One-way sync `b → a` for `prop` with optional compute.
+- `link(a, b, prop?)`: Two-way live sync between two reactives/objects by `prop`.
+- `computed(src, compute?, behavior?, prop="value")`: Reactive computed ref from `src[prop]`.
+- `propRef(src, srcProp?, behavior?, initial?)`: Ref pointing to `src[srcProp]` with 2-way sync.
+- `conditionalIndex(conditions[])`: Index of first predicate returning true.
+- `delayedSubscribe(ref, cb, delay?)`: Calls `cb` after `ref.value` stays truthy for delay.
+- `triggerWithDelay(ref, cb, delay?)`: Returns timer when `ref.value` is truthy.
+- `delayedBehavior(delay?)`, `delayedOrInstantBehavior(delay?)`: Behavior composables for delayed triggers.
+- `remap(sub, cb?, dest?)` [deprecated]: One-way mapping into `dest`.
+- `unified(...subs)` [deprecated]: Merges updates into a single object.
+
+### Specific (`$core$/Specific.ts`)
+
+- `makeReactiveArray(arr)`, `makeReactiveMap(map)`, `makeReactiveSet(set)`, `makeReactiveObject(obj)`.
+  Internally use `Subscript` to manage listeners and trigger updates.
+
+### Subscriptions (`$core$/Subscript.ts`)
+
+- `Subscript`: Internal registry for listeners with `subscribe`, `unsubscribe`, and `trigger`.
+- `wrapWith(what, handler)`: Proxy wrapper that registers with the `Subscript` registry.
+
+### Utilities (`$wrap$/Utils.ts`)
+
+- `safe`, `unwrap`, `deref`, `addToCallChain`, `isNotEqual`, `isKeyType`, etc.
+
+### Symbols (`$wrap$/Symbol.ts`)
+
+- Exposes internal well-known symbols like `$value`, `$extractKey$`, `$registryKey$`, `$triggerLess`.
+
+### Promises (`$wrap$/Promised.ts`)
+
+- `Promised(promise)`: Proxy enabling property access and calls on a pending promise, forwarding when resolved.
+
+## Change Propagation
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Reactive as Reactive Proxy
+  participant Subscript as Subscript Registry
+  participant Listener as Subscriber
+
+  User->>Reactive: obj.prop = newValue
+  Reactive->>Subscript: trigger(prop, newValue, oldValue)
+  Subscript-->>Listener: cb(newValue, prop, oldValue)
+```
+
+## Notes
+
+- Promises and `WeakRef` are not re-wrapped by `makeReactive` and pass through.
+- Use `Symbol.dispose` on reactive objects/arrays/maps/sets to detach subscriptions.

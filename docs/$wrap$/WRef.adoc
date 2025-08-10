@@ -1,0 +1,7 @@
+= WRef.ts
+:source_path: modules/object.ts/src/$wrap$/WRef.ts
+
+Auto-generated documentation.
+
+== Exports
+- types: WRef, WR

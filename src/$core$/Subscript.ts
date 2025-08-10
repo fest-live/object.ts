@@ -159,7 +159,7 @@ export class Subscript {
 
     // try execute immediatly, if already running, try delayed action in callstack
     // if catch will also fail, will cause another unhandled reject (will no repeating)
-    trigger(name: keyType, value: any = null, oldValue?: any, ...etc: any[]) {
+    trigger(name: keyType|null, value: any = null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
 
         // @ts-ignore

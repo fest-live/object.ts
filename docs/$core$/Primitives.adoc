@@ -1,0 +1,7 @@
+= Primitives.ts
+:source_path: modules/object.ts/src/$core$/Primitives.ts
+
+Auto-generated documentation.
+
+== Exports
+- consts: numberRef, stringRef, booleanRef, ref, autoRef, promised, triggerWithDelay, delayedBehavior, delayedOrInstantBehavior, makeReactive

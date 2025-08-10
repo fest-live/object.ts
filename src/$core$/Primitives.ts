@@ -1,28 +1,8 @@
-import { makeReactive, subscribe } from "../$core$/Mainline";
-import { $value, $behavior, $promise } from "../$wrap$/Symbol";
-import { addToCallChain, deref, isKeyType, isNotEqual, objectAssignNotEqual, refValid, subValid, type keyType } from "../$wrap$/Utils";
+import { $value, $behavior, $promise, $extractKey$ } from "../$wrap$/Symbol";
+import { deref, refValid } from "../$wrap$/Utils";
+import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 
-/**
- * Создаёт реактивное условное значение.
- *
- * @param {any} ref - Реактивная ссылка или значение, определяющее условие.
- * @param {any} ifTrue - Значение, возвращаемое при истинном условии.
- * @param {any} ifFalse - Значение, возвращаемое при ложном условии.
- * @returns {any} - Реактивная ссылка, которая меняет значение между ifTrue и ifFalse.
- */
-export const conditional = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
-    const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
-    const usb = subscribe([cond, "value"], (val) => { cur.value = val ? ifTrue : ifFalse; });
-    addToCallChain(cur, Symbol.dispose, usb); return cur;
-}
-
-/**
- * Создаёт реактивную ссылку для числового значения.
- *
- * @param {any} [initial] - Начальное значение или Promise.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @returns {any} - Реактивная ссылка с геттером и сеттером для .value (число).
- */
+//
 export const numberRef = <Under = number>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r: refValid<Under> = makeReactive({
@@ -36,13 +16,7 @@ export const numberRef = <Under = number>(initial?: any, behavior?: any): refVal
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-/**
- * Создаёт реактивную ссылку для строкового значения.
- *
- * @param {any} [initial] - Начальное значение или Promise.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @returns {any} - Реактивная ссылка с геттером и сеттером для .value (строка).
- */
+//
 export const stringRef = <Under = string>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r: refValid<Under> = makeReactive({
@@ -56,13 +30,7 @@ export const stringRef = <Under = string>(initial?: any, behavior?: any): refVal
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-/**
- * Создаёт реактивную ссылку для булевого значения.
- *
- * @param {any} [initial] - Начальное значение или Promise.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @returns {any} - Реактивная ссылка с геттером и сеттером для .value (boolean).
- */
+//
 export const booleanRef = <Under = boolean>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r: refValid<Under> = makeReactive({
@@ -76,13 +44,7 @@ export const booleanRef = <Under = boolean>(initial?: any, behavior?: any): refV
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-/**
- * Создаёт универсальную реактивную ссылку.
- *
- * @param {any} [initial] - Начальное значение или Promise.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @returns {any} - Реактивная ссылка с полем .value произвольного типа.
- */
+//
 export const ref = <Under = any>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r: refValid<Under> = makeReactive({
@@ -92,12 +54,7 @@ export const ref = <Under = any>(initial?: any, behavior?: any): refValid<Under>
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
-/**
- * Создаёт реактивную ссылку на основе типа данных.
- *
- * @param {any} typed - Исходное значение.
- * @returns {any} - Реактивная ссылка.
- */
+//
 export const autoRef = <Under = any>(typed: any, behavior?: any): refValid<Under> => {
     switch (typeof typed) {
         case "boolean": return booleanRef<boolean>(typed, behavior);
@@ -108,238 +65,41 @@ export const autoRef = <Under = any>(typed: any, behavior?: any): refValid<Under
     }
 }
 
-/**
- * Оборачивает Promise в реактивную ссылку.
- *
- * @deprecated Используйте ref(promise) напрямую.
- * @param {any} promise - Promise, результат которого станет значением .value.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @returns {any} - Реактивная ссылка.
- */
+//
 export const promised = <Under = any>(promise: any, behavior?: any): refValid<Under> => {
     return ref<Under>(promise, behavior);
 }
 
-/**
- * Односторонняя синхронизация значений двух реактивных ссылок.
- * Значение a[prop] будет меняться при изменении b[prop].
- *
- * @param {any} a - Получатель значения.
- * @param {any} b - Источник значения.
- * @param {string} [prop="value"] - Имя синхронизируемого поля.
- * @returns {Function|undefined} - Функция для отписки или undefined.
- */
-
 //
-const $getValue = ($objOrPlain: any)=>{
-    if (typeof $objOrPlain == "object" && ("value" in $objOrPlain || $objOrPlain?.value != null)) { return $objOrPlain?.value; }; return $objOrPlain;
-}
-
-//
-interface PropStore {
-    unsub?: any;
-    bound?: any;
-    cmpfx?: any;
-    compute?: any;
-    dispose?: any;
-}
-
-//
-export const assignMap = new WeakMap<any, Map<any, PropStore>>();
-export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType = "value") => {
-    const isACompute = typeof a?.[1] == "function" && (a as [any, keyType])?.length == 2, isBCompute = typeof b?.[1] == "function" && (b as [any, keyType])?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
-
-    //
-    if (!(typeof b?.[0] == "object" || typeof b?.[0] == "function")) { a[0][a_prop] = b?.[0]; return ()=>{}; };
-
-    //
-    const compute = (v, p) => {
-        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.bound == bRef?.deref?.()) {
-            let val:any = null;
-            const cmpfx = assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.cmpfx;
-            if (typeof cmpfx == "function")
-                { val = cmpfx?.($getValue(bRef?.deref?.()) ?? v, p, null); } else
-                { val = bRef?.deref?.() ?? v; };
-            aRef.deref()[a_prop] = $getValue(val);
-        } else {
-            const map = assignMap?.get?.(aRef?.deref?.());
-            const store = map?.get?.(a_prop);
-            store?.dispose?.();
-        }
-    };
-
-    //
-    const dispose = () => {
-        const map = assignMap?.get?.(aRef?.deref?.());
-        const store = map?.get?.(a_prop);
-        map?.delete?.(a_prop);
-        store?.unsub?.();
-    };
-
-    //
-    const bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") && !(b?.[0] instanceof WeakRef || typeof b?.[0]?.deref == "function") ? new WeakRef(b?.[0]) : b?.[0],
-          aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") && !(a?.[0] instanceof WeakRef || typeof a?.[0]?.deref == "function") ? new WeakRef(a?.[0]) : a?.[0];
-
-    //
-    let store: PropStore = { compute, dispose, cmpfx: cmpBFnc };
-
-    //
-    const a_tmp = aRef?.deref?.(), b_tmp = bRef?.deref?.();
-    if (aRef instanceof WeakRef) {
-        if (assignMap?.get?.(a_tmp)?.get?.(a_prop)?.bound != b_tmp) {
-            assignMap?.get?.(a_tmp)?.delete?.(a_prop);
-        };
-
-        // @ts-ignore
-        const map = assignMap?.getOrInsert?.(a_tmp, new Map());
-        store = map?.getOrInsertComputed?.(a_prop, ()=>({
-            bound: b_tmp,
-            cmpfx: cmpBFnc,
-            unsub: subscribe(b, compute),
-            compute,
-            dispose,
-        }));
-
-        //
-        store.cmpfx = cmpBFnc;
-        addToCallChain(a_tmp, Symbol.dispose, store?.dispose);
-        addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
-    }
-
-    //
-    if (b_tmp) { b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop]; }
-
-    //
-    return store?.dispose;
-}
-
-/**
- * Двунаправленный "лайв-синк" между двумя реактивами/объектами по prop.
- *
- * @param {any} a - Первая ссылка.
- * @param {any} b - Вторая ссылка.
- * @param {string} [prop="value"] - Имя синхронизируемого поля.
- * @returns {Function} - Функция для прекращения синхронизации.
- */
-export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType = "value") => {
-    const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
-    const usub = [ assign(a, b, a_prop), assign(b, a, b_prop) ];
-    return ()=>usub?.map?.((a)=>a?.());
-}
-
-/**
- * Создаёт реактивную ссылку на результат вычисления.
- *
- * @param {any} src - Исходный объект.
- * @param {Function|null} cb - Функция вычисления.
- * @param {string} [prop="value"] - Имя свойства.
- * @returns {any} - Реактивная ссылка.
- */
-export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>, cb?: Function|null, behavior?: any, prop: keyType = "value"): refValid<OutputUnder> => { prop ??= "value";
-    const isACompute = typeof src?.[1] == "function" && (src as [any, keyType])?.length == 2;
-    const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? src?.[1] : prop; if (!isAProp && !isACompute) { src = [src, a_prop]; }; if (isACompute) { src[1] = a_prop; };
-    const rf = autoRef(cb?.(src?.[0]?.[prop], prop), behavior);
-    assign([rf, prop], [src?.[0], cb], prop); return rf;
-}
-
-/**
- * Создаёт реактивную ссылку на свойство объекта.
- *
- * @param {any} src - Исходный объект.
- * @param {string} prop - Имя свойства.
- * @param {any} [behavior] - Дополнительное поведение реактива.
- * @param {any} [initial] - Значение по умолчанию.
- * @returns {any} - Реактивная ссылка, синхронизированная с полем объекта.
- */
-export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType = "value", behavior?: any, initial?: any): refValid<Under> => {
-    const r = autoRef(src?.[srcProp ??= "value"] ?? initial, behavior);
-    link([r, "value"], [src, srcProp]); return r;
-}
-
-/**
- * Создаёт реактивную ссылку на индекс первого элемента в массиве, удовлетворяющего условию.
- *
- * @param {any[]} condList - Массив условий.
- * @returns {any} - Реактивная ссылка.
- */
-export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
-
-/**
- * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
- *
- * @param {any} ref - Реактивная ссылка.
- * @param {Function} cb - Функция для выполнения.
- * @param {number} [delay=100] - Задержка в миллисекундах.
- * @returns {any} - Таймер или null.
- */
-export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): refValid<Under> => {
-    let tm: any; //= triggerWithDelay(ref, cb, delay);
-    return subscribe([ref, "value"], (v)=>{
-        if (!v && tm) { clearTimeout(tm); tm = null; } else
-        if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
-    });
-}
-
-/**
- * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
- *
- * @param {any} ref - Реактивная ссылка.
- * @param {Function} cb - Функция для выполнения.
- * @param {number} [delay=100] - Задержка в миллисекундах.
- * @returns {any} - Таймер или null.
- */
 export const triggerWithDelay = <Under = any>(ref: any, cb: Function, delay = 100): refValid<Under> => { if (ref?.value ?? ref) { return setTimeout(()=>{ if (ref.value) cb?.(); }, delay); } }
 
-/**
- * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
- *
- * @param {any} ref - Реактивная ссылка.
- * @param {Function} cb - Функция для выполнения.
- * @param {number} [delay=100] - Задержка в миллисекундах.
- * @returns {any} - Таймер или null.
- */
+//
 export const delayedBehavior  = (delay = 100) => {
     return (cb: Function, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); };
 }
 
-/**
- * Запускает функцию с задержкой, если значение реактивной ссылки истинно.
- *
- * @param {any} ref - Реактивная ссылка.
- * @param {Function} cb - Функция для выполнения.
- * @param {number} [delay=100] - Задержка в миллисекундах.
- * @returns {any} - Таймер или null.
- */
+//
 export const delayedOrInstantBehavior = (delay = 100) => {
     return (cb: Function, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
 }
 
-/**
- * @deprecated Use `computed` instead.
- */
-// used for redirection properties
-// !one-directional
-export const remap = <Under = any>(sub: subValid<Under>, cb?: Function|null, dest?: any|null)=>{
-    if (!dest) dest = makeReactive<Under>({});
-    const usb = subscribe(sub, (value, prop, old)=> {
-        const got = cb?.(value, prop, old);
-        if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
-        if (isNotEqual(dest[prop], got)) dest[prop] = got;
-    });
-    if (dest) { addToCallChain(dest, Symbol.dispose, usb); }; return dest; // return reactive value
-}
+//
+export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Under,T>, stateName = ""): refValid<Under,T> => {
+    if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null || target?.[$extractKey$]) return target as refValid<Under,T>;
+    if (target instanceof Promise || target instanceof WeakRef) return target as refValid<Under,T>; // promise forbidden
 
-/**
- * @deprecated Use `computed` instead.
- */
-// !one-directional
-export const unified = <Under = any>(...subs: subValid<Under>[])=>{
-    const dest = makeReactive({});
-    subs?.forEach?.((sub)=>subscribe(sub, (value, prop, _)=>{
-        if (isNotEqual(dest[prop], value)) { dest[prop] = value; };
-    })); return dest;
+    //
+    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
+    if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return target as refValid<Under,T>;
+    if (unwrap instanceof Promise || unwrap instanceof WeakRef) return target as refValid<Under,T>; // promise forbidden
+
+    //
+    let reactive = target;
+    if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target as Under[]); } else
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target as Map<any, Under>); } else
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target as Set<Under>); } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
+
+    //
+    return reactive;
 }
