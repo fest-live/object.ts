@@ -36,8 +36,6 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
 
         //
         let unsub: any = self?.subscribe?.(cb, tProp);
-
-        //
         addToCallChain(unsub, Symbol.dispose, unsub);
         addToCallChain(unsub, Symbol.asyncDispose, unsub);
         addToCallChain(unwrap, Symbol.dispose, unsub);

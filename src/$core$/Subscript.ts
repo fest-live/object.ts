@@ -23,10 +23,20 @@ const completeWithUnsub = (subscriber, weak: WeakRef<any>|WR<any>, handler: Subs
 export const subscriptRegistry = new WeakMap<any, Subscript>();
 
 // @ts-ignore
-export const register = (what: any, handle: any): any => { const unwrap = what?.[$extractKey$] ?? what; subscriptRegistry.getOrInsert(unwrap, new Subscript()); return handle; }
-export const wrapWith = (what: any, handle: any): any =>{ what = deref(what?.[$extractKey$] ?? what);
-    if (typeof what == "symbol" || !(typeof what == "object" || typeof what == "function") || what == null) return what;
-    return new Proxy(what, register(what, handle));
+const wrapped = new WeakMap();
+
+//
+export const register = (what: any, handle: any): any => {
+    const unwrap = what?.[$extractKey$] ?? what;  // @ts-ignore
+    subscriptRegistry.getOrInsert(unwrap, new Subscript());
+    return handle;
+}
+
+//
+export const wrapWith = (what: any, handle: any): any =>{
+    what = deref(what?.[$extractKey$] ?? what);
+    if (typeof what == "symbol" || !(typeof what == "object" || typeof what == "function") || what == null) return what; // @ts-ignore
+    return wrapped.getOrInsertComputed(what, ()=>new Proxy(what, register(what, handle)));
 }; // !experimental `getOrInsert` feature!
 
 //
@@ -44,8 +54,8 @@ export class Subscript {
         if (cb && this.#flags.has(cb)) return this;
         this.#flags.add(cb);
         if (Array.isArray(args)) // @ts-ignore
-            { await Promise?.try?.(cb, ...args as [any, any, any])?.catch?.(console.error.bind(console)); } else // @ts-ignore
-            { await Promise?.try?.(cb, args)?.catch?.(console.error.bind(console)); }
+            { Promise?.try?.(cb, ...args as [any, any, any])?.catch?.(console.error.bind(console)); } else // @ts-ignore
+            { Promise?.try?.(cb, args)?.catch?.(console.error.bind(console)); }
         this.#flags.delete(cb); return this;
     }
 

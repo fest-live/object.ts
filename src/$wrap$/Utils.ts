@@ -79,9 +79,11 @@ export const safe = (target)=>{
 
 //
 export const unwrap = (arr)=>{ return arr?.[$extractKey$] ?? arr?.["@target"] ?? arr; }
-export const deref  = (target?: any, discountValue?: boolean|null)=>{
+export const deref  = (target?: any, discountValue: boolean|null = false)=>{
+    if (target == null) return target;
     let from = (target?.value != null && (typeof target?.value == "object" || typeof target?.value == "function") && !discountValue) ? target?.value : target;
-    if (from instanceof WeakRef) { from = deref(from.deref(), discountValue); }; return from;
+    if (from == null) return from;
+    if (from instanceof WeakRef && from.deref() != from) { from = deref(from.deref(), discountValue); }; return from;
 }
 
 // experimental promise support

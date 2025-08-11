@@ -102,8 +102,11 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
             const cmpfx = assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.cmpfx;
             if (typeof cmpfx == "function")
                 { val = cmpfx?.($getValue(bRef?.deref?.()) ?? v, p, null); } else
-                { val = bRef?.deref?.() ?? v; };
-            aRef.deref()[a_prop] = $getValue(val);
+                { val = bRef?.deref?.()?.[p] ?? v; };
+
+            //
+            const nv = $getValue(val);
+            aRef.deref()[a_prop] = nv;
         } else {
             const map = assignMap?.get?.(aRef?.deref?.());
             const store = map?.get?.(a_prop);
@@ -138,12 +141,13 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
         store = map?.getOrInsertComputed?.(a_prop, ()=>({
             bound: b_tmp,
             cmpfx: cmpBFnc,
-            unsub: subscribe(b, compute),
+            unsub: null,
             compute,
             dispose,
         }));
 
         //
+        store.unsub = subscribe(b, compute);
         store.cmpfx = cmpBFnc;
         addToCallChain(a_tmp, Symbol.dispose, store?.dispose);
         addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
@@ -158,11 +162,12 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
 
 //
 export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType = "value") => {
-    const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
+    /*const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
     const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
-    const usub = [ assign(a, b, a_prop), assign(b, a, b_prop) ];
-    return ()=>usub?.map?.((a)=>a?.());
+    const usub = [ assign(a, b, b_prop), assign(b, a, a_prop) ];*/
+    const usub = [ assign(a, b, prop), assign(b, a, prop) ];
+    return ()=>usub?.map?.((c)=>c?.());
 }
 
 //

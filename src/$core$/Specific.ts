@@ -9,7 +9,7 @@ const systemGet = (target, name, registry)=>{
 
     //
     const exists = target?.[name]?.bind?.(target);
-    if (exists != null) return exists;
+    if (exists != null) return null;
 
     //
     if (name == $value)               { return target?.[$value] ?? target?.value; }
@@ -29,7 +29,7 @@ const systemGet = (target, name, registry)=>{
 
 //
 const observableAPIMethods = (target, name, registry)=>{
-    if (name in target || target?.[name] != null) return target?.[name];
+    if (name in target || target?.[name] != null) return null;
     if (name == "subscribe") {
         return registry?.deref?.()?.compatible?.[name] ?? ((handler)=>{
             if (typeof handler == "function") {
@@ -90,31 +90,34 @@ export class ObserveArrayMethod {
 
     //
     apply(target, ctx, args) {
-        let added: any[] = [], removed: any[] = [];
-        let setPairs: [any, number, any][] = [];
+        let added: [number, any, any][] = [], removed: [number, any, any][] = [];
+        let setPairs: [number, any, any][] = [];
         let oldState: any[] = [...this.#self];
         let idx: number = -1;
 
         //
         switch (this.#name) {
-            case "push"   : idx = this.#self?.length; added = args; break;
+            case "push"   : idx = oldState?.length; added = args; break;
             case "unshift": idx = 0; added = args; break;
             case "pop":
-                idx = this.#self?.length - 1;
-                if (this.#self.length > 0) { removed = [this.#self[idx - 1]]; }
+                idx = oldState?.length - 1;
+                if (oldState.length > 0) { removed = [[idx - 1, oldState[idx - 1], null]]; }
                 break;
             case "shift":
                 idx = 0;
-                if (this.#self.length > 0) removed = [this.#self[idx]];
+                if (oldState.length > 0) removed = [[idx, oldState[idx], null]];
                 break;
             case "splice":
                 const [start, deleteCount, ...items] = args; idx = start;
-                removed = this.#self.slice(start, start + deleteCount);
-                added   = items.slice(deleteCount); // если добавлено больше, чем удалено
-                // Если есть замена элементов (deleteCount > 0 && items.length > 0)
-                if (deleteCount > 0 && items.length > 0) {
-                    for (let i = 0; i < Math.min(deleteCount, items.length); i++) {
-                        setPairs.push([start + i, items[i], oldState[start + i]]);
+                added = deleteCount > 0 ? items.slice(deleteCount) : [];
+
+                // discount of replaced (assigned) elements
+                removed = deleteCount > 0 ? oldState?.slice?.(items?.length + start, start + (deleteCount - (items?.length || 0))) : [];
+
+                // index assignment
+                if (deleteCount > 0 && items?.length > 0) {
+                    for (let i = 0; i < Math.min(deleteCount, items?.length ?? 0); i++) {
+                        setPairs.push([start + i, items[i], oldState?.[start + i] ?? null]);
                     }
                 }
                 break;
@@ -122,34 +125,34 @@ export class ObserveArrayMethod {
             case "fill":
             case "reverse":
             case "copyWithin":
-                // Сравниваем старое и новое состояние, находим изменённые элементы
-                idx = 0; for (let i = 0; i < this.#self.length; i++) {
-                    if (isNotEqual(oldState[i], this.#self[i]))
-                        {setPairs.push([idx+i, this.#self[i], oldState?.[idx+i]]); }
+                // compare old and new state, find changed elements
+                idx = 0; for (let i = 0; i < oldState.length; i++) {
+                    if (isNotEqual(oldState[i], oldState[i]))
+                        {setPairs.push([idx+i, oldState[i], oldState[i]]); }
                 }
                 break;
-            // Индексное присваивание, args: [value, index]
+            // index assignment, args: [value, index]
             case "set": idx = args[1];
-            setPairs.push([idx, args[0], oldState?.[idx]]); break;
+            setPairs.push([idx, args[0], oldState?.[idx] ?? null]); break;
         }
 
-        // Выполнить операцию
+        // execute operation
         const result = Reflect.apply(target, ctx || this.#self, args);
         if (this.#handle?.[$triggerLock]) {
             if (Array.isArray(result)) { return makeReactiveArray(result); }
             return result;
         }
 
-        // Триггеры на добавление
-        const reg = subscriptRegistry.get(target);
+        // triggers on adding
+        const reg = subscriptRegistry.get(this.#self);
         if (added?.length === 1) {
             reg?.trigger?.(idx, added[0], null, "@add");
         } else if (added?.length > 1) {
             reg?.trigger?.(idx, added, null, "@addAll");
-            removed.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, "@add"));
+            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, "@add"));
         }
 
-        // Триггеры на удаление
+        // triggers on removing
         if (removed?.length === 1) {
             reg?.trigger?.(idx, null, removed[0], "@remove");
         } else if (removed?.length > 1) {
@@ -157,12 +160,12 @@ export class ObserveArrayMethod {
             removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@remove"));
         }
 
-        // Триггеры на изменение
+        // triggers on changing
         if (setPairs?.length === 1) {
             reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], "@set");
         } else if (setPairs?.length > 1) {
             reg?.trigger?.(idx, setPairs, null, "@setAll");
-            removed.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], "@set"));
+            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], "@set"));
         }
 
         //
@@ -194,7 +197,7 @@ export class ReactiveArray {
 
         // that case: target[n]?.(?{.?value})?
         const got = Reflect.get(target, name, rec);
-        if (typeof got == "function") { return new Proxy(got, new ObserveArrayMethod(name, target, this)); };
+        if (typeof got == "function") { return new Proxy(got?.bind?.(target) ?? got, new ObserveArrayMethod(name, target, this)); };
         return got;
     }
 
