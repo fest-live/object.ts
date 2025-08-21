@@ -98,7 +98,7 @@ const disposeMap = new WeakMap();
 const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.forEach?.((cb: any)=>cb?.()); });
 
 //
-export function addToCallChain(obj, methodKey, callback) {
+export function addToCallChain(obj, methodKey, callback?: any|null) {
     if (!callback || typeof callback != "function" || (typeof obj != "object" && typeof obj != "function")) return;
     if (methodKey == Symbol.dispose) {
         // @ts-ignore
