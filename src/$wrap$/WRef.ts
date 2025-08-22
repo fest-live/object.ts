@@ -17,11 +17,11 @@ class WeakRefProxyHandler<T extends object|Function> implements ProxyHandler<obj
         const obj = this._deref(tg), value = (obj as any)?.[prop];
 
         // libraries specific (LUR.E/object.ts)
-        if ((prop === "element" || prop === "value") && obj && (value == null || !(prop in obj))) { return obj; }
+        if ((prop == "element" || prop == "value") && obj && (value == null || !(prop in obj))) { return obj; }
         // wrap-away deref from side-effects
-        if (prop === "deref") { return ()=>this._deref(tg); };
+        if (prop == "deref") { return ()=>this._deref(tg); };
         // if function, workaround callable
-        if (typeof value === 'function') {
+        if (typeof value == 'function') {
             return (...args: any[]) => {
                 const realObj = this._deref(tg);
                 return (realObj as any)?.[prop]?.(...args);

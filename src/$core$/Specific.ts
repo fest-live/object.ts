@@ -145,7 +145,7 @@ export class ObserveArrayMethod {
 
         // triggers on adding
         const reg = subscriptRegistry.get(this.#self);
-        if (added?.length === 1) {
+        if (added?.length == 1) {
             reg?.trigger?.(idx, added[0], null, "@add");
         } else if (added?.length > 1) {
             reg?.trigger?.(idx, added, null, "@addAll");
@@ -153,7 +153,7 @@ export class ObserveArrayMethod {
         }
 
         // triggers on removing
-        if (removed?.length === 1) {
+        if (removed?.length == 1) {
             reg?.trigger?.(idx, null, removed[0], "@remove");
         } else if (removed?.length > 1) {
             reg?.trigger?.(idx, removed, null, "@removeAll");
@@ -161,7 +161,7 @@ export class ObserveArrayMethod {
         }
 
         // triggers on changing
-        if (setPairs?.length === 1) {
+        if (setPairs?.length == 1) {
             reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], "@set");
         } else if (setPairs?.length > 1) {
             reg?.trigger?.(idx, setPairs, null, "@setAll");

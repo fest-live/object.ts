@@ -7,4 +7,4 @@ export * from "./$wrap$/WRef";
 
 //
 export {$triggerLess} from "./$wrap$/Symbol";
-export {safe, unwrap, deref, isValidObj, addToCallChain} from "./$wrap$/Utils";
+export {safe, unwrap, deref, isValidObj, addToCallChain, isNotEqual} from "./$wrap$/Utils";

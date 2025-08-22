@@ -43,7 +43,7 @@ export const objectAssign = (target, value, name: keyType | null = null, removeN
         //
         if (exists instanceof Set || exists instanceof WeakSet)
             { for (const E of entries) { // @ts-ignore
-                const mergeObj = E?.[mergeKey] ? Array.from(exists?.values?.() || []).find((I)=>I?.[mergeKey]===E?.[mergeKey]) : null;
+                const mergeObj = E?.[mergeKey] ? Array.from(exists?.values?.() || []).find((I)=>!isNotEqual?.(I?.[mergeKey], E?.[mergeKey])) : null;
                 if (mergeObj != null) { objectAssign(mergeObj, E, null, removeNotExists, mergeKey); } else { exists.add(E); }
             } return exists; }
 
