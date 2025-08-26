@@ -114,6 +114,10 @@ class PromiseHandler {
 //
 export type PromiseLike<T=any> = Promise<T>|any;
 export function Promised<T=any>(promise: PromiseLike<T>, resolve?: ((...args: any[])=>void)|null, reject?: ((...args: any[])=>void)|null) {
+    if (!(promise instanceof Promise || typeof promise?.then == "function")) { return promise; }
+    if (resolvedMap?.has?.(promise)) { return resolvedMap?.get?.(promise); };
     if (!handledMap?.has?.(promise)) { promise?.then?.((item)=>resolvedMap?.set?.(promise, item)); } // @ts-ignore
     return handledMap?.getOrInsertComputed?.(promise, ()=>new Proxy<PromiseLike<T>>(fixFx(promise), new PromiseHandler(resolve, reject)));
 }
+
+//if (["then", "catch", "finally"].includes(prop as string)) { return (typeof withUpdate?.[prop] == "function" ? withUpdate?.[prop]?.bind?.(withUpdate) : withUpdate?.[prop]); }
