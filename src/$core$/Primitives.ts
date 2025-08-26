@@ -96,9 +96,9 @@ export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Un
     //
     let reactive = target;
     if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target as Under[]); return reactive; } else
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target as Map<any, Under>); } else
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target as Set<Under>); } else
-    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target as Map<any, Under>); return reactive; } else
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target as Set<Under>); return reactive; } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); return reactive; }
 
     //
     return reactive;

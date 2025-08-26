@@ -76,19 +76,15 @@ const makeTriggerLess = function(self){
 
 //
 export class ObserveArrayMethod {
-    #handle: any; #name: string; #self: any;
+    #name: string; #self: any; #handle: any;
     constructor(name, self, handle) {
         this.#name = name;
-        this.#handle = handle;
         this.#self = self;
+        this.#handle = handle;
     }
 
     //
-    get(target, name, rec) {
-        return Reflect.get(target, name, rec);
-    }
-
-    //
+    get(target, name, rec) { return Reflect.get(target, name, rec); }
     apply(target, ctx, args) {
         let added: [number, any, any][] = [], removed: [number, any, any][] = [];
         let setPairs: [number, any, any][] = [];
@@ -156,7 +152,7 @@ export class ObserveArrayMethod {
         if (removed?.length == 1) {
             reg?.trigger?.(idx, null, removed[0], "@remove");
         } else if (removed?.length > 1) {
-            reg?.trigger?.(idx, removed, null, "@removeAll");
+            reg?.trigger?.(idx, null, removed, "@removeAll");
             removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@remove"));
         }
 
@@ -164,7 +160,7 @@ export class ObserveArrayMethod {
         if (setPairs?.length == 1) {
             reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], "@set");
         } else if (setPairs?.length > 1) {
-            reg?.trigger?.(idx, setPairs, null, "@setAll");
+            reg?.trigger?.(idx, setPairs, oldState, "@setAll");
             setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], "@set"));
         }
 
