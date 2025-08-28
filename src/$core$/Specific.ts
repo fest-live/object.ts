@@ -189,7 +189,7 @@ export class ReactiveArray {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
         if (name == "@target" || name == $extractKey$) return target;
 
         // that case: target[n]?.(?{.?value})?
@@ -248,7 +248,7 @@ export class ReactiveMap {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@trigger"); }; }
+        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
 
         //
         if (name == "clear") {
@@ -309,7 +309,7 @@ export class ReactiveSet {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
 
         //
         if (name == "clear") {
@@ -365,7 +365,7 @@ export class ReactiveObject {
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@set"); }; } // @ts-ignore
+        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
 
         //
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
