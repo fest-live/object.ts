@@ -1,6 +1,6 @@
 import { subscribe, unsubscribe } from "../$core$/Mainline";
 import { subscriptRegistry, wrapWith } from "../$core$/Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value } from "../$wrap$/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger } from "../$wrap$/Symbol";
 import { isNotEqual, bindCtx, deref, type keyType, refValid } from "../$wrap$/Utils";
 
 // get reactive primitives (if native iterator is available, use it)
@@ -189,6 +189,7 @@ export class ReactiveArray {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@set"); }; }
         if (name == "@target" || name == $extractKey$) return target;
 
         // that case: target[n]?.(?{.?value})?
@@ -247,6 +248,7 @@ export class ReactiveMap {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@trigger"); }; }
 
         //
         if (name == "clear") {
@@ -307,6 +309,7 @@ export class ReactiveSet {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@set"); }; }
 
         //
         if (name == "clear") {
@@ -359,11 +362,12 @@ export class ReactiveObject {
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
-        if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-
-        //
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
+        if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
+        if (name == $trigger) { return ()=>{ registry?.deref()?.trigger?.("value", target?.value, target?.value, "@set"); }; } // @ts-ignore
+
+        //
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
         if (name == Symbol.toPrimitive) { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.[Symbol.toPrimitive]?.(); } }
         if (name == "toString") { return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || ""); }
