@@ -1,7 +1,7 @@
 import { $extractKey$ } from "../$wrap$/Symbol";
 import { UUIDv4 } from "../$wrap$/Utils";
-import { makeReactiveObject, ReactiveMap, ReactiveSet } from "../$core$/Specific";
-import { wrapWith } from "../$core$/Subscript";
+import { makeReactiveObject, ReactiveMap, ReactiveSet } from "./Specific";
+import { wrapWith } from "./Subscript";
 
 //
 export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => wrapWith(new Map(map), new ReactiveMap());

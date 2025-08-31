@@ -1,5 +1,5 @@
-import { $originalKey$, $extractKey$, $registryKey$  } from "../$wrap$/Symbol";
-import { $originalObjects$, isIterable, type keyType, refValid } from "../$wrap$/Utils";
+import { $originalKey$, $extractKey$, $registryKey$  } from "./Symbol";
+import { $originalObjects$, isIterable, type keyType, refValid } from "./Utils";
 
 //
 export const removeExtra = (target, value, name: keyType | null = null)=>{

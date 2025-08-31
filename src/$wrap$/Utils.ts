@@ -1,4 +1,4 @@
-import { $extractKey$, $originalKey$, $registryKey$ } from "../$wrap$/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
 //
 export type keyType = string | number | symbol;

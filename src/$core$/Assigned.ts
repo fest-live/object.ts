@@ -1,4 +1,4 @@
-import { subscribe } from "../$core$/Mainline";
+import { subscribe } from "./Mainline";
 import { addToCallChain, isKeyType, isNotEqual, objectAssignNotEqual, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
 

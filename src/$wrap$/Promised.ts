@@ -1,4 +1,4 @@
-import { $fxy } from "../$wrap$/Symbol";
+import { $fxy } from "./Symbol";
 
 //
 export const fixFx = (obj) => { if (typeof obj == "function" || obj == null) return obj; const fx = function(){}; fx[$fxy] = obj; return fx; }

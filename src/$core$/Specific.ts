@@ -1,5 +1,5 @@
-import { subscribe, unsubscribe } from "../$core$/Mainline";
-import { subscriptRegistry, wrapWith } from "../$core$/Subscript";
+import { subscribe, unsubscribe } from "./Mainline";
+import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger } from "../$wrap$/Symbol";
 import { isNotEqual, bindCtx, deref, type keyType, refValid } from "../$wrap$/Utils";
 

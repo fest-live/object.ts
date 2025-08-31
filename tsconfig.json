@@ -4,9 +4,17 @@
     "compilerOptions": {
         "outDir": "./dist/",
         "paths": {
-            "fest/*": ["../shared/fest/*"],
-            "fest/cdnImport": ["../cdnImport.mjs"],
-            "fest/object": ["./src/index.ts"]
+            "fest/*": ["../../shared/fest/*"],
+            "fest/cdnImport": ["../../cdnImport.mjs"],
+            "fest/dom": ["../dom.ts/src/index.ts"],
+            "fest/lure": ["../lur.e/src/index.ts"],
+            "fest/object": ["./src/index.ts"],
+            "fest/fl-ui": ["./src/index.ts"],
+            "fest/ui": ["./src/index.ts"],
+            "fest/uniform": ["../uniform.ts/src/index.ts"],
+            "fest/theme": ["../theme.core/src/index.ts"],
+            "fest/polyfill/*": ["../../shared/fest/polyfill/*"],
+            "polyfill/*": ["../../shared/fest/polyfill/*"]
         },
         "target": "ESNext",
         "module": "ESNext",

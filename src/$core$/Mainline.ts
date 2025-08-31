@@ -1,8 +1,8 @@
 import { objectAssign } from "../$wrap$/AssignObject";
 import { $extractKey$, $registryKey$ } from "../$wrap$/Symbol";
 import { addToCallChain, callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType, subValid, refValid } from "../$wrap$/Utils";
-import { subscriptRegistry } from "../$core$/Subscript";
-import { makeReactive } from "../$core$/Primitives";
+import { subscriptRegistry } from "./Subscript";
+import { makeReactive } from "./Primitives";
 
 //
 export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
