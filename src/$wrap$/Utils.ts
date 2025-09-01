@@ -132,7 +132,7 @@ export const isNotEqual = (a, b)=>{
     if (a == null && b == null) return false;
     if (a == null || b == null) return true;
     if (typeof a == "number" && typeof b == "number") {
-        return (Math.abs(a - b) >= 0.00001);
+        return (Math.abs(a - b) >= 1e-9);
     }
     if (typeof a == "boolean" && typeof b == "boolean") {
         return a != b;
