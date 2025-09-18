@@ -2,6 +2,30 @@ import { $extractKey$ } from "../$wrap$/Symbol";
 import { associateWith, deref, type keyType, propCbMap } from "../$wrap$/Utils";
 import { WR } from "../$wrap$/WRef";
 
+// @ts-ignore
+WeakMap.prototype.getOrInsert ??= function (key, defaultValue) {
+    if (!this.has(key)) { this.set(key, defaultValue); }
+    return this.get(key);
+};
+
+// @ts-ignore
+WeakMap.prototype.getOrInsertComputed ??= function (key, callbackFunction) {
+    if (!this.has(key)) { this.set(key, callbackFunction(key)); }
+    return this.get(key);
+};
+
+// @ts-ignore
+Map.prototype.getOrInsert ??= function (key, defaultValue) {
+    if (!this.has(key)) { this.set(key, defaultValue); }
+    return this.get(key);
+};
+
+// @ts-ignore
+Map.prototype.getOrInsertComputed ??= function (key, callbackFunction) {
+    if (!this.has(key)) { this.set(key, callbackFunction(key)); }
+    return this.get(key);
+};
+
 //
 const withUnsub = new WeakMap();
 const completeWithUnsub = (subscriber, weak: WeakRef<any>|WR<any>, handler: Subscript)=>{
