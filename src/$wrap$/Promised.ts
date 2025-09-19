@@ -107,7 +107,11 @@ class PromiseHandler {
     //
     apply(target, thisArg, args) { // @ts-ignore
         if (this.#resolve) { const result = this.#resolve?.(...args); this.#resolve = null; return result; }
-        return actWith(unwrap(target, this.#resolve), (obj)=>Reflect.apply(obj, thisArg, args));
+        return actWith(unwrap(target, this.#resolve), (obj) => {
+            if (typeof obj == "function") {
+                return Reflect.apply(obj, thisArg, args);
+            }
+        });
     }
 }
 
