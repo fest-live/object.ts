@@ -6,7 +6,7 @@ import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
 export const conditional = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
     const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
-    const usb = subscribe([cond, "value"], (val) => { cur.value = val ? ifTrue : ifFalse; });
+    const usb = subscribe([cond, "value"], (val) => { if (cur != null && (typeof cur == "object" || typeof cur == "function")) cur.value = val ? ifTrue : ifFalse; });
     addToCallChain(cur, Symbol.dispose, usb); return cur;
 }
 
@@ -56,6 +56,7 @@ export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, S
 export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Under, [any, Under][]> => { // @ts-ignore
     const obs: refValid<Under> = makeReactive<Under[]>([]) as refValid<Under>; // @ts-ignore
     addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => { // @ts-ignore
+        console.log(value, old);
         if (isNotEqual(value, old)) {
             if (old != null && value == null) {
                 const idx = obs.findIndex(([name, _]) => (name == prop));

@@ -398,7 +398,7 @@ export class ReactiveObject {
     }
 
     // supports nested "value" objects
-    has(target, prop: keyType) { if ((target = deref(target)) == null) return; return Reflect.has(target, prop); }
+    has(target, prop: keyType) { if ((target = deref(target)) == null) return false; return Reflect.has(target, prop); }
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;

@@ -9,7 +9,7 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
     if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) return;
 
     //
-    const isPair = Array.isArray(tg) && tg?.length == 2 && ["object", "function"].indexOf(typeof tg?.[0]) >= 0 && (isKeyType(tg?.[1]) || (Array.isArray(tg?.[0] && tg?.[1] == Symbol.iterator)));
+    const isPair = Array.isArray(tg) && tg?.length == 2 && ["object", "function"].indexOf(typeof tg?.[0]) >= 0 && (isKeyType(tg?.[1]) || (Array.isArray(tg?.[0]) && tg?.[1] == Symbol.iterator));
     const prop   = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
 
     // tg?.[0] ?? tg now isn't allowed anymore, because it's not safe
