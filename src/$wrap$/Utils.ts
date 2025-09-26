@@ -39,7 +39,7 @@ export const bindFx = (target, fx)=>{
 
 //
 export const isIterable = (obj) => (typeof obj?.[Symbol.iterator] == "function");
-export const isKeyType  = (prop: keyType|any)=> ["symbol", "string", "number"].indexOf(typeof prop) >= 0;
+export const isKeyType = (prop: keyType | any) => (["symbol", "string", "number"].indexOf(typeof prop) >= 0);
 export const bindCtx    = (target, fx) => ((typeof fx == "function" ? bindFx(target, fx) : fx) ?? fx);
 export const isValidObj = (obj?: any)=> { return obj != null && (typeof obj == "function" || typeof obj == "object") && !(obj instanceof WeakRef); };
 export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
@@ -50,11 +50,24 @@ export const mergeByKey = (items: any[]|Set<any>, key = "id")=>{
 
 //
 export const callByProp = (unwrap, prop: keyType, cb, ctx)=>{
-    if (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$ || (typeof prop == "symbol" || typeof prop == "object" || typeof prop == "function")) return;
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) { if (prop != null && unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); } } else
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) { if (prop != null && unwrap.has(prop as any)) { return cb?.(prop, prop); } } else
-        if (Array.isArray(unwrap) && Number.isInteger(typeof prop == "string" ? parseInt(prop) : prop)) { return cb?.(unwrap?.[typeof prop == "string" ? parseInt(prop) : prop], typeof prop == "string" ? parseInt(prop) : prop, null, "@add"); } else
-            if (typeof unwrap == "function" || typeof unwrap == "object") { return cb?.(unwrap?.[prop], prop); }
+    if (
+        prop == null ||
+        (prop == $extractKey$ || prop == $originalKey$ || prop == $registryKey$) ||
+        (typeof prop == "symbol" || typeof prop == "object" || typeof prop == "function")
+    ) return;
+
+    //
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) {
+        if (unwrap.has(prop as any)) { return cb?.(unwrap.get(prop as any), prop); }
+    } else
+        if (unwrap instanceof Set || unwrap instanceof WeakSet) {
+            if (unwrap.has(prop as any)) { return cb?.(prop, prop); }
+        } else
+            if (Array.isArray(unwrap) && (typeof prop == "string" && [...prop?.matchAll?.(/^\d+$/g)]?.length == 1) && Number.isInteger(typeof prop == "string" ? parseInt(prop) : prop)) {
+                const index = typeof prop == "string" ? parseInt(prop) : prop;
+                return cb?.(unwrap?.[index], index, null, "@add");
+            } else
+                if (typeof unwrap == "function" || typeof unwrap == "object") { return cb?.(unwrap?.[prop], prop); }
 }
 
 //
@@ -64,18 +77,17 @@ export const callByAllProp = (unwrap, cb, ctx)=>{
 
     //
     let keys: any = [];
-    if (unwrap instanceof Set || unwrap instanceof Map || typeof unwrap?.keys == "function") {
-        keys = [...(unwrap?.keys?.() || keys)];
-    } else
-        if (Array.isArray(unwrap) || isIterable(unwrap)) {
-            return [...unwrap]?.forEach?.((v, I) => callByProp(unwrap, I, cb, ctx));
-        } else
-            if (typeof unwrap == "object" || typeof unwrap == "function") {
-                keys = [...(Object.keys(unwrap) || keys)];
-            }
+    if (Array.isArray(unwrap) || isIterable(unwrap)) {
+        return [...unwrap]?.forEach?.((v, I) => callByProp(unwrap, I, cb, ctx));
+    }
 
-    //
-    return keys?.forEach?.((prop: keyType | any) => callByProp(unwrap, prop, cb, ctx));
+    if (unwrap instanceof Set || unwrap instanceof Map || typeof unwrap?.keys == "function") {
+        return [...(unwrap?.keys?.() || keys)]?.forEach?.((prop: keyType | any) => callByProp(unwrap, prop, cb, ctx));
+    }
+
+    if (typeof unwrap == "object" || typeof unwrap == "function") {
+        return [...(Object.keys(unwrap) || keys)]?.forEach?.((prop: keyType | any) => callByProp(unwrap, prop, cb, ctx));
+    }
 }
 
 //
@@ -91,10 +103,10 @@ export const safe = (target)=>{
 //
 export const unwrap = (arr)=>{ return arr?.[$extractKey$] ?? arr?.["@target"] ?? arr; }
 export const deref  = (target?: any, discountValue: boolean|null = false)=>{
-    if (target == null) return target; const val = target.value;
-    let from = (val != null && (typeof val == "object" || typeof val == "function") && !discountValue) ? val : target;
-    if (from == null || target == from) return target; from = unwrap(from);
-    if (from instanceof WeakRef && from?.deref?.() != from) { from = deref(from?.deref?.(), discountValue); };
+    if (target == null) return target; const val = unwrap(target?.value ?? target);
+    let from = (val != null && !discountValue && (typeof val == "object" || typeof val == "function")) ? val : target;
+    if (from == null || target == from) return target;
+    if (from instanceof WeakRef || typeof from?.deref == "function") { from = deref(from?.deref?.(), discountValue); } else { from = deref(from, discountValue); }
     return from;
 }
 

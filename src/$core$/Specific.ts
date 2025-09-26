@@ -372,7 +372,7 @@ export class ReactiveObject {
         if (name == Symbol.toPrimitive) { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.[Symbol.toPrimitive]?.(); } }
         if (name == "toString") { return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || ""); }
         if (name == "valueOf" ) { return () => { if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
-        return bindCtx(target, Reflect.get(target, name, ctx));
+        return bindCtx(target, target?.[name]);
     }
 
     //
@@ -398,15 +398,15 @@ export class ReactiveObject {
     }
 
     // supports nested "value" objects
-    has(target, prop: keyType) { if ((target = deref(target)) == null) return false; return Reflect.has(target, prop); }
+    has(target, prop: keyType) { if ((target = deref(target)) == null) return false; return (prop in target); }
     set(target, name: keyType, value) {
         const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
         return potentiallyAsync(value, (v)=>{
             if (typeof name == "symbol" && (name in target || target?.[name] != null)) return;
-            const oldValue = target[name], result = Reflect.set(target, name, v);
+            const oldValue = target[name]; target[name] = v;
             if (isNotEqual(oldValue, v)) { if (!this[$triggerLock]) { registry?.trigger?.(name, v, oldValue); } };
-            return result;
+            return true;
         })
     }
 }

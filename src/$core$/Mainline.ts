@@ -6,14 +6,22 @@ import { makeReactive } from "./Primitives";
 
 //
 export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
-    if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) return;
+    if (typeof tg == "symbol" || tg == null || !(typeof tg == "object" || typeof tg == "function")) return;
 
     //
-    const isPair = Array.isArray(tg) && tg?.length == 2 && ["object", "function"].indexOf(typeof tg?.[0]) >= 0 && (isKeyType(tg?.[1]) || (Array.isArray(tg?.[0]) && tg?.[1] == Symbol.iterator));
-    const prop   = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
+    const isPair = (Array.isArray(tg) && tg?.length == 2) && /*(["object", "function"].indexOf(typeof tg?.[0]) >= 0) &&*/ (isKeyType(tg?.[1]) || (Array.isArray(tg?.[0]) && tg?.[1] == Symbol.iterator));
+    const prop = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
 
     // tg?.[0] ?? tg now isn't allowed anymore, because it's not safe
-    tg = (isPair && (prop != null)) ? tg?.[0] : tg; if (!tg) return;
+    tg = (isPair && (prop != null)) ? tg?.[0] : tg;
+
+    // no hope...
+    if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) {
+        cb?.(tg, prop, null); return;
+    };
+
+    //
+    if (!tg) return;
 
     // temp ban with dispose
     return withPromise(tg, (target: any) => { if (!target) return;
@@ -22,7 +30,7 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
         if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return;
 
         //
-        const tProp = prop != Symbol.iterator ? prop : null;
+        const tProp = (prop != Symbol.iterator) ? prop : null;
         if (tProp != null) { callByProp(unwrap, tProp, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
         let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap); if (self?.[Symbol.dispose]) return;
 
