@@ -77,12 +77,13 @@ export const callByAllProp = (unwrap, cb, ctx)=>{
 
     //
     let keys: any = [];
-    if (Array.isArray(unwrap) || isIterable(unwrap)) {
-        return [...unwrap]?.forEach?.((v, I) => callByProp(unwrap, I, cb, ctx));
-    }
 
     if (unwrap instanceof Set || unwrap instanceof Map || typeof unwrap?.keys == "function") {
         return [...(unwrap?.keys?.() || keys)]?.forEach?.((prop: keyType | any) => callByProp(unwrap, prop, cb, ctx));
+    }
+
+    if (Array.isArray(unwrap) || isIterable(unwrap)) {
+        return [...unwrap]?.forEach?.((v, I) => callByProp(unwrap, I, cb, ctx));
     }
 
     if (typeof unwrap == "object" || typeof unwrap == "function") {
