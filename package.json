@@ -17,7 +17,7 @@
     },
     "browserslist": [
         "last 1 chrome version",
-        "last 1 firefox version"
+        "last 1 edge version"
     ],
     "devDependencies": {
         "@rollup/plugin-terser": "^0.4.4",
