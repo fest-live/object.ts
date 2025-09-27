@@ -73,7 +73,7 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
 
 //
 const $getValue = ($objOrPlain: any)=>{
-    if (typeof $objOrPlain == "object" && ("value" in $objOrPlain || $objOrPlain?.value != null)) { return $objOrPlain?.value; }; return $objOrPlain;
+    if (typeof $objOrPlain == "object" && $objOrPlain != null && ($objOrPlain?.value != null || "value" in $objOrPlain)) { return $objOrPlain?.value; }; return $objOrPlain;
 }
 
 //
