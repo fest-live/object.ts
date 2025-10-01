@@ -1,9 +1,84 @@
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
+/*
 //
+type AnyFn = (...args: any[]) => any;
+type MethodKeys<T> = {
+    [K in keyof T]-?: T[K] extends AnyFn ? K : never
+}[keyof T];
+
+//
+type MethodsOf<T> = Pick<T, MethodKeys<T>>;
+type WithMethods<Under, T> = MethodsOf<Under> & MethodsOf<T>;
+
+//
+export type WeakKey = object;
 export type keyType = string | number | symbol;
-export type refValid<Under = any, T=any, K=any> = T|Under[]|Map<K, Under>|Set<any>|WeakMap<K extends WeakKey ? K : never, Under>|WeakSet<Under extends WeakKey ? Under : never>|Function;
-export type subValid<Under = any, T=any, K=any> = refValid<Under,T,K> | [refValid<Under,T,K>, keyType|Function] | [refValid<Under,T,K>, keyType|Function, ...any[]];
+
+//
+export type refValid<Under = any, T = any, K = any> =
+    | (T & WithMethods<Under, T>)
+    | (Under[] & WithMethods<Under, T>)
+    | (Map<K, Under> & WithMethods<Under, T>)
+    | (Set<any> & WithMethods<Under, T>)
+    | (WeakMap<(K extends WeakKey ? K : never), Under> & WithMethods<Under, T>)
+    | (WeakSet<(Under extends WeakKey ? Under : never)> & WithMethods<Under, T>)
+    | (Function & WithMethods<Under, T>);
+
+//
+export type subValid<Under = any, T = any, K = any> =
+    | refValid<Under, T, K>
+    | ([refValid<Under, T, K>, keyType | Function] & WithMethods<Under, T>)
+    | ([refValid<Under, T, K>, keyType | Function, ...any[]] & WithMethods<Under, T>);
+*/
+
+//
+type AnyFn = (...args: any[]) => any;
+type MethodKeys<T> = {
+    [K in keyof T]-?: T[K] extends AnyFn ? K : never
+}[keyof T];
+type MethodsOf<T> = Pick<T, MethodKeys<T>>;
+type WithMethods<Under, T = any> = MethodsOf<Under> & MethodsOf<T>;
+
+//
+export type WeakKey = object;
+export type keyType = string | number | symbol;
+
+//
+type ContainerMethods<X> =
+    X extends any[] ? MethodsOf<any[]> :
+    X extends Map<any, any> ? MethodsOf<Map<any, any>> :
+    X extends Set<any> ? MethodsOf<Set<any>> :
+    X extends WeakMap<object, any> ? MethodsOf<WeakMap<object, any>> :
+    X extends WeakSet<object> ? MethodsOf<WeakSet<object>> :
+    X extends Function ? MethodsOf<Function> :
+    {};
+
+//
+export type refValid<Under = any, T = any, K = any> =
+    | T & WithMethods<T>
+    | Under[] & WithMethods<Under[]>
+    | Map<K, Under> & WithMethods<Map<K, Under>>
+    | Set<any> & WithMethods<Set<any>>
+    | WeakMap<(K extends WeakKey ? K : never), Under> & WithMethods<WeakMap<(K extends WeakKey ? K : never), Under>>
+    | WeakSet<(Under extends WeakKey ? Under : never)> & WithMethods<WeakSet<(Under extends WeakKey ? Under : never)>>
+    | Function & WithMethods<Function>;
+
+//
+type TupleWithInheritedMethods<RV> =
+    RV extends unknown ? ([RV, keyType | Function] & ContainerMethods<RV>) : never;
+
+//
+type TupleVariadicWithInheritedMethods<RV> =
+    RV extends unknown ? ([RV, keyType | Function, ...any[]] & ContainerMethods<RV>) : never;
+
+//
+export type subValid<Under = any, T = any, K = any> =
+    | refValid<Under, T, K>
+    | TupleWithInheritedMethods<refValid<Under, T, K>>
+    | TupleVariadicWithInheritedMethods<refValid<Under, T, K>>;
+
+
 
 //
 export const $originalObjects$ = new WeakMap();
