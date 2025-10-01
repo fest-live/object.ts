@@ -56,13 +56,13 @@ type ContainerMethods<X> =
 
 //
 export type refValid<Under = any, T = any, K = any> =
-    | T & WithMethods<T>
-    | Under[] & WithMethods<Under[]>
-    | Map<K, Under> & WithMethods<Map<K, Under>>
-    | Set<any> & WithMethods<Set<any>>
-    | WeakMap<(K extends WeakKey ? K : never), Under> & WithMethods<WeakMap<(K extends WeakKey ? K : never), Under>>
-    | WeakSet<(Under extends WeakKey ? Under : never)> & WithMethods<WeakSet<(Under extends WeakKey ? Under : never)>>
-    | Function & WithMethods<Function>;
+    | T & MethodsOf<T>
+    | Under[] & MethodsOf<Under[]>
+    | Map<K, Under> & MethodsOf<Map<K, Under>>
+    | Set<any> & MethodsOf<Set<any>>
+    | WeakMap<(K extends WeakKey ? K : never), Under> & MethodsOf<WeakMap<(K extends WeakKey ? K : never), Under>>
+    | WeakSet<(Under extends WeakKey ? Under : never)> & MethodsOf<WeakSet<(Under extends WeakKey ? Under : never)>>
+    | Function & MethodsOf<Function>;
 
 //
 type TupleWithInheritedMethods<RV> =

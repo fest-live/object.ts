@@ -13,15 +13,10 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
     const prop = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
 
     // tg?.[0] ?? tg now isn't allowed anymore, because it's not safe
-    tg = (isPair && (prop != null)) ? tg?.[0] : tg;
+    if (!(tg = (isPair && (prop != null)) ? tg?.[0] : tg)) return;
 
     // no hope...
-    if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) {
-        cb?.(tg, prop, null); return;
-    };
-
-    //
-    if (!tg) return;
+    if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) { cb?.(tg, prop, null); return; };
 
     // temp ban with dispose
     return withPromise(tg, (target: any) => { if (!target) return;
@@ -57,23 +52,15 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
 
 //
 export const observe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null)=>{
-    if (Array.isArray(tg)) {
-        return subscribe([tg, Symbol.iterator], cb, ctx);
-    }
+    if (Array.isArray(tg)) { return subscribe([tg, Symbol.iterator], cb, ctx); }
     return subscribe(tg, cb, ctx);
 }
 
 //
 export const unsubscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     return withPromise(tg, (target: any) => {
-        // Определение, является ли аргумент парой [объект, ключ]
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
-        const prop = isPair ? target?.[1] : null;
-
-        // Для пары — извлекается цель
-        target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
-
-        // Извлекается сырой объект
+        const prop = isPair ? target?.[1] : null; target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
         const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
         let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
         self?.unsubscribe?.(cb, prop);
@@ -81,17 +68,12 @@ export const unsubscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T
 }
 
 //
-export const bindByKey = <Under = any, T=refValid<Under>>(target, reactive: subValid<Under,T>, key = () => "") =>
-    subscribe(reactive, (value, id) => { if (id == key()) { objectAssign(target, value, null, true); } });
-
-//
-export const derivate = <Under = any, T=refValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
-
-//
-export const bindBy = <Under = any, T=refValid<Under>>(target, reactive: subValid<Under,T>, watch?) => {
-    // Синхронизация from reactive → target
+export const bindBy = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, watch?) => {
     subscribe(reactive, (v, p) => { objectAssign(target, v, p, true); });
-    // Если есть watch — синхронизация target → reactive
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); } }, { deep: true });
     return target;
 };
+
+//
+export const derivate = <Under = any, T = refValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
+export const bindByKey = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, key = () => "") => subscribe(reactive, (value, id) => { if (id == key()) { objectAssign(target, value, null, true); } });
