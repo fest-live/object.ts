@@ -38,28 +38,27 @@ type MethodKeys<T> = {
     [K in keyof T]-?: T[K] extends AnyFn ? K : never
 }[keyof T];
 type MethodsOf<T> = Pick<T, MethodKeys<T>>;
-type WithMethods<Under, T = any> = MethodsOf<Under> & MethodsOf<T>;
 
 //
-export type WeakKey = object;
+export type WeakKey = object | Function;
 export type keyType = string | number | symbol;
 
 //
 type ContainerMethods<X> =
-    X extends any[] ? MethodsOf<any[]> :
-    X extends Map<any, any> ? MethodsOf<Map<any, any>> :
+    X extends (any[] | Array<any>) ? MethodsOf<Array<any>> :
+    X extends Map<keyType, any> ? MethodsOf<Map<keyType, any>> :
     X extends Set<any> ? MethodsOf<Set<any>> :
-    X extends WeakMap<object, any> ? MethodsOf<WeakMap<object, any>> :
-    X extends WeakSet<object> ? MethodsOf<WeakSet<object>> :
+    X extends WeakMap<WeakKey, any> ? MethodsOf<WeakMap<WeakKey, any>> :
+    X extends WeakSet<WeakKey> ? MethodsOf<WeakSet<WeakKey>> :
     X extends Function ? MethodsOf<Function> :
     {};
 
 //
 export type refValid<Under = any, T = any, K = any> =
     | T & MethodsOf<T>
-    | Under[] & MethodsOf<Under[]>
+    | Under[] & MethodsOf<Array<Under>>
     | Map<K, Under> & MethodsOf<Map<K, Under>>
-    | Set<any> & MethodsOf<Set<any>>
+    | Set<Under> & MethodsOf<Set<Under>>
     | WeakMap<(K extends WeakKey ? K : never), Under> & MethodsOf<WeakMap<(K extends WeakKey ? K : never), Under>>
     | WeakSet<(Under extends WeakKey ? Under : never)> & MethodsOf<WeakSet<(Under extends WeakKey ? Under : never)>>
     | Function & MethodsOf<Function>;
