@@ -201,14 +201,53 @@ export class ReactiveArray {
     //
     set(target, name, value) {
         if (typeof name != "symbol") {
+            // handle Array.length explicitly before numeric index normalization
+            if (name == "length") {
+                const oldLen = target?.length;
+                const newLen = value;
+                // capture elements that will be removed on shrink
+                const removedItems = (Number.isInteger(oldLen) && Number.isInteger(newLen) && newLen < oldLen)
+                    ? target.slice(newLen, oldLen)
+                    : [];
+
+                const result = Reflect.set(target, name, value);
+                if (!this[$triggerLock] && oldLen !== newLen) {
+                    const $reg = (subscriptRegistry).get(target);
+
+                    // emit removals if shrunk
+                    if (removedItems.length === 1) {
+                        $reg?.trigger?.(newLen, null, removedItems[0], "@remove");
+                    } else if (removedItems.length > 1) {
+                        $reg?.trigger?.(newLen, null, removedItems, "@removeAll");
+                        removedItems.forEach((item, I)=>$reg?.trigger?.(newLen + I, null, item, "@remove"));
+                    }
+
+                    // emit additions if grown (holes are considered added undefined entries)
+                    const addedCount = (Number.isInteger(oldLen) && Number.isInteger(newLen) && newLen > oldLen)
+                        ? (newLen - oldLen) : 0;
+                    if (addedCount === 1) {
+                        $reg?.trigger?.(oldLen, undefined, null, "@add");
+                    } else if (addedCount > 1) {
+                        const added = Array(addedCount).fill(undefined);
+                        $reg?.trigger?.(oldLen, added, null, "@addAll");
+                        added.forEach((_, I)=>$reg?.trigger?.(oldLen + I, undefined, null, "@add"));
+                    }
+
+                    // finally, notify the length change itself
+                    $reg?.trigger?.(name, newLen, oldLen, "@set");
+                }
+                return result;
+            }
             if (!Number.isInteger(parseInt(name))) { return Reflect.set(target, name, value); };
             name = parseInt(name);
         }
+
+        //
         const old = target?.[name];
         const got = Reflect.set(target, name, value);
 
         //
-        if (!this[$triggerLock]) {
+        if (!this[$triggerLock] && name != "length") {
             const $reg = (subscriptRegistry).get(target);
             $reg?.trigger?.(name, value, old, "@set");
         }
@@ -221,7 +260,7 @@ export class ReactiveArray {
         const got = Reflect.deleteProperty(target, name);
 
         //
-        if (!this[$triggerLock]) {
+        if (!this[$triggerLock] && name != "length") {
             const $reg = (subscriptRegistry).get(target);
             $reg?.trigger?.(name, name, old, "@delete");
         }

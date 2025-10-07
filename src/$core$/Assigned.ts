@@ -35,6 +35,8 @@ export const unified = <Under = any>(...subs: subValid<Under>[])=>{
 //
 export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, Set<Under>> => { // @ts-ignore
     const obs: Under[] = makeReactive<Under[]>([]) as refValid<Under>; // @ts-ignore
+    // Initialize with existing set entries
+    obs.push(...Array.from(set?.values?.() || [])); // @ts-ignore
     addToCallChain(obs, Symbol.dispose, subscribe(set, (value, _, old) => { // @ts-ignore
         if (isNotEqual(value, old)) {
             if (old == null && value != null) {
@@ -54,20 +56,35 @@ export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, S
 
 //
 export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Under, [any, Under][]> => { // @ts-ignore
-    const obs: refValid<Under> = makeReactive<Under[]>([]) as refValid<Under>; // @ts-ignore
-    addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => { // @ts-ignore
+    const obs: [any, Under][] = makeReactive<[any, Under][]>([]) as refValid<Under>; // @ts-ignore
+
+    // Initialize with existing map entries
+    const initialEntries: [any, Under][] = Array.from(map.entries());
+    obs.push(...initialEntries);
+
+    addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => {
         if (isNotEqual(value, old)) {
             if (old != null && value == null) {
-                const idx = obs.findIndex(([name, _]) => (name == prop));
+                // Map entry deleted
+                const idx = obs.findIndex(([name, _]) => (name === prop));
                 if (idx >= 0) obs.splice(idx, 1);
             } else {
-                const idx = obs.findIndex(([name, _]) => {
-                    return (name == prop)
-                });
-                if (idx >= 0) { if (isNotEqual(obs[idx]?.[1], value)) obs[idx] = [prop, value]; } else { obs.push([prop, value]); };
+                // Map entry added or updated
+                const idx = obs.findIndex(([name, _]) => (name === prop));
+
+                if (idx >= 0) {
+                    // Entry exists - update if value changed
+                    if (isNotEqual(obs[idx]?.[1], value)) {
+                        obs[idx] = [prop, value];
+                    }
+                } else {
+                    // New entry - add to array
+                    obs.push([prop, value]);
+                }
             }
         }
     }));
+
     return obs;
 }
 
