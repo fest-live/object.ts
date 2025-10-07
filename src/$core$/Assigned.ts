@@ -62,16 +62,26 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
     const initialEntries: [any, Under][] = Array.from(map.entries());
     obs.push(...initialEntries);
 
+    //
     addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => {
-        if (isNotEqual(value, old)) {
+        if (isNotEqual(value, old) || (old == null && value != null) || (old != null && value == null)) {
             if (old != null && value == null) {
-                // Map entry deleted
-                const idx = obs.findIndex(([name, _]) => (name === prop));
+                // Map entry deleted (by name)
+                let idx = obs.findIndex(([name, _]) => (name == prop));
+
+                // alternative index search
+                if (idx < 0) idx = obs.findIndex(([_, val]) => (old === val));
+
+                // remove entry
                 if (idx >= 0) obs.splice(idx, 1);
             } else {
-                // Map entry added or updated
-                const idx = obs.findIndex(([name, _]) => (name === prop));
+                // Map entry added or updated (by name)
+                let idx = obs.findIndex(([name, _]) => (name == prop));
 
+                // alternative index search
+                if (idx < 0) idx = obs.findIndex(([_, val]) => (old === val));
+
+                //
                 if (idx >= 0) {
                     // Entry exists - update if value changed
                     if (isNotEqual(obs[idx]?.[1], value)) {
@@ -85,6 +95,7 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
         }
     }));
 
+    //
     return obs;
 }
 
