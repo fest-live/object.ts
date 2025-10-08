@@ -114,38 +114,27 @@ export interface PropStore {
 }
 
 //
-const isArrayInvalidKey = (key: keyType | null | undefined | any, src?: any) => {
-    const invalidForArray = key == null || (key as any) < 0 || typeof key != "number" || (key as any) == Symbol.iterator || (src != null ? key >= (src?.length || 0) : false);
-    return (src != null ? Array.isArray(src) && invalidForArray : true);
-};
-
-//
 export const assignMap = new WeakMap<any, Map<any, PropStore>>();
-export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType | null = "value") => {
+export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType = "value") => {
     const isACompute = typeof a?.[1] == "function" && (a as [any, keyType])?.length == 2, isBCompute = typeof b?.[1] == "function" && (b as [any, keyType])?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : (Array.isArray(a) ? null : prop); if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : (Array.isArray(b) ? null : prop); if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
 
     //
-    if (a_prop == null || b_prop == null || isArrayInvalidKey(a_prop, a?.[0]) || isArrayInvalidKey(b_prop, b?.[0])) { return; };
-    if (!((typeof b?.[0] == "object" || typeof b?.[0] == "function") && b?.[0] != null) && !Array.isArray(a[0])) { a[0][a_prop] = b?.[0]; return () => { }; };
+    if (!(typeof b?.[0] == "object" || typeof b?.[0] == "function")) { a[0][a_prop] = b?.[0]; return () => { }; };
 
     //
     const compute = (v, p) => {
-        const a_tmp = aRef?.deref?.();
-        const b_tmp = bRef?.deref?.();
-        if (assignMap?.get?.(a_tmp)?.get?.(a_prop)?.bound == b_tmp) {
+        if (assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.bound == bRef?.deref?.()) {
             let val: any = null;
-            const cmpfx = assignMap?.get?.(a_tmp)?.get?.(a_prop)?.cmpfx;
-            if (typeof cmpfx == "function") { val = cmpfx?.($getValue(b_tmp) ?? v, p, null); } else { val = b_tmp?.[p] ?? v; };
+            const cmpfx = assignMap?.get?.(aRef?.deref?.())?.get?.(a_prop)?.cmpfx;
+            if (typeof cmpfx == "function") { val = cmpfx?.($getValue(bRef?.deref?.()) ?? v, p, null); } else { val = bRef?.deref?.()?.[p] ?? v; };
 
             //
             const nv = $getValue(val);
-            if (nv !== a_tmp[a_prop]) {
-                a_tmp[a_prop] = nv;
-            };
+            aRef.deref()[a_prop] = nv;
         } else {
-            const map = assignMap?.get?.(a_tmp);
+            const map = assignMap?.get?.(aRef?.deref?.());
             const store = map?.get?.(a_prop);
             store?.dispose?.();
         }
@@ -153,16 +142,14 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
 
     //
     const dispose = () => {
-        const a_tmp = aRef?.deref?.();
-        const map = assignMap?.get?.(a_tmp);
+        const map = assignMap?.get?.(aRef?.deref?.());
         const store = map?.get?.(a_prop);
         map?.delete?.(a_prop);
         store?.unsub?.();
     };
 
     //
-    const
-        bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") && !(b?.[0] instanceof WeakRef || typeof b?.[0]?.deref == "function") ? new WeakRef(b?.[0]) : b?.[0],
+    const bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") && !(b?.[0] instanceof WeakRef || typeof b?.[0]?.deref == "function") ? new WeakRef(b?.[0]) : b?.[0],
         aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") && !(a?.[0] instanceof WeakRef || typeof a?.[0]?.deref == "function") ? new WeakRef(a?.[0]) : a?.[0];
 
     //
@@ -192,15 +179,15 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
         addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
     }
 
-    // normalization isn't allowed for arrays
-    if (b_tmp && !Array.isArray(b_tmp)) { b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop]; }
+    //
+    if (b_tmp) { b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop]; }
 
     //
     return store?.dispose;
 }
 
 //
-export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType | null = "value") => {
+export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType = "value") => {
     /*const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
     const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
@@ -210,21 +197,17 @@ export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: 
 }
 
 //
-export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>, cb?: Function | null, behavior?: any, prop: keyType | null = "value"): refValid<OutputUnder> => {
+export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>, cb?: Function | null, behavior?: any, prop: keyType = "value"): refValid<OutputUnder> => {
+    prop ??= "value";
     const isACompute = typeof src?.[1] == "function" && (src as [any, keyType])?.length == 2;
-    const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2;
-    let a_prop = (isAProp && !isACompute) ? src?.[1] : (Array.isArray(src) ? null : prop);
-    if (!isAProp && !isACompute) { src = [src, a_prop]; }; if (isACompute) { src[1] = a_prop; };
-    if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
-    const rf = autoRef(cb?.(src?.[0]?.[a_prop], a_prop), behavior);
-    assign([rf, prop], [src?.[0], cb], a_prop); return rf;
+    const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? src?.[1] : prop; if (!isAProp && !isACompute) { src = [src, a_prop]; }; if (isACompute) { src[1] = a_prop; };
+    const rf = autoRef(cb?.(src?.[0]?.[prop], prop), behavior);
+    assign([rf, prop], [src?.[0], cb], prop); return rf;
 }
 
 //
-export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = null, behavior?: any, initial?: any): refValid<Under> => {
-    if (Array.isArray(src) && isArrayInvalidKey(srcProp, src)) { return; }
-    if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
-    const r = autoRef(src?.[srcProp] ?? initial, behavior);
+export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType = "value", behavior?: any, initial?: any): refValid<Under> => {
+    const r = autoRef(src?.[srcProp ??= "value"] ?? initial, behavior);
     link([r, "value"], [src, srcProp]); return r;
 }
 

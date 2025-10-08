@@ -233,8 +233,7 @@ export class ReactiveArray {
     set(target, name, value) {
         if (typeof name != "symbol") {
             // handle Array.length explicitly before numeric index normalization
-            if (!Number.isInteger(parseInt(name))) { return Reflect.set(target, name, value); };
-            name = parseInt(name);
+            if (Number.isInteger(parseInt(name))) { name = parseInt(name); };
         }
 
         // array property changes
@@ -243,13 +242,17 @@ export class ReactiveArray {
 
         // bit different trigger rules
         if (name == "length") {
-            triggerWhenLengthChange(this, target, old, value);
+            if (isNotEqual(old, value)) {
+                triggerWhenLengthChange(this, target, old, value);
+            }
         }
 
         //
         if (!this[$triggerLock]) {
             const $reg = (subscriptRegistry).get(target);
-            $reg?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
+            if (isNotEqual(old, value)) {
+                $reg?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
+            }
         }
 
         //
@@ -258,14 +261,24 @@ export class ReactiveArray {
 
     //
     deleteProperty(target, name) {
+        if (typeof name != "symbol") {
+            // handle Array.length explicitly before numeric index normalization
+            name = parseInt(name);
+        }
+
+        //
         const old = target?.[name];
         const got = Reflect.deleteProperty(target, name);
 
         //
         if (!this[$triggerLock] && name != "length") {
             const $reg = (subscriptRegistry).get(target);
-            $reg?.trigger?.(name, name, old, "@delete");
+            if (old != null) {
+                $reg?.trigger?.(name, name, old, typeof name == "number" ? "@delete" : null);
+            }
         }
+
+        //
         return got;
     }
 }
