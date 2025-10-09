@@ -103,3 +103,8 @@ export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Un
     //
     return reactive;
 }
+
+//
+export const isReactive = (target: any) => {
+    return !!((typeof target == "object" || typeof target == "function") && target != null && target?.[$extractKey$]);
+}
