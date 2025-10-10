@@ -244,3 +244,284 @@ export const isNotEqual = (a, b)=>{
     }
     return a != b;
 }
+
+
+type DuplicateContext = 'set' | 'push' | 'unshift' | 'splice';
+
+interface DuplicateEvent<T> {
+    value: T;
+    via: DuplicateContext;
+    index?: number;
+}
+
+interface SetArrayOptions<T> {
+    onDuplicate?: (event: DuplicateEvent<T>) => void;
+}
+
+interface SetArrayMethods<T> {
+    push(...items: T[]): number;
+    pop(): T | undefined;
+    shift(): T | undefined;
+    unshift(...items: T[]): number;
+    splice(start: number, deleteCount?: number, ...items: T[]): T[];
+    includes(value: T): boolean;
+    indexOf(value: T): number;
+    toArray(): T[];
+    toSet(): Set<T>;
+    clear(): void;
+    delete(value: T): boolean;
+    [Symbol.iterator](): IterableIterator<T>;
+}
+
+export type SetArray<T> = SetArrayMethods<T> & {
+    readonly length: number;
+    [index: number]: T;
+};
+
+const isArrayIndex = (prop: PropertyKey): prop is `${number}` => {
+    if (typeof prop !== 'string') return false;
+    if (prop === '') return false;
+    const num = Number(prop);
+    return Number.isInteger(num) && num >= 0 && String(num) === prop;
+};
+
+export function wrapSetAsArray<T>(
+    source: Iterable<T> = [],
+    options: SetArrayOptions<T> = {}
+): SetArray<T> {
+    let backingSet: Set<T> = new Set<T>();
+
+    const notifyDuplicate = (value: T, via: DuplicateContext, index?: number) => {
+        options.onDuplicate?.({ value, via, index });
+    };
+
+    if (source instanceof Set) { backingSet = source; } else {
+        for (const item of source) {
+            if (backingSet.has(item)) {
+                notifyDuplicate(item, 'push');
+                continue;
+            }
+            backingSet.add(item);
+        }
+    }
+
+    const snapshot = () => Array.from(backingSet);
+    const rebuildFrom = (arr: T[]) => {
+        backingSet.clear();
+        for (const item of arr) {
+            backingSet.add(item);
+        }
+    };
+
+
+
+    const methods: SetArrayMethods<T> = {
+        push: (...items: T[]) => {
+            let size = backingSet.size;
+            for (const item of items) {
+                if (backingSet.has(item)) {
+                    notifyDuplicate(item, 'push');
+                    continue;
+                }
+                backingSet.add(item);
+                size++;
+            }
+            return size;
+        },
+        pop: () => {
+            const arr = snapshot();
+            if (!arr.length) return undefined;
+            const value = arr[arr.length - 1];
+            backingSet.delete(value);
+            return value;
+        },
+        shift: () => {
+            const iterator = backingSet.values().next();
+            if (iterator.done) return undefined;
+            const value = iterator.value;
+            backingSet.delete(value);
+            return value;
+        },
+        unshift: (...items: T[]) => {
+            if (!items.length) return backingSet.size;
+            const current = snapshot();
+            const toPrepend: T[] = [];
+
+            for (const item of items) {
+                if (current.includes(item) || toPrepend.includes(item)) {
+                    notifyDuplicate(item, 'unshift', 0);
+                    continue;
+                }
+                toPrepend.push(item);
+            }
+
+            if (!toPrepend.length) return current.length;
+
+            const next = [...toPrepend, ...current];
+            rebuildFrom(next);
+            return next.length;
+        },
+        splice: (start: number, deleteCount?: number, ...items: T[]) => {
+            const arr = snapshot();
+            const normalizedStart = Math.min(Math.max(start, 0), arr.length);
+            const actualDeleteCount =
+                deleteCount === undefined
+                    ? arr.length - normalizedStart
+                    : Math.max(0, Math.min(deleteCount, arr.length - normalizedStart));
+
+            const removed = arr.splice(normalizedStart, actualDeleteCount);
+
+            let insertPosition = normalizedStart;
+            for (const item of items) {
+                if (arr.includes(item)) {
+                    notifyDuplicate(item, 'splice', insertPosition);
+                    continue;
+                }
+                arr.splice(insertPosition++, 0, item);
+            }
+
+            rebuildFrom(arr);
+            return removed;
+        },
+        includes: (value: T) => backingSet.has(value),
+        indexOf: (value: T) => snapshot().indexOf(value),
+        clear: () => {
+            backingSet.clear();
+        },
+        delete: (value: T) => backingSet.delete(value),
+        toArray: () => snapshot(),
+        toSet: () => new Set(backingSet),
+        [Symbol.iterator]: () => backingSet[Symbol.iterator](),
+    };
+
+    const handler: ProxyHandler<SetArrayMethods<T>> = {
+        get: (_, prop) => {
+            if (prop === 'length') {
+                return backingSet.size;
+            }
+
+            if (isArrayIndex(prop)) {
+                const arr = snapshot();
+                return arr[Number(prop)];
+            }
+
+            const value = (methods as unknown as Record<PropertyKey, unknown>)[prop];
+            if (typeof value === 'function') {
+                return value;
+            }
+            return value;
+        },
+        set: (_, prop, value) => {
+            if (prop === 'length') {
+                if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+                    throw new RangeError('length must be a finite non-negative number');
+                }
+                const nextLength = Math.floor(value);
+                if (nextLength >= backingSet.size) {
+                    // расширение с "дырами" не поддерживаем — просто игнорируем
+                    return true;
+                }
+                const arr = snapshot().slice(0, nextLength);
+                rebuildFrom(arr);
+                return true;
+            }
+
+            if (isArrayIndex(prop)) {
+                const arr = snapshot();
+                const index = Number(prop);
+
+                if (index > arr.length) {
+                    return true; // не поддерживаем "редкие" индексы
+                }
+
+                const nextValue = value as T;
+                if (index < arr.length) {
+                    const currentValue = arr[index];
+                    if (Object.is(currentValue, nextValue)) {
+                        return true;
+                    }
+                    const duplicateElsewhere = arr.some(
+                        (item, idx) => idx !== index && Object.is(item, nextValue)
+                    );
+                    if (duplicateElsewhere) {
+                        notifyDuplicate(nextValue, 'set', index);
+                        return true;
+                    }
+                    arr[index] = nextValue;
+                } else {
+                    if (arr.includes(nextValue)) {
+                        notifyDuplicate(nextValue, 'set', index);
+                        return true;
+                    }
+                    arr.push(nextValue);
+                }
+
+                rebuildFrom(arr);
+                return true;
+            }
+
+            return Reflect.set(methods, prop, value);
+        },
+        deleteProperty: (_, prop) => {
+            if (prop === 'length') {
+                return false; // как у обычного массива
+            }
+
+            if (isArrayIndex(prop)) {
+                const arr = snapshot();
+                const index = Number(prop);
+                if (index >= arr.length) {
+                    return true;
+                }
+                arr.splice(index, 1);
+                rebuildFrom(arr);
+                return true;
+            }
+
+            return Reflect.deleteProperty(methods, prop);
+        },
+        ownKeys: () => {
+            const keys: (string | symbol)[] = [];
+            let i = 0;
+            for (const _ of backingSet) {
+                keys.push(String(i++));
+            }
+            keys.push('length');
+            return keys;
+        },
+        getOwnPropertyDescriptor: (_, prop) => {
+            if (prop === 'length') {
+                return {
+                    configurable: false,
+                    enumerable: false,
+                    writable: true,
+                    value: backingSet.size,
+                };
+            }
+
+            if (isArrayIndex(prop)) {
+                const arr = snapshot();
+                const index = Number(prop);
+                if (index >= arr.length) return undefined;
+                return {
+                    configurable: true,
+                    enumerable: true,
+                    writable: true,
+                    value: arr[index],
+                };
+            }
+
+            return Reflect.getOwnPropertyDescriptor(methods, prop);
+        },
+        has: (_, prop) => {
+            if (prop === 'length') return true;
+            if (isArrayIndex(prop)) {
+                const index = Number(prop);
+                return index >= 0 && index < backingSet.size;
+            }
+            return prop in methods;
+        },
+    };
+
+    return new Proxy(methods, handler) as SetArray<T>;
+}
