@@ -110,6 +110,9 @@ export class ObserveArrayMethod {
                 // discount of replaced (assigned) elements
                 removed = deleteCount > 0 ? oldState?.slice?.(items?.length + start, start + (deleteCount - (items?.length || 0))) : [];
 
+                // fix index for remaining removed or added elements
+                idx += (added?.length || 0) - (removed?.length || 0);
+
                 // index assignment
                 if (deleteCount > 0 && items?.length > 0) {
                     for (let i = 0; i < Math.min(deleteCount, items?.length ?? 0); i++) {
@@ -148,20 +151,20 @@ export class ObserveArrayMethod {
             added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, "@add"));
         }
 
-        // triggers on removing
-        if (removed?.length == 1) {
-            reg?.trigger?.(idx, null, removed[0], "@remove");
-        } else if (removed?.length > 1) {
-            reg?.trigger?.(idx, null, removed, "@removeAll");
-            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@remove"));
-        }
-
         // triggers on changing
         if (setPairs?.length == 1) {
             reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], "@set");
         } else if (setPairs?.length > 1) {
             reg?.trigger?.(idx, setPairs, oldState, "@setAll");
             setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], "@set"));
+        }
+
+        // triggers on removing
+        if (removed?.length == 1) {
+            reg?.trigger?.(idx, null, removed[0], "@remove");
+        } else if (removed?.length > 1) {
+            reg?.trigger?.(idx, null, removed, "@removeAll");
+            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@remove"));
         }
 
         //
