@@ -1,6 +1,7 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, isKeyType, isNotEqual, objectAssignNotEqual, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
+import { $triggerLock } from "../$wrap$/Symbol";
 
 //
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
@@ -120,6 +121,23 @@ const isArrayInvalidKey = (key: keyType | null | undefined | any, src?: any) => 
 };
 
 //
+const hasValue = (v: any) => {
+    return (typeof v == "object" && (v?.value != null || (v != null && ("value" in v))));
+}
+
+//
+const $avoidTrigger = (ref: any, cb: Function)=>{
+    if (hasValue(ref)) ref[$triggerLock] = true;
+    let result;
+    try {
+        result = cb?.();
+    } finally {
+        if (hasValue(ref)) { delete ref[$triggerLock]; }
+    }
+    return result;
+}
+
+//
 export const assignMap = new WeakMap<any, Map<any, PropStore>>();
 export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType | null = "value") => {
     const isACompute = typeof a?.[1] == "function" && (a as [any, keyType])?.length == 2, isBCompute = typeof b?.[1] == "function" && (b as [any, keyType])?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
@@ -128,7 +146,8 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
 
     //
     if (a_prop == null || b_prop == null || isArrayInvalidKey(a_prop, a?.[0]) || isArrayInvalidKey(b_prop, b?.[0])) { return; };
-    if (!((typeof b?.[0] == "object" || typeof b?.[0] == "function") && b?.[0] != null) && !Array.isArray(a[0])) { a[0][a_prop] = b?.[0]; return () => { }; };
+    if (!((typeof b?.[0] == "object" || typeof b?.[0] == "function") && b?.[0] != null) && !Array.isArray(a[0]))
+        { $avoidTrigger(b, ()=>{ a[0][a_prop] = b?.[0]; }); return () => { }; };
 
     //
     const compute = (v, p) => {
@@ -137,12 +156,14 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
         if (assignMap?.get?.(a_tmp)?.get?.(a_prop)?.bound == b_tmp) {
             let val: any = null;
             const cmpfx = assignMap?.get?.(a_tmp)?.get?.(a_prop)?.cmpfx;
-            if (typeof cmpfx == "function") { val = cmpfx?.($getValue(b_tmp) ?? v, p, null); } else { val = b_tmp?.[p] ?? v; };
+            $avoidTrigger(b_tmp, ()=>{
+                if (typeof cmpfx == "function") { val = cmpfx?.($getValue(b_tmp) ?? v, p, null); } else { val = b_tmp?.[p] ?? v; };
+            });
 
             //
             const nv = $getValue(val);
             if (nv !== a_tmp[a_prop]) {
-                a_tmp[a_prop] = nv;
+                $avoidTrigger(b_tmp, ()=>{ a_tmp[a_prop] = nv; });
             };
         } else {
             const map = assignMap?.get?.(a_tmp);
@@ -193,7 +214,11 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
     }
 
     // normalization isn't allowed for arrays
-    if (b_tmp && !Array.isArray(b_tmp)) { b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop]; }
+    if (b_tmp && !Array.isArray(b_tmp)) {
+        $avoidTrigger(a_tmp, ()=>{
+            b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop];
+        });
+    }
 
     //
     return store?.dispose;
