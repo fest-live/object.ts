@@ -111,7 +111,7 @@ export class ObserveArrayMethod {
                 removed = deleteCount > 0 ? oldState?.slice?.(items?.length + start, start + (deleteCount - (items?.length || 0))) : [];
 
                 // fix index for remaining removed or added elements
-                idx += ((items?.length || 1) - (deleteCount || 0));
+                idx += (deleteCount || 0) - (items?.length || 1);
 
                 // index assignment
                 if (deleteCount > 0 && items?.length > 0) {
