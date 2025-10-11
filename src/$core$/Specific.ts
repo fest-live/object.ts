@@ -236,6 +236,9 @@ export class ReactiveArray {
             if (Number.isInteger(parseInt(name))) { name = parseInt(name); };
         }
 
+        //
+        if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+
         // array property changes
         const old = target?.[name];
         const got = Reflect.set(target, name, value);
@@ -248,11 +251,8 @@ export class ReactiveArray {
         }
 
         //
-        if (!this[$triggerLock]) {
-            const $reg = (subscriptRegistry).get(target);
-            if (isNotEqual(old, value)) {
-                $reg?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
-            }
+        if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(old, value)) {
+            (subscriptRegistry)?.get?.(target)?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
         }
 
         //
@@ -271,11 +271,16 @@ export class ReactiveArray {
         const got = Reflect.deleteProperty(target, name);
 
         //
-        if (!this[$triggerLock] && name != "length") {
+        if (!this[$triggerLock] && (name != "length" && name != $triggerLock && typeof name != "symbol")) {
             const $reg = (subscriptRegistry).get(target);
             if (old != null) {
                 $reg?.trigger?.(name, name, old, typeof name == "number" ? "@delete" : null);
             }
+        }
+
+        //
+        if (name == $triggerLock) {
+            this[$triggerLock] = false;
         }
 
         //
@@ -337,10 +342,30 @@ export class ReactiveMap {
         return valueOrFx;
     }
 
+    //
+    set(target, name: keyType, value) {
+        if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+        if ((target = deref(target)) == null) return true;
+        return Reflect.set(target, name, value);
+    }
+
     // redirect to value key
     has(target, prop: keyType) { if ((target = deref(target)) == null) return false; return Reflect.has(target, prop); }
     apply(target, ctx, args) { if ((target = deref(target)) == null) return; return Reflect.apply(target, ctx, args); }
     construct(target, args, newT) { if ((target = deref(target)) == null) return; return Reflect.construct(target, args, newT); }
+    ownKeys(target) { if ((target = deref(target)) == null) return; return Reflect.ownKeys(target); }
+    isExtensible(target) { if ((target = deref(target)) == null) return; return Reflect.isExtensible(target); }
+    getOwnPropertyDescriptor(target, key) {
+        if ((target = deref(target)) == null) return;
+        return Reflect.getOwnPropertyDescriptor(target, key);
+    }
+
+    deleteProperty(target, name: keyType) {
+        if (name == $triggerLock) { this[$triggerLock] = false; return true; }
+        if ((target = deref(target)) == null) return true;
+        const result = Reflect.deleteProperty(target, name);
+        return result;
+    }
 }
 
 //
@@ -397,10 +422,31 @@ export class ReactiveSet {
         return valueOrFx;
     }
 
+    //
+    set(target, name: keyType, value) {
+        if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+        if ((target = deref(target)) == null) return true;
+        return Reflect.set(target, name, value);
+    }
+
     // redirect to value key i
     has(target, prop: keyType) { if ((target = deref(target)) == null) return; return Reflect.has(target, prop); }
     apply(target, ctx, args) { if ((target = deref(target)) == null) return; return Reflect.apply(target, ctx, args); }
     construct(target, args, newT) { if ((target = deref(target)) == null) return; return Reflect.construct(target, args, newT); }
+    ownKeys(target) { if ((target = deref(target)) == null) return; return Reflect.ownKeys(target); }
+    isExtensible(target) { if ((target = deref(target)) == null) return; return Reflect.isExtensible(target); }
+    getOwnPropertyDescriptor(target, key) {
+        if ((target = deref(target)) == null) return;
+        return Reflect.getOwnPropertyDescriptor(target, key);
+    }
+
+    //
+    deleteProperty(target, name: keyType) {
+        if (name == $triggerLock) { this[$triggerLock] = false; return true;}
+        if ((target = deref(target)) == null) return true;
+        const result = Reflect.deleteProperty(target, name);
+        return result;
+    }
 }
 
 //
@@ -441,7 +487,14 @@ export class ReactiveObject {
         //
         const oldValue = target[name];
         const result = Reflect.deleteProperty(target, name);
-        if (!this[$triggerLock]) { registry?.trigger?.(name, null, oldValue); }
+
+        //
+        if (name == $triggerLock) {
+            this[$triggerLock] = false;
+        }
+
+        //
+        if (!this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) { registry?.trigger?.(name, null, oldValue); }
         return result;
     }
 
@@ -454,12 +507,14 @@ export class ReactiveObject {
     // supports nested "value" objects
     has(target, prop: keyType) { if ((target = deref(target)) == null) return false; return (prop in target); }
     set(target, name: keyType, value) {
-        const registry = (subscriptRegistry).get(target);
         if ((target = deref(target, name == "value")) == null) return;
         return potentiallyAsync(value, (v)=>{
-            if (typeof name == "symbol" && (name in target || target?.[name] != null)) return;
+            if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+            if (typeof name == "symbol" && !(target?.[name] != null && name in target)) return;
             const oldValue = target[name]; target[name] = v;
-            if (isNotEqual(oldValue, v)) { if (!this[$triggerLock]) { registry?.trigger?.(name, v, oldValue); } };
+            if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(oldValue, v)) {
+                (subscriptRegistry)?.get?.(target)?.trigger?.(name, v, oldValue);
+            };
             return true;
         })
     }
