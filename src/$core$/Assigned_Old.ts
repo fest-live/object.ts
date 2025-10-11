@@ -100,7 +100,13 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
 }
 
 //
+const isPrimitive = (exists: any) => {
+    return exists == null || typeof exists == "string" || typeof exists == "number" || typeof exists == "boolean" || typeof exists == "symbol" || typeof exists == "undefined";
+}
+
+//
 const $getValue = ($objOrPlain: any) => {
+    if (isPrimitive($objOrPlain)) return $objOrPlain;
     if (typeof $objOrPlain == "object" && $objOrPlain != null && ($objOrPlain?.value != null || "value" in $objOrPlain)) { return $objOrPlain?.value; }; return $objOrPlain;
 }
 
