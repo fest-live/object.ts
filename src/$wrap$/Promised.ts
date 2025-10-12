@@ -24,6 +24,22 @@ const unwrap = (obj, fallback?: null|undefined|((...args: any[])=>any))=>{
     return (obj?.[$fxy] ?? (fallback ?? obj));
 }
 
+
+//
+const isPrimitive = (obj: any)=>{
+    return obj == null || typeof obj == "string" || typeof obj == "number" || typeof obj == "boolean" || typeof obj == "bigint" || typeof obj == "symbol" || typeof obj == "undefined";
+}
+
+//
+const tryParseByHint = (value: any, hint?: any)=>{
+    if (!isPrimitive(value)) return null;
+    if (hint == "number") { return Number(value) || 0; }
+    if (hint == "string") { return String(value) || ""; }
+    if (hint == "boolean") { return !!value; }
+    return value;
+}
+
+
 //
 class PromiseHandler {
     #resolve?: ((...args: any[])=>void)|null;
@@ -91,12 +107,28 @@ class PromiseHandler {
         if (prop == 'then' || prop == 'catch' || prop == 'finally') { return target?.[prop]?.bind?.(target); }
 
         // @ts-ignore
-        return Promised(actWith(target, async (obj)=>{
+        const result = Promised(actWith(target, async (obj)=>{
+            if (isPrimitive(obj)) { return (prop == Symbol.toPrimitive || prop == Symbol.toStringTag) ? obj : undefined; }
             let value: any = undefined;
             try { value = Reflect.get(obj, prop, receiver); } catch (e) { value = target?.[prop]; }
             if (typeof value == 'function') { return value?.bind?.(obj); }
             return value;
         }));
+
+        //
+        if (prop == Symbol.toStringTag) {
+            if (isPrimitive(result)) { return String(result ?? "") || ""; };
+            return result?.[Symbol.toStringTag]?.() || String(result ?? "") || "";
+        }
+
+        //
+        if (prop == Symbol.toPrimitive) { return (hint?)=>{
+            if (isPrimitive(result)) { return tryParseByHint(result, hint); };
+            return tryParseByHint(result?.[Symbol.toPrimitive]?.());
+        }}
+
+        //
+        return result;
     }
 
     //

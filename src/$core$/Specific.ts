@@ -3,6 +3,22 @@ import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger } from "../$wrap$/Symbol";
 import { isNotEqual, bindCtx, deref, type keyType, refValid } from "../$wrap$/Utils";
 
+
+//
+const isPrimitive = (obj: any)=>{
+    return obj == null || typeof obj == "string" || typeof obj == "number" || typeof obj == "boolean" || typeof obj == "bigint" || typeof obj == "symbol" || typeof obj == "undefined";
+}
+
+//
+const tryParseByHint = (value: any, hint?: any)=>{
+    if (!isPrimitive(value)) return null;
+    if (hint == "number") { return Number(value) || 0; }
+    if (hint == "string") { return String(value) || ""; }
+    if (hint == "boolean") { return !!value; }
+    return value;
+}
+
+
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target, name, registry)=>{
     if (target == null) return null;
@@ -23,8 +39,8 @@ const systemGet = (target, name, registry)=>{
     if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
     if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
-    if (name == Symbol.toPrimitive)   { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "function")) { return target.value; }; return target?.valueOf?.(); } }
-    if (name == Symbol.toStringTag)   { return ()=>String(target?.value ?? "") || ""; }
+    if (name == Symbol.toPrimitive)   { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "function")) { return tryParseByHint(target.value, hint); }; return tryParseByHint(target?.valueOf?.(), hint); } }
+    if (name == Symbol.toStringTag)   { return ()=>{ if (isPrimitive(target?.value)) { return String(target?.value ?? "") || ""; }; return target?.valueOf?.(); } }
 }
 
 //
@@ -472,9 +488,9 @@ export class ReactiveObject {
 
         //
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
-        if (name == Symbol.toPrimitive) { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.[Symbol.toPrimitive]?.(); } }
-        if (name == "toString") { return () => (((typeof target?.value == "string") ? target?.value : target?.toString?.()) || ""); }
-        if (name == "valueOf" ) { return () => { if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return target.value; }; return target?.valueOf?.(); } }
+        if (name == Symbol.toPrimitive) { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "string")) { return tryParseByHint(target.value, hint); }; return tryParseByHint(target?.[Symbol.toPrimitive]?.(), hint); } }
+        if (name == "toString") { return () => { if (isPrimitive(target?.value)) { return String(target?.value ?? "") || ""; }; return target?.toString?.(); } }
+        if (name == "valueOf" ) { return () => { if (isPrimitive(target?.value)) { return tryParseByHint(target.value); }; return tryParseByHint(target?.valueOf?.()); } }
         return bindCtx(target, target?.[name]);
     }
 
