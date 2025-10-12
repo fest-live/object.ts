@@ -71,7 +71,7 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
                 let idx = obs.findIndex(([name, _]) => (name == prop));
 
                 // alternative index search
-                if (idx < 0) idx = obs.findIndex(([_, val]) => (old === val));
+                if (idx < 0) idx = obs.findLastIndex(([_, val]) => (old === val));
 
                 // remove entry
                 if (idx >= 0) obs.splice(idx, 1);
@@ -80,10 +80,10 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
                 let idx = obs.findIndex(([name, _]) => (name == prop));
 
                 // alternative index search
-                if (idx < 0) idx = obs.findIndex(([_, val]) => (old === val));
+                if (idx < 0) idx = obs.findLastIndex(([_, val]) => (old === val));
 
                 //
-                if (idx >= 0) {
+                if (idx >= 0 && idx < obs.length) {
                     // Entry exists - update if value changed
                     if (isNotEqual(obs[idx]?.[1], value)) {
                         obs[idx] = [prop, value];
