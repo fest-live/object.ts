@@ -1,5 +1,5 @@
 {
-    "name": "@unite-2/object-ts",
+    "name": "@fest/object-ts",
     "description": "JS objects utils",
     "version": "1.0.0alpha",
     "private": false,
