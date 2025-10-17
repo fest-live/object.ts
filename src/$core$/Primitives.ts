@@ -21,12 +21,12 @@ export const stringRef = <Under = string>(initial?: any, behavior?: any): refVal
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r: refValid<Under> = makeReactive({
         [$promise]: isPromise ? initial : null, // @ts-ignore
-        [$value]: (isPromise ? "" : String(deref(initial || "") || "")) || "", // @ts-ignore
+        [$value]: (isPromise ? "" : String(deref(typeof initial == "number" ? String(initial) : (initial || "")))) ?? "", // @ts-ignore
         [$behavior]: behavior, // @ts-ignore
-        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; }, // @ts-ignore
-        [Symbol?.toPrimitive](hint: any) { return String(this?.[$value] ?? "") || ""; }, // TODO: check hint
-        set value(v) { this[$value] = String(typeof v == "number" ? v : (v || "")) || ""; }, // @ts-ignore
-        get value() { return String(this[$value] || ""); }, // @ts-ignore
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") ?? ""; }, // @ts-ignore
+        [Symbol?.toPrimitive](hint: any) { return String(this?.[$value] ?? "") ?? ""; }, // TODO: check hint
+        set value(v) { this[$value] = String(typeof v == "number" ? String(v) : (v || "")) ?? ""; }, // @ts-ignore
+        get value() { return String(this[$value] ?? "") ?? ""; }, // @ts-ignore
     }); initial?.then?.((v)=>$r.value = v); return $r;
 }
 
