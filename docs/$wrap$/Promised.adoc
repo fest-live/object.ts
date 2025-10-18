@@ -1,8 +1,0 @@
-= Promised.ts
-:source_path: modules/object.ts/src/$wrap$/Promised.ts
-
-Auto-generated documentation.
-
-== Exports
-- consts: fixFx
-- types: PromiseLike

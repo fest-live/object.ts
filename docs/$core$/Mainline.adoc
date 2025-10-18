@@ -1,7 +1,0 @@
-= Mainline.ts
-:source_path: modules/object.ts/src/$core$/Mainline.ts
-
-Auto-generated documentation.
-
-== Exports
-- consts: subscribe, observe, unsubscribe, bindByKey, derivate, bindBy

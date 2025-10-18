@@ -1,9 +1,0 @@
-= Utils.ts
-:source_path: modules/object.ts/src/$wrap$/Utils.ts
-
-Auto-generated documentation.
-
-== Exports
-- functions: addToCallChain(obj, methodKey, callback)
-- consts: propCbMap, boundCtx, associateWith, getRandomValues, UUIDv4, bindFx, isIterable, isKeyType, bindCtx, isValidObj, mergeByKey, callByProp, objectAssignNotEqual, callByAllProp, safe, unwrap, deref, withPromise, isObjectNotEqual, isNotEqual
-- types: keyType, refValid, subValid

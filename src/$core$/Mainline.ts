@@ -1,6 +1,6 @@
-import { objectAssign } from "../$wrap$/AssignObject";
+import { callByAllProp, callByProp, isKeyType, objectAssign } from "fest/core";
 import { $extractKey$, $registryKey$ } from "../$wrap$/Symbol";
-import { addToCallChain, callByAllProp, callByProp, isKeyType, safe, withPromise, type keyType, subValid, refValid } from "../$wrap$/Utils";
+import { addToCallChain, safe, withPromise, type keyType, subValid, refValid } from "../$wrap$/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactive } from "./Primitives";
 import { observableBySet, observableByMap } from "./Assigned";

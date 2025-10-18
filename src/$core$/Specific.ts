@@ -1,23 +1,8 @@
 import { subscribe, unsubscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger } from "../$wrap$/Symbol";
-import { isNotEqual, bindCtx, deref, type keyType, refValid } from "../$wrap$/Utils";
-
-
-//
-const isPrimitive = (obj: any)=>{
-    return obj == null || typeof obj == "string" || typeof obj == "number" || typeof obj == "boolean" || typeof obj == "bigint" || typeof obj == "symbol" || typeof obj == "undefined";
-}
-
-//
-const tryParseByHint = (value: any, hint?: any)=>{
-    if (!isPrimitive(value)) return null;
-    if (hint == "number") { return Number(value) || 0; }
-    if (hint == "string") { return String(value) || ""; }
-    if (hint == "boolean") { return !!value; }
-    return value;
-}
-
+import { deref, type keyType, refValid } from "../$wrap$/Utils";
+import { bindCtx, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target, name, registry)=>{
@@ -57,36 +42,6 @@ const observableAPIMethods = (target, name, registry)=>{
                 return handler["complete"];
             }
         })
-    }
-}
-
-//
-const potentiallyAsync = (promise, cb)=>{
-    if (promise instanceof Promise || typeof promise?.then == "function")
-        { return promise?.then?.(cb); } else
-        { return cb?.(promise); }
-    return promise;
-}
-
-//
-const potentiallyAsyncMap = (promise, cb)=>{
-    if (promise instanceof Promise || typeof promise?.then == "function")
-        { return promise?.then?.(cb); } else
-        { return cb?.(promise); }
-    return promise;
-}
-
-//
-const makeTriggerLess = function(self){
-    return (cb)=>{
-        self[$triggerLock] = true;
-        let result;
-        try {
-            result = cb?.();
-        } finally {
-            self[$triggerLock] = false;
-        }
-        return result;
     }
 }
 

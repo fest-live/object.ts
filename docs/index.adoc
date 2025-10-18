@@ -1,8 +1,0 @@
-= index.ts
-:source_path: modules/object.ts/src/index.ts
-
-Auto-generated documentation.
-
-== Exports
-- reexports: $triggerLess, safe, unwrap, deref, isValidObj, addToCallChain
-- star reexports from: ./$wrap$/AssignObject, ./$core$/Assigned, ./$core$/Mainline, ./$core$/Primitives, ./$wrap$/Promised, ./$wrap$/WRef

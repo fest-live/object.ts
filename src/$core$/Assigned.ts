@@ -1,7 +1,8 @@
 import { subscribe } from "./Mainline";
-import { addToCallChain, isKeyType, isNotEqual, objectAssignNotEqual, refValid, subValid, type keyType } from "../$wrap$/Utils";
+import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
 import { $triggerLock } from "../$wrap$/Symbol";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual } from "fest/core";
 
 //
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
@@ -101,46 +102,12 @@ export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Und
 }
 
 //
-const isPrimitive = (exists: any) => {
-    return exists == null || typeof exists == "string" || typeof exists == "number" || typeof exists == "boolean" || typeof exists == "symbol" || typeof exists == "undefined";
-}
-
-//
-const $getValue = ($objOrPlain: any) => {
-    if (isPrimitive($objOrPlain)) return $objOrPlain;
-    if (typeof $objOrPlain == "object" && $objOrPlain != null && ($objOrPlain?.value != null || "value" in $objOrPlain)) { return $objOrPlain?.value; }; return $objOrPlain;
-}
-
-//
 export interface PropStore {
     unsub?: any;
     bound?: any;
     cmpfx?: any;
     compute?: any;
     dispose?: any;
-}
-
-//
-const isArrayInvalidKey = (key: keyType | null | undefined | any, src?: any) => {
-    const invalidForArray = key == null || (key as any) < 0 || typeof key != "number" || (key as any) == Symbol.iterator || (src != null ? key >= (src?.length || 0) : false);
-    return (src != null ? Array.isArray(src) && invalidForArray : true);
-};
-
-//
-const hasValue = (v: any) => {
-    return (typeof v == "object" && (v?.value != null || (v != null && ("value" in v))));
-}
-
-//
-const $avoidTrigger = (ref: any, cb: Function)=>{
-    if (hasValue(ref)) ref[$triggerLock] = true;
-    let result;
-    try {
-        result = cb?.();
-    } finally {
-        if (hasValue(ref)) { delete ref[$triggerLock]; }
-    }
-    return result;
 }
 
 //
