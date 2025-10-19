@@ -1,7 +1,7 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
-import { $triggerLock } from "../$wrap$/Symbol";
+import { $promise, $triggerLock, $value, $behavior } from "../$wrap$/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual } from "fest/core";
 
 //
@@ -212,9 +212,22 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     const isACompute = typeof src?.[1] == "function" && (src as [any, keyType])?.length == 2;
     const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2;
     let a_prop = (isAProp && !isACompute) ? src?.[1] : (Array.isArray(src) ? null : prop);
-    if (!isAProp && !isACompute) { src = [src, a_prop]; }; if (isACompute) { src[1] = a_prop; };
+    if (!isAProp && !isACompute) { src = [(isAProp ? src?.[0] : src), a_prop]; }; if (isACompute) { src[1] = a_prop; };
     if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
-    const rf = autoRef(cb?.(src?.[0]?.[a_prop], a_prop), behavior);
+
+    //
+    const isPromise = false; const initial = cb?.(src?.[0]?.[a_prop], a_prop, null);
+    const rf: refValid<Under> = makeReactive({
+        [$promise]: isPromise ? initial : null, // @ts-ignore
+        [$value]: initial, // @ts-ignore
+        [$behavior]: behavior, // @ts-ignore
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; }, // @ts-ignore
+        [Symbol?.toPrimitive](hint: any) { return (!!this?.[$value] || false); }, // TODO: check hint
+        set value(v) { this[$value] = cb?.(src?.[0]?.[a_prop], a_prop, v); }, // @ts-ignore
+        get value() { return (cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value]); } // @ts-ignore
+    });
+
+    //
     assign([rf, prop], [src?.[0], cb], a_prop); return rf;
 }
 
