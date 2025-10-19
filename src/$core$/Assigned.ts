@@ -2,7 +2,7 @@ import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior } from "../$wrap$/Symbol";
-import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual } from "fest/core";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual, tryParseByHint } from "fest/core";
 
 //
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
@@ -218,13 +218,13 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     //
     const isPromise = false; const initial = cb?.(src?.[0]?.[a_prop], a_prop, null);
     const rf: refValid<Under> = makeReactive({
-        [$promise]: isPromise ? initial : null, // @ts-ignore
-        [$value]: initial, // @ts-ignore
-        [$behavior]: behavior, // @ts-ignore
-        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; }, // @ts-ignore
-        [Symbol?.toPrimitive](hint: any) { return (!!this?.[$value] || false); }, // TODO: check hint
-        set value(v) { this[$value] = cb?.(src?.[0]?.[a_prop], a_prop, v); }, // @ts-ignore
-        get value() { return (cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value]); } // @ts-ignore
+        [$promise]: isPromise ? initial : null,
+        [$value]: initial,
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value], hint); },
+        set value(v) { this[$value] = cb?.(src?.[0]?.[a_prop], a_prop, v); },
+        get value() { return (cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value]); }
     });
 
     //
