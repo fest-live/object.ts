@@ -35,7 +35,7 @@ export const booleanRef = <Under = boolean>(initial?: any, behavior?: any): refV
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
     const $r: refValid<Under> = makeReactive({
         [$promise]: isPromise ? initial : null, // @ts-ignore
-        [$value]: (isPromise ? false : !!deref(initial)) || false, // @ts-ignore
+        [$value]: (isPromise ? false : ((deref(initial) != null ? (typeof deref(initial) == "string" ? true : !!deref(initial)) : false) || false)) || false, // @ts-ignore
         [$behavior]: behavior, // @ts-ignore
         [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; }, // @ts-ignore
         [Symbol?.toPrimitive](hint: any) { return (!!this?.[$value] || false); }, // TODO: check hint
