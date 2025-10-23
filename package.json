@@ -1,5 +1,5 @@
 {
-    "name": "@fest/object-ts",
+    "name": "@fest/object",
     "description": "JS objects utils",
     "version": "1.0.0alpha",
     "private": false,
