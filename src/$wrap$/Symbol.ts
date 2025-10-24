@@ -17,3 +17,4 @@ export const $promise      = Symbol.for("@promise");
 export const $triggerLess  = Symbol.for("@trigger-less");
 export const $triggerLock  = Symbol.for("@trigger-lock");
 export const $trigger      = Symbol.for("@trigger");
+export const $subscribe    = Symbol.for("@subscribe");

@@ -1,12 +1,28 @@
 import { callByAllProp, callByProp, isKeyType, objectAssign } from "fest/core";
-import { $extractKey$, $registryKey$ } from "../$wrap$/Symbol";
+import { $extractKey$, $registryKey$, $subscribe } from "../$wrap$/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, subValid, refValid } from "../$wrap$/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { makeReactive } from "./Primitives";
 import { observableBySet, observableByMap } from "./Assigned";
 
 //
+export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => {
+    if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] == null) { return unwrap; }
+    unwrap[$subscribe] = (cb)=>{
+        const observable = unwrap?.[Symbol.observable];
+        observable?.()?.subscribe?.(cb);
+        return () => observable?.()?.unsubscribe?.(cb);
+    }; return unwrap;
+}
+
+//
 export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
+    // use custom subscribe if available
+    if (tg?.[$subscribe] != null && typeof tg?.[$subscribe] == "function") {
+        return tg?.[$subscribe]?.(cb);
+    }
+
+    //
     if (typeof tg == "symbol" || tg == null || !(typeof tg == "object" || typeof tg == "function")) return;
 
     //
@@ -29,14 +45,6 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
         const tProp = (prop != Symbol.iterator) ? prop : null;
         if (tProp != null) { callByProp(unwrap, tProp, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
         let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap); if (self?.[Symbol.dispose]) return;
-
-        // @ts-ignore
-        if (!self && unwrap?.[Symbol.observable]) {
-            unwrap = makeReactive(unwrap); // @ts-ignore
-            unwrap?.[Symbol.observable]?.()?.subscribe?.((value, prop?: any) => (unwrap[prop ?? "value"] = value));
-            self ??= unwrap?.[$registryKey$] ?? (subscriptRegistry).get(unwrap) ?? self;
-        }
-        if (!self) return;
 
         //
         let unsub: any = self?.subscribe?.(cb, tProp);
