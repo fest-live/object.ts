@@ -1,16 +1,19 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
-import { $promise, $triggerLock, $value, $behavior } from "../$wrap$/Symbol";
+import { $promise, $triggerLock, $value, $behavior, $trigger } from "../$wrap$/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual, tryParseByHint } from "fest/core";
 
 //
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
-export const conditional = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
+export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
     const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
     const usb = subscribe([cond, "value"], (val) => { if (cur != null && (typeof cur == "object" || typeof cur == "function")) cur.value = val ? ifTrue : ifFalse; });
     addToCallChain(cur, Symbol.dispose, usb); return cur;
 }
+
+// alias
+export const conditional = conditionalRef;
 
 //
 // used for redirection properties
@@ -235,8 +238,22 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = null, behavior?: any, initial?: any): refValid<Under> => {
     if (Array.isArray(src) && isArrayInvalidKey(srcProp, src)) { return; }
     if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
-    const r = autoRef(src?.[srcProp] ?? initial, behavior);
-    link([r, "value"], [src, srcProp]); return r;
+
+    // truly reflective
+    const r = makeReactive({
+        [$value]: src?.[srcProp] ?? initial,
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
+        set value(v) { src[srcProp] = v; },
+        get value() { return src?.[srcProp] ?? this[$value]; }
+    });
+
+    //
+    subscribe([src, srcProp], (v)=>{ r?.[$trigger]?.(); });
+
+    //
+    return r;
 }
 
 //
