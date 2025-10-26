@@ -1,7 +1,7 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
-import { $promise, $triggerLock, $value, $behavior, $trigger } from "../$wrap$/Symbol";
+import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../$wrap$/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual, tryParseByHint } from "fest/core";
 
 //
@@ -219,7 +219,7 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
 
     //
-    const cmp = (v?: any)=>cb?.(/*ws?.deref?.()*/  v ?? src?.[0]?.[a_prop], "value", v != undefined ? src?.[0]?.[a_prop] : null);
+    const cmp = (v?: any)=>cb?.(/*ws?.deref?.()*/  v ?? src?.[0]?.[a_prop], a_prop, v != undefined ? src?.[0]?.[a_prop] : null);
     const isPromise = false; const initial = cmp();
     const rf: refValid<Under> = makeReactive({
         [$promise]: isPromise ? initial : null,

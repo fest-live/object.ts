@@ -5,7 +5,7 @@ import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
 
 //
-export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => {
+export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => { // @ts-ignore
     if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] == null) { return unwrap; }
     unwrap[$subscribe] = (cb)=>{ // @ts-ignore
         const observable = unwrap?.[Symbol?.observable];

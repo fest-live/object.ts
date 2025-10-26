@@ -1,6 +1,6 @@
 import { subscribe, unsubscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger } from "../$wrap$/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual } from "../$wrap$/Symbol";
 import { deref, type keyType, refValid } from "../$wrap$/Utils";
 import { bindCtx, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
@@ -487,8 +487,8 @@ export class ReactiveObject {
         return potentiallyAsync(value, (v)=>{
             if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
             if (typeof name == "symbol" && !(target?.[name] != null && name in target)) return;
-            const oldValue = target[name]; target[name] = v;
-            if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(oldValue, v)) {
+            const oldValue = target[name]; target[name] = v; const newValue = target[name] ?? v;
+            if (!this[$triggerLock] && typeof name != "symbol" && (target?.[$isNotEqual]?.bind?.(target) ?? isNotEqual)?.(oldValue, newValue)) {
                 (subscriptRegistry)?.get?.(target)?.trigger?.(name, v, oldValue);
             };
             return true;
