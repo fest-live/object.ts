@@ -219,8 +219,7 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
 
     //
-    const ws = new WeakRef(src?.[0]);
-    const cmp = (v?: any)=>cb?.(/*ws?.deref?.()*/  v ?? src?.[0]?.[a_prop], "value", v != undefined ? ws?.deref?.()?.[a_prop] : null);
+    const cmp = (v?: any)=>cb?.(/*ws?.deref?.()*/  v ?? src?.[0]?.[a_prop], "value", v != undefined ? src?.[0]?.[a_prop] : null);
     const isPromise = false; const initial = cmp();
     const rf: refValid<Under> = makeReactive({
         [$promise]: isPromise ? initial : null,
@@ -230,7 +229,7 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cmp() ?? this[$value], hint); },
         set value(v) { this[$value] = cmp(v); },
         get value() { return (cmp() ?? this[$value]); }
-    }); const wr = new WeakRef(rf);
+    });
 
     //
     const usb = subscribe([src?.[0], a_prop], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
@@ -252,7 +251,6 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
         set value(v) { src[srcProp] = v; },
         get value() { return src?.[srcProp] ?? this[$value]; }
     });
-    //const wr = new WeakRef(r);
 
     //
     const usb = subscribe([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
