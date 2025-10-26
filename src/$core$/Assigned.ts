@@ -219,19 +219,23 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
 
     //
-    const isPromise = false; const initial = cb?.(src?.[0]?.[a_prop], a_prop, null);
+    const ws = new WeakRef(src?.[0]);
+    const cmp = (v?: any)=>cb?.(/*ws?.deref?.()*/  v ?? src?.[0]?.[a_prop], "value", v != undefined ? ws?.deref?.()?.[a_prop] : null);
+    const isPromise = false; const initial = cmp();
     const rf: refValid<Under> = makeReactive({
         [$promise]: isPromise ? initial : null,
         [$value]: initial,
         [$behavior]: behavior,
-        [Symbol?.toStringTag]() { return String(cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value] ?? "") || ""; },
-        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value], hint); },
-        set value(v) { this[$value] = cb?.(src?.[0]?.[a_prop], a_prop, v); },
-        get value() { return (cb?.(src?.[0]?.[a_prop], a_prop, null) ?? this[$value]); }
-    });
+        [Symbol?.toStringTag]() { return String(cmp() ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cmp() ?? this[$value], hint); },
+        set value(v) { this[$value] = cmp(v); },
+        get value() { return (cmp() ?? this[$value]); }
+    }); const wr = new WeakRef(rf);
 
     //
-    assign([rf, prop], [src?.[0], cb], a_prop); return rf;
+    const usb = subscribe([src?.[0], a_prop], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
+    //const usb = assign([rf, "value"], src, a_prop)
+    addToCallChain(rf, Symbol.dispose, usb); return rf;
 }
 
 //
@@ -248,11 +252,11 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
         set value(v) { src[srcProp] = v; },
         get value() { return src?.[srcProp] ?? this[$value]; }
     });
+    //const wr = new WeakRef(r);
 
     //
-    subscribe([src, srcProp], (v)=>{ r?.[$trigger]?.(); });
-
-    //
+    const usb = subscribe([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
+    addToCallChain(r, Symbol.dispose, usb);
     return r;
 }
 
