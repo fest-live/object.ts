@@ -62,6 +62,13 @@ export class ObserveArrayMethod {
         let oldState: any[] = [...this.#self];
         let idx: number = -1;
 
+        // execute operation
+        const result = Reflect.apply(target, ctx || this.#self, args);
+        if (this.#handle?.[$triggerLock]) {
+            if (Array.isArray(result)) { return makeReactiveArray(result); }
+            return result;
+        }
+
         //
         switch (this.#name) {
             case "push"   : idx = oldState?.length; added = args; break;
@@ -97,20 +104,15 @@ export class ObserveArrayMethod {
             case "copyWithin":
                 // compare old and new state, find changed elements
                 idx = 0; for (let i = 0; i < oldState.length; i++) {
-                    if (isNotEqual(oldState[i], oldState[i]))
-                        {setPairs.push([idx+i, oldState[i], oldState[i]]); }
+                    if (isNotEqual(oldState[i], this.#self[i]))
+                        {
+                            setPairs.push([idx+i, this.#self[i], oldState[i]]);
+                        }
                 }
                 break;
             // index assignment, args: [value, index]
             case "set": idx = args[1];
             setPairs.push([idx, args[0], oldState?.[idx] ?? null]); break;
-        }
-
-        // execute operation
-        const result = Reflect.apply(target, ctx || this.#self, args);
-        if (this.#handle?.[$triggerLock]) {
-            if (Array.isArray(result)) { return makeReactiveArray(result); }
-            return result;
         }
 
         // triggers on adding

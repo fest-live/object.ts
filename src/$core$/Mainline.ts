@@ -2,14 +2,13 @@ import { callByAllProp, callByProp, isKeyType, objectAssign } from "fest/core";
 import { $extractKey$, $registryKey$, $subscribe } from "../$wrap$/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, subValid, refValid } from "../$wrap$/Utils";
 import { subscriptRegistry } from "./Subscript";
-import { makeReactive } from "./Primitives";
 import { observableBySet, observableByMap } from "./Assigned";
 
 //
 export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => {
     if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] == null) { return unwrap; }
-    unwrap[$subscribe] = (cb)=>{
-        const observable = unwrap?.[Symbol.observable];
+    unwrap[$subscribe] = (cb)=>{ // @ts-ignore
+        const observable = unwrap?.[Symbol?.observable];
         observable?.()?.subscribe?.(cb);
         return () => observable?.()?.unsubscribe?.(cb);
     }; return unwrap;
