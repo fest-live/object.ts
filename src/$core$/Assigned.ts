@@ -1,8 +1,8 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
-import { autoRef, makeReactive, triggerWithDelay } from "./Primitives";
+import { autoRef, isReactive, makeReactive, triggerWithDelay } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../$wrap$/Symbol";
-import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, objectAssignNotEqual, tryParseByHint } from "fest/core";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint } from "fest/core";
 
 //
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
@@ -239,6 +239,9 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 
 //
 export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = null, behavior?: any, initial?: any): refValid<Under> => {
+    if (isPrimitive(src)) return src;
+
+    //
     if (Array.isArray(src) && isArrayInvalidKey(srcProp, src)) { return; }
     if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
 
@@ -248,8 +251,8 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
-        set value(v) { src[srcProp] = v; },
-        get value() { return src?.[srcProp] ?? this[$value]; }
+        set value(v) { r[$triggerLock] = true; src[srcProp] = (this[$value] = v); r[$triggerLock] = false; },
+        get value() { const result = src?.[srcProp] ?? this[$value]; return result; }
     });
 
     //

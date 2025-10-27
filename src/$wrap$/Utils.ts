@@ -1,3 +1,4 @@
+import { hasValue, isPrimitive } from "fest/core";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
 /*
@@ -92,15 +93,18 @@ export const safe = (target)=>{
 
 //
 export const unwrap = (arr)=>{ return arr?.[$extractKey$] ?? arr?.["@target"] ?? arr; }
-
-//
-export const deref  = (target?: any, discountValue: boolean|null = false)=>{
-    if (target == null || typeof target == "string" || typeof target == "number" || typeof target == "bigint" || typeof target == "boolean" || typeof target == "symbol" || typeof target == "undefined") return target;
-    const val = unwrap((target?.value != null || "value" in target) ? target?.value : target);
-    let from = (val != null && !discountValue && (typeof val == "object" || typeof val == "function")) ? val : target;
-    if (from == null || target == from) return target;
-    if (from instanceof WeakRef || typeof from?.deref == "function") { from = deref(from?.deref?.(), discountValue); } else { from = deref(from, discountValue); }
-    return from;
+export const deref  = (target?: any, discountValue: boolean|null = true)=>{
+    if (isPrimitive(target) || typeof target == "symbol") return target;
+    if (target != null && typeof target == "object" || typeof target == "function") {
+        const val = unwrap((!discountValue && hasValue(target)) ? target?.value : target);
+        let from = (val != null && (typeof val == "object" || typeof val == "function")) ? val : target;
+        if (from == null || target == from) return target;
+        if (from instanceof WeakRef || typeof from?.deref == "function")
+            { from = deref(from?.deref?.(), discountValue); } else
+            { from = deref(from, discountValue); }
+        return from;
+    }
+    return target;
 }
 
 // experimental promise support

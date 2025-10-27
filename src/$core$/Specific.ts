@@ -9,7 +9,7 @@ const systemGet = (target, name, registry)=>{
     if (target == null) return null;
 
     //
-    const exists = target?.[name]?.bind?.(target);
+    const exists = (name != "deref" && name != "bind" && name != $originalKey$ && name != $extractKey$ && name != $registryKey$) ? target?.[name]?.bind?.(target) : null;
     if (exists != null) return null;
 
     //
@@ -196,7 +196,7 @@ export class ReactiveArray {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
         if (name == "@target" || name == $extractKey$) return target;
 
         // that case: target[n]?.(?{.?value})?
@@ -283,7 +283,7 @@ export class ReactiveMap {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
 
         //
         if (name == "clear") {
@@ -364,7 +364,7 @@ export class ReactiveSet {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
 
         //
         if (name == "clear") {
@@ -441,7 +441,7 @@ export class ReactiveObject {
         // redirect to value key
         if ((target = deref(target, name == "value")) == null) return;
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
 
         //
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }

@@ -6,12 +6,14 @@ import { observableBySet, observableByMap } from "./Assigned";
 
 //
 export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => { // @ts-ignore
-    if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] == null) { return unwrap; }
+    if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] != null) { return unwrap; } // @ts-ignore
+    try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
     unwrap[$subscribe] = (cb)=>{ // @ts-ignore
         const observable = unwrap?.[Symbol?.observable];
         observable?.()?.subscribe?.(cb);
         return () => observable?.()?.unsubscribe?.(cb);
-    }; return unwrap;
+    }; // @ts-ignore
+    return unwrap;
 }
 
 //
@@ -52,8 +54,7 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
         addToCallChain(unwrap, Symbol.dispose, unsub);
         addToCallChain(unwrap, Symbol.asyncDispose, unsub);
 
-        // @ts-ignore
-        try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
+        //
         return unsub;
     });
 }
