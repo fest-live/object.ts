@@ -124,9 +124,9 @@ export class Subscript {
 
     // try execute immediatly, if already running, try delayed action in callstack
     // if catch will also fail, will cause another unhandled reject (will no repeating)
-    trigger(name: keyType|null, value: any = null, oldValue?: any, ...etc: any[]) {
+    trigger(name: keyType|null, value?: any|null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
-        if (!this.#triggerLock?.has(name)) {
+        if (!this.#triggerLock?.has(name ?? this)) {
             return Promise.try(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(console.error.bind(console));
         }
     }
