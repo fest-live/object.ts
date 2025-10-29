@@ -43,88 +43,42 @@ export const wrapWith = (what: any, handle: any): any =>{
 //
 export class Subscript {
     compatible: any;
-    #listeners: Set<(value: any, prop: keyType, oldValue?: any) => void>;
+    #listeners: Set<(value: any, prop: keyType, oldValue?: any, operation?: string|null) => void>;
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
+    #triggerLock: Map<any, boolean>;
     #subMap?: WeakMap<any, Map<any, any>>|null;
-    //#caller: any;
 
     // production version
-    async $safeExec(cb, args) {
-        if (cb && this.#flags.has(cb)) return this;
-        this.#flags.add(cb);
-        if (Array.isArray(args)) // @ts-ignore
-            { Promise?.try?.(cb, ...args as [any, any, any])?.catch?.(console.error.bind(console)); } else // @ts-ignore
-            { Promise?.try?.(cb, args)?.catch?.(console.error.bind(console)); }
-        this.#flags.delete(cb); return this;
-    }
-
-/*  // debug version (with performance.mark)
-    async $safeExec(cb, args) {
-        const cbName    = cb.name || '[anonymous]';
-        const markTime  = (performance.now()*1000)|0;
-        const markStart = `cb_start_${cbName}_on_[${args?.[1]||"<?>"}]_@[${markTime}]_[${Math.random()}]`;
-        const markEnd   = `cb_end_${cbName}_on_[${args?.[1]||"<?>"}]_@[${markTime}]_[${Math.random()}]`;
-        const markName  = `cb_exec_${cbName}_on_[${args?.[1]||"<?>"}]_@[${markTime}]_[${Math.random()}]`;
-
-        //
+    $safeExec(cb, args) {
         if (cb && this.#flags.has(cb)) return this;
 
-        //
-        performance.mark(markStart);
         this.#flags.add(cb);
-        try {
-            if (Array.isArray(args)) // @ts-ignore
-                { await Promise?.try?.(cb, ...args as [any, any, any]); } else // @ts-ignore
-                { await Promise?.try?.(cb, args); }
-        } catch (e) { console.error(e); }
+        this.#triggerLock?.set?.(args?.[1] ?? this, true);
+
+        const result = (Array.isArray(args) ?
+            Promise?.try?.(cb, ...args as [any, any, any, any]) :
+            Promise?.try?.(cb, args))?.catch?.(console.warn.bind(console));
+
+        this.#triggerLock?.delete?.(args?.[1] ?? this);
         this.#flags.delete(cb);
-
-        //
-        performance.mark(markEnd);
-        performance.measure(
-            markName,
-            markStart,
-            markEnd
-        );
-
-        //
-        const measures = performance.getEntriesByName(markName);
-        if (measures.length) {
-            //const duration = measures[measures.length - 1].duration; //recordCbStat(cbName, duration);
-            //console.log(`[${markTime}] exec_time for '${cbName}(...)' on [${args?.[1]||"<?>"}]:`, duration, 'ms');
-        }
-
-        //
-        performance.clearMarks(markStart);
-        performance.clearMarks(markEnd);
-        performance.clearMeasures(markName);
-        return this;
-    }*/
+        return result;
+    }
 
     //
     constructor(withWeak?: any) {
-        const weak = new WeakRef(this);
+        this.#triggerLock = new Map();
         this.#listeners = new Set();
         this.#flags = new WeakSet();
         this.#subMap = new WeakMap();
 
         //
-        const listeners = new WeakRef(this.#listeners);
-        const caller = async (name, value = null, oldValue?: any, ...etc: any[]) => {
-            const callName = ("[" + ((performance.now()*1000)|0) + "]") + ' caller_stack on [' + (name || "<?>") + "]";
-            //console.time(callName);
+        const weak = new WeakRef(this), listeners = new WeakRef(this.#listeners);
+        const caller = (name, value = null, oldValue?: any, ...etc: any[]) => {
             const arr = [...(listeners?.deref()?.values()||[])];
-            const result = await Promise.all(arr?.map?.((cb) =>
-                weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue, ...etc])
-            )||[]);
-            //console.timeEnd(callName);
-            return result;
+            return Promise.all(arr?.map?.((cb) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue, ...etc]))||[]);;
         };
-
-        //const caller = (name, value = null, oldValue?: any)=>Promise.all([...listeners?.deref()?.values()||[]]?.map?.((cb: (value: any, prop: keyType, oldValue?: any) => void) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue]))||[]);
-        //this.#caller = caller;
 
         // compatible with https://github.com/WICG/observable
         // mostly, only for subscribers (virtual Observable)
@@ -137,7 +91,7 @@ export class Subscript {
         const generator = function*() {
             while (weak?.deref?.() && listeners?.deref?.()) {
                 const args: any = yield;
-                if (Array.isArray(args)) { caller(...args as [any, any, any]); } else { caller(args); }
+                const result = Array.isArray(args) ? caller(...args as [any, any, any, any]) : caller(args);
             }
         }
 
@@ -172,9 +126,9 @@ export class Subscript {
     // if catch will also fail, will cause another unhandled reject (will no repeating)
     trigger(name: keyType|null, value: any = null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
-
-        // @ts-ignore
-        return Promise.try(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(console.error.bind(console));
+        if (!this.#triggerLock?.has(name)) {
+            return Promise.try(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(console.error.bind(console));
+        }
     }
 
     //
