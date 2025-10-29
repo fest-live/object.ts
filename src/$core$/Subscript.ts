@@ -1,4 +1,3 @@
-import { associateWith, propCbMap } from "fest/core";
 import { $extractKey$ } from "../$wrap$/Symbol";
 import { deref, type keyType } from "../$wrap$/Utils";
 import { WR } from "fest/core";
@@ -41,9 +40,12 @@ export const wrapWith = (what: any, handle: any): any =>{
 }; // !experimental `getOrInsert` feature!
 
 //
+const forAll = Symbol.for("@allProps");
+
+//
 export class Subscript {
     compatible: any;
-    #listeners: Set<(value: any, prop: keyType, oldValue?: any, operation?: string|null) => void>;
+    #listeners: Map<any, Set<(value: any, prop: keyType, oldValue?: any, operation?: string|null) => void>>;
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
@@ -54,13 +56,16 @@ export class Subscript {
     $safeExec(cb, args) {
         if (cb && this.#flags.has(cb)) return this;
 
+        //
         this.#flags.add(cb);
         this.#triggerLock?.set?.(args?.[1] ?? this, true);
 
+        //
         const result = (Array.isArray(args) ?
             Promise?.try?.(cb, ...args as [any, any, any, any]) :
             Promise?.try?.(cb, args))?.catch?.(console.warn.bind(console));
 
+        //
         this.#triggerLock?.delete?.(args?.[1] ?? this);
         this.#flags.delete(cb);
         return result;
@@ -69,14 +74,17 @@ export class Subscript {
     //
     constructor(withWeak?: any) {
         this.#triggerLock = new Map();
-        this.#listeners = new Set();
+        this.#listeners = new Map();
         this.#flags = new WeakSet();
         this.#subMap = new WeakMap();
 
         //
         const weak = new WeakRef(this), listeners = new WeakRef(this.#listeners);
         const caller = (name, value = null, oldValue?: any, ...etc: any[]) => {
-            const arr = [...(listeners?.deref()?.values()||[])];
+            const arr = [
+                ...(listeners?.deref?.()?.get?.(forAll)?.values?.()||[]),
+                ...((name != null ? listeners?.deref?.()?.get?.(name)?.values?.() : null) || [])
+            ];
             return Promise.all(arr?.map?.((cb) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue, ...etc]))||[]);;
         };
 
@@ -107,19 +115,19 @@ export class Subscript {
     //
     wrap(nw: any[] | unknown) { if (Array.isArray(nw)) { return wrapWith(nw, this); }; return nw; }
     subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
-        if (prop != null) { cb = associateWith(cb, prop) ?? cb; };
-        if (!this.#listeners.has(cb)) { this.#listeners.add?.(cb); }; // @ts-ignore
-        return this.#subMap?.getOrInsert?.(cb)?.getOrInsert?.(prop, () => this.unsubscribe(cb, prop));
+        if (!this.#listeners?.get?.(prop ?? forAll)?.has?.(cb)) { // @ts-ignore
+            this.#listeners?.getOrInsert?.(prop ?? forAll, new Set())?.add?.(cb); }; // @ts-ignore
+        return () => this.unsubscribe(cb, prop ?? forAll);
     }
 
     //
     unsubscribe(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (cb != null && typeof cb == "function") {
-            if (prop != null && propCbMap.has(cb)) { cb = propCbMap.get(cb) ?? cb; } // @ts-ignore
-            if (this.#listeners.has(cb)) { this.#listeners.delete(cb); } // @ts-ignore
+            const listeners = this.#listeners?.get?.(prop ?? forAll);
+            if (listeners?.has?.(cb)) { listeners?.delete?.(cb); } // @ts-ignore
             return () => this.subscribe(cb, prop);
         } // otherwise, clear everyone
-        this.#listeners.clear();
+        return this.#listeners?.get?.(prop ?? forAll)?.clear?.();
     }
 
     // try execute immediatly, if already running, try delayed action in callstack
