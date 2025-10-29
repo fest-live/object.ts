@@ -2,21 +2,24 @@ import { subscribe, unsubscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual } from "../$wrap$/Symbol";
 import { deref, type keyType, refValid } from "../$wrap$/Utils";
-import { bindCtx, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
+import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target, name, registry)=>{
-    if (target == null) return null;
+    if (target == null || isPrimitive(target)) { return target; }
 
     //
-    const exists = (name != "deref" && name != "bind" && name != $originalKey$ && name != $extractKey$ && name != $registryKey$) ? target?.[name]?.bind?.(target) : null;
+    const exists = ["deref", "bind", $originalKey$, $extractKey$, $registryKey$]?.indexOf(name) < 0 ? target?.[name]?.bind?.(target) : null;
     if (exists != null) return null;
 
     //
+    const $extK = [$extractKey$, $originalKey$];
+
+    //
+    if ($extK.indexOf(name) >= 0)     { return target?.[name] ?? target; }
     if (name == $value)               { return target?.[$value] ?? target?.value; }
-    if (name == "value")              { return target?.value ?? target?.[$value]; }
-    if (name == $registryKey$)        { return registry?.deref?.(); }
-    if (name == $extractKey$ || name == $originalKey$) { return target?.[name] ?? target; } // @ts-ignore
+    if (name == "value")              { return target?.[name] ?? target?.[$value]; }
+    if (name == $registryKey$)        { return registry?.deref?.(); } // @ts-ignore
     if (name == Symbol.observable)    { return registry?.deref?.()?.compatible; } // @ts-ignore
     if (name == Symbol.subscribe)     { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
     if (name == Symbol.iterator)      { return target[name]?.bind?.(target); }
@@ -24,8 +27,15 @@ const systemGet = (target, name, registry)=>{
     if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
     if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
-    if (name == Symbol.toPrimitive)   { return (hint?)=>{ if ((target?.value != null || "value" in target) && (typeof target?.value != "object" && typeof target?.value != "function")) { return tryParseByHint(target.value, hint); }; return tryParseByHint(target?.valueOf?.(), hint); } }
-    if (name == Symbol.toStringTag)   { return ()=>{ if (isPrimitive(target?.value)) { return String(target?.value ?? "") || ""; }; return target?.valueOf?.(); } }
+    if (name == Symbol.toPrimitive)   { return (hint?)=>{
+        if (typeof target?.[Symbol.toPrimitive] == "function") { return target?.[Symbol.toPrimitive]?.(hint); };
+        if (hasValue(target)) { return tryParseByHint(target.value, hint); }
+    } }
+    if (name == Symbol.toStringTag)   { return ()=>{
+        if (typeof target?.[Symbol.toStringTag] == "function") { return target?.[Symbol.toStringTag]?.(); };
+        if (hasValue(target) && isPrimitive(target?.value)) { return String(target?.value ?? "") || ""; };
+        return String(target?.toString?.() ?? target?.valueOf?.() ?? target);
+    } }
 }
 
 //

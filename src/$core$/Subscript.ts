@@ -45,47 +45,40 @@ const forAll = Symbol.for("@allProps");
 //
 export class Subscript {
     compatible: any;
-    #listeners: Map<any, Set<(value: any, prop: keyType, oldValue?: any, operation?: string|null) => void>>;
+    #listeners: Map<(value: any, prop: keyType, oldValue?: any, operation?: string|null) => void, any>;
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
-    #triggerLock: Map<any, boolean>;
-    #subMap?: WeakMap<any, Map<any, any>>|null;
+    triggerLock: boolean;
 
     // production version
-    $safeExec(cb, args) {
-        if (cb && this.#flags.has(cb)) return this;
+    $safeExec(cb, ...args) {
+        if (!cb || this.#flags.has(cb)) return this;
 
         //
         this.#flags.add(cb);
-        this.#triggerLock?.set?.(args?.[1] ?? this, true);
-
-        //
         const result = (Array.isArray(args) ?
             Promise?.try?.(cb, ...args as [any, any, any, any]) :
             Promise?.try?.(cb, args))?.catch?.(console.warn.bind(console));
-
-        //
-        this.#triggerLock?.delete?.(args?.[1] ?? this);
         this.#flags.delete(cb);
         return result;
     }
 
     //
-    constructor(withWeak?: any) {
-        this.#triggerLock = new Map();
+    constructor() {
+        this.triggerLock = false;
         this.#listeners = new Map();
         this.#flags = new WeakSet();
-        this.#subMap = new WeakMap();
 
         //
         const weak = new WeakRef(this), listeners = new WeakRef(this.#listeners);
         const caller = (name, value = null, oldValue?: any, ...etc: any[]) => {
-            const arr = [
-                ...(listeners?.deref?.()?.get?.(forAll)?.values?.()||[]),
-                ...((name != null ? listeners?.deref?.()?.get?.(name)?.values?.() : null) || [])
-            ];
-            return Promise.all(arr?.map?.((cb) => weak?.deref?.()?.$safeExec?.(cb, [value, name, oldValue, ...etc]))||[]);;
+            const arr = listeners?.deref?.();
+
+            // sort by history order
+            return Promise.all([...(arr?.entries?.()||[])]
+                ?.filter?.(([_, $nm])=>($nm == name || $nm == forAll))
+                ?.map?.(([cb, $nm]) => cb?.(...[value, name, oldValue, ...etc]))||[]);;
         };
 
         // compatible with https://github.com/WICG/observable
@@ -95,48 +88,47 @@ export class Subscript {
             return completeWithUnsub(subscriber, weak, handler);
         }
 
-        //
-        const generator = function*() {
-            while (weak?.deref?.() && listeners?.deref?.()) {
-                const args: any = yield;
-                const result = Array.isArray(args) ? caller(...args as [any, any, any, any]) : caller(args);
-            }
-        }
-
         // @ts-ignore
         this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
 
         // initiate generator, and do next
-        this.#iterator = generator();
-        this.#iterator?.next?.();
+        this.#iterator = {
+            next(args: any) {
+                if (args) { Array.isArray(args) ? caller(...args as [any, any, any, any]) : caller(args); };
+            }
+        }
+
+        //
         this.compatible = ()=>this.#native;
     }
 
     //
     wrap(nw: any[] | unknown) { if (Array.isArray(nw)) { return wrapWith(nw, this); }; return nw; }
     subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
-        if (!this.#listeners?.get?.(prop ?? forAll)?.has?.(cb)) { // @ts-ignore
-            this.#listeners?.getOrInsert?.(prop ?? forAll, new Set())?.add?.(cb); }; // @ts-ignore
+        if (cb == null || (typeof cb != "function")) return;
+
+        //
+        this.#listeners?.set?.(cb = this.$safeExec.bind(this, cb), prop || forAll);
         return () => this.unsubscribe(cb, prop ?? forAll);
     }
 
     //
     unsubscribe(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (cb != null && typeof cb == "function") {
-            const listeners = this.#listeners?.get?.(prop ?? forAll);
-            if (listeners?.has?.(cb)) { listeners?.delete?.(cb); } // @ts-ignore
-            return () => this.subscribe(cb, prop);
-        } // otherwise, clear everyone
-        return this.#listeners?.get?.(prop ?? forAll)?.clear?.();
+            const listeners = this.#listeners;
+            if (listeners?.has?.(cb)) {
+                listeners?.delete?.(cb);
+                return () => this.subscribe(cb, prop);
+            }
+        }
+        return this.#listeners?.clear?.();
     }
 
     // try execute immediatly, if already running, try delayed action in callstack
     // if catch will also fail, will cause another unhandled reject (will no repeating)
     trigger(name: keyType|null, value?: any|null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
-        if (!this.#triggerLock?.has(name ?? this)) {
-            return Promise.try(()=>this.#iterator.next([name, value, oldValue, ...etc]))?.catch?.(console.error.bind(console));
-        }
+        return Promise.try(this.#iterator.next?.bind(this.#iterator), [name, value, oldValue, ...etc])?.catch?.(console.warn.bind(console));;
     }
 
     //
