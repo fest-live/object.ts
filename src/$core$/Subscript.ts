@@ -78,7 +78,7 @@ export class Subscript {
             // sort by history order
             return Promise.all([...(arr?.entries?.()||[])]
                 ?.filter?.(([_, $nm])=>($nm == name || $nm == forAll))
-                ?.map?.(([cb, $nm]) => cb?.(...[value, name, oldValue, ...etc]))||[]);;
+                ?.map?.(([cb, $nm]) => this.$safeExec(cb, value, name, oldValue, ...etc))||[]);;
         };
 
         // compatible with https://github.com/WICG/observable
@@ -108,7 +108,7 @@ export class Subscript {
         if (cb == null || (typeof cb != "function")) return;
 
         //
-        this.#listeners?.set?.(cb = this.$safeExec.bind(this, cb), prop || forAll);
+        this.#listeners?.set?.(cb, prop || forAll);
         return () => this.unsubscribe(cb, prop ?? forAll);
     }
 
