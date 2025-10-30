@@ -1,5 +1,5 @@
 import { tryParseByHint } from "fest/core";
-import { $value, $behavior, $promise, $extractKey$ } from "../$wrap$/Symbol";
+import { $value, $behavior, $promise, $extractKey$, $subscribe } from "../$wrap$/Symbol";
 import { deref, refValid } from "../$wrap$/Utils";
 import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
 
@@ -115,5 +115,5 @@ export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Un
 
 //
 export const isReactive = (target: any) => {
-    return !!((typeof target == "object" || typeof target == "function") && target != null && target?.[$extractKey$]);
+    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$subscribe]));
 }
