@@ -228,7 +228,7 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
         [Symbol?.toStringTag]() { return String(cmp() ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cmp() ?? this[$value], hint); },
         set value(v) { this[$value] = cmp(v); },
-        get value() { return (cmp() ?? this[$value]); }
+        get value() { return (this[$value] = cmp() ?? this[$value]); }
     });
 
     //
@@ -252,7 +252,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
         [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
         set value(v) { r[$triggerLock] = true; src[srcProp] = (this[$value] = v || defaultByType(src[srcProp])); r[$triggerLock] = false; },
-        get value() { const result = src?.[srcProp] ?? this[$value]; return result; }
+        get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
     });
 
     //
