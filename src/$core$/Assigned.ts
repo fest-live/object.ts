@@ -232,13 +232,13 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     });
 
     //
-    const usb = subscribe([src?.[0], a_prop], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
+    const usb = subscribe([src?.[0] ?? src, a_prop ?? "value"], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
     //const usb = assign([rf, "value"], src, a_prop)
     addToCallChain(rf, Symbol.dispose, usb); return rf;
 }
 
 //
-export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = null, behavior?: any, initial?: any): refValid<Under> => {
+export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = null, initial?: any, behavior?: any): refValid<Under> => {
     if (isPrimitive(src)) return src;
 
     //
@@ -247,11 +247,11 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
 
     // truly reflective
     const r = makeReactive({
-        [$value]: src?.[srcProp] ?? initial,
+        [$value]: (src[srcProp] ??= initial ?? src[srcProp]),
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
-        set value(v) { r[$triggerLock] = true; this[$value] = src[srcProp] = v || defaultByType(src[srcProp]); r[$triggerLock] = false; },
+        set value(v) { r[$triggerLock] = true; src[srcProp] = (this[$value] = v || defaultByType(src[srcProp])); r[$triggerLock] = false; },
         get value() { const result = src?.[srcProp] ?? this[$value]; return result; }
     });
 

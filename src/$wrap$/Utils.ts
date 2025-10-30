@@ -96,7 +96,8 @@ export const unwrap = (arr)=>{ return arr?.[$extractKey$] ?? arr?.["@target"] ??
 export const deref  = (target?: any, discountValue: boolean|null = true)=>{
     if (isPrimitive(target) || typeof target == "symbol") return target;
     if (target != null && typeof target == "object" || typeof target == "function") {
-        const val = unwrap((!discountValue && hasValue(target)) ? target?.value : target);
+        //const val = unwrap((!discountValue && hasValue(target)) ? target?.value : target);
+        const val = target;
         let from = (val != null && (typeof val == "object" || typeof val == "function")) ? val : target;
         if (from == null || target == from) return target;
         if (from instanceof WeakRef || typeof from?.deref == "function")

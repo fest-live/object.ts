@@ -190,7 +190,7 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
 //
 export class ReactiveArray {
-    [$triggerLock]: boolean = false;
+    [$triggerLock]?: boolean;
     constructor() {
     }
 
@@ -200,13 +200,17 @@ export class ReactiveArray {
     // TODO: some target with target[n] may has also reactive target[n]?.value, which (sometimes) needs to observe too...
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
-        const $reg = (subscriptRegistry).get(target), registry = $reg ? new WeakRef($reg) : null;
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key = 0)=>{ return registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
         if (name == "@target" || name == $extractKey$) return target;
 
         // that case: target[n]?.(?{.?value})?
@@ -217,13 +221,23 @@ export class ReactiveArray {
 
     //
     set(target, name, value) {
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
+        const sys = systemGet(target, name, registry); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
+
+        //
         if (typeof name != "symbol") {
             // handle Array.length explicitly before numeric index normalization
-            if (Number.isInteger(parseInt(name))) { name = parseInt(name); };
+            if (Number.isInteger(parseInt(name))) { name = parseInt(name) ?? name; };
         }
 
         //
-        if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+        if (name == $triggerLock && value) { this[$triggerLock] = !!value; return true; }
+        if (name == $triggerLock && !value) { delete this[$triggerLock]; return true; }
 
         // array property changes
         const old = target?.[name];
@@ -247,10 +261,20 @@ export class ReactiveArray {
 
     //
     deleteProperty(target, name) {
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
+
+        //
         if (typeof name != "symbol") {
             // handle Array.length explicitly before numeric index normalization
-            name = parseInt(name);
+            if (Number.isInteger(parseInt(name))) { name = parseInt(name) ?? name; };
         }
+
+        //
+        if (name == $triggerLock) { delete this[$triggerLock]; return true; }
 
         //
         const old = target?.[name];
@@ -258,15 +282,9 @@ export class ReactiveArray {
 
         //
         if (!this[$triggerLock] && (name != "length" && name != $triggerLock && typeof name != "symbol")) {
-            const $reg = (subscriptRegistry).get(target);
             if (old != null) {
-                $reg?.trigger?.(name, name, old, typeof name == "number" ? "@delete" : null);
+                registry?.deref?.()?.trigger?.(name, name, old, typeof name == "number" ? "@delete" : null);
             }
-        }
-
-        //
-        if (name == $triggerLock) {
-            this[$triggerLock] = false;
         }
 
         //
@@ -280,20 +298,22 @@ export class ReactiveMap {
 
     //
     get(target, name: keyType, ctx) {
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
-        if ((target = deref(target)) == null) return;
         const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
         const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/(tp)?.[name]);
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key)=>{ if (key != null) { return registry?.deref()?.trigger?.(key, target?.get?.(key), target?.get?.(key), "@set"); } }; }
 
         //
         if (name == "clear") {
@@ -319,7 +339,7 @@ export class ReactiveMap {
         if (name == "set") {
             return (prop, value) => potentiallyAsyncMap(value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock]) { registry?.deref()?.trigger?.(prop, value, oldValue); } };
+                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { registry?.deref()?.trigger?.(prop, result, oldValue); } };
                 return result;
             });
         }
@@ -331,6 +351,7 @@ export class ReactiveMap {
     //
     set(target, name: keyType, value) {
         if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+        if (name == $triggerLock && !value) { delete this[$triggerLock]; return true; };
         if ((target = deref(target)) == null) return true;
         return Reflect.set(target, name, value);
     }
@@ -346,8 +367,9 @@ export class ReactiveMap {
         return Reflect.getOwnPropertyDescriptor(target, key);
     }
 
+    //
     deleteProperty(target, name: keyType) {
-        if (name == $triggerLock) { this[$triggerLock] = false; return true; }
+        if (name == $triggerLock) { delete this[$triggerLock]; return true; }
         if ((target = deref(target)) == null) return true;
         const result = Reflect.deleteProperty(target, name);
         return result;
@@ -356,25 +378,27 @@ export class ReactiveMap {
 
 //
 export class ReactiveSet {
-    [$triggerLock]: boolean = false;
+    [$triggerLock]?: boolean = false;
     constructor() {}
 
     //
     get(target, name: keyType, ctx) {
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         // redirect to value key
-        if ((target = deref(target)) == null) return;
         const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
         const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/tp?.[name]);
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key)=>{ if (key != null) { return registry?.deref()?.trigger?.(key, target?.has?.(key), target?.has?.(key)); } }; }
 
         //
         if (name == "clear") {
@@ -410,7 +434,8 @@ export class ReactiveSet {
 
     //
     set(target, name: keyType, value) {
-        if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+        if (name == $triggerLock && value) { this[$triggerLock] = !!value; return true; }
+        if (name == $triggerLock && !value) { delete this[$triggerLock]; return true; }
         if ((target = deref(target)) == null) return true;
         return Reflect.set(target, name, value);
     }
@@ -428,7 +453,7 @@ export class ReactiveSet {
 
     //
     deleteProperty(target, name: keyType) {
-        if (name == $triggerLock) { this[$triggerLock] = false; return true;}
+        if (name == $triggerLock) { delete this[$triggerLock]; return true; }
         if ((target = deref(target)) == null) return true;
         const result = Reflect.deleteProperty(target, name);
         return result;
@@ -437,11 +462,14 @@ export class ReactiveSet {
 
 //
 export class ReactiveObject {
-    [$triggerLock]: boolean = false;
+    [$triggerLock]?: boolean;
     constructor() {}
 
     // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
         const $reg = (subscriptRegistry).get(target);
         const registry = $reg ? new WeakRef($reg) : null;
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
@@ -449,9 +477,8 @@ export class ReactiveObject {
 
         //
         // redirect to value key
-        if ((target = deref(target, name == "value")) == null) return;
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ !this[$triggerLock] && registry?.deref()?.trigger?.(key, target?.[key], target?.[key], "@set"); }; }
+        if (name == $trigger) { return (key = "value")=>{ return (subscriptRegistry).get(target)?.trigger?.(key, target?.[key], target?.[key]); }; }
 
         //
         if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return target?.[name]; }
@@ -466,23 +493,6 @@ export class ReactiveObject {
     ownKeys(target) { if ((target = deref(target)) == null) return; return Reflect.ownKeys(target); }
     construct(target, args, newT) { if ((target = deref(target)) == null) return; return Reflect.construct(target, args, newT); }
     isExtensible(target) { if ((target = deref(target)) == null) return; return Reflect.isExtensible(target); }
-    deleteProperty(target, name: keyType) {
-        const registry = (subscriptRegistry).get(target);
-        if ((target = deref(target)) == null) return;
-
-        //
-        const oldValue = target[name];
-        const result = Reflect.deleteProperty(target, name);
-
-        //
-        if (name == $triggerLock) {
-            this[$triggerLock] = false;
-        }
-
-        //
-        if (!this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) { registry?.trigger?.(name, null, oldValue); }
-        return result;
-    }
 
     //
     getOwnPropertyDescriptor(target, key) {
@@ -495,14 +505,37 @@ export class ReactiveObject {
     set(target, name: keyType, value) {
         if ((target = deref(target, name == "value")) == null) return;
         return potentiallyAsync(value, (v)=>{
-            if (name == $triggerLock) { this[$triggerLock] = !!value; return true; }
+            if (name == $triggerLock && value) { this[$triggerLock] = !!value; return true; }
+            if (name == $triggerLock && !value) { delete this[$triggerLock]; return true; }
+
+            //
             if (typeof name == "symbol" && !(target?.[name] != null && name in target)) return;
-            const oldValue = target[name]; target[name] = v; const newValue = target[name] ?? v;
+            const oldValue = name == "value" ? (target?.[$value] ?? target?.[name]) : target?.[name]; target[name] = v; const newValue = target?.[name] ?? v;
             if (!this[$triggerLock] && typeof name != "symbol" && (target?.[$isNotEqual]?.bind?.(target) ?? isNotEqual)?.(oldValue, newValue)) {
                 (subscriptRegistry)?.get?.(target)?.trigger?.(name, v, oldValue);
             };
             return true;
         })
+    }
+
+    //
+    deleteProperty(target, name: keyType) {
+        if ((target = deref(target, name == "value")) == null) return;
+
+        //
+        const $reg = (subscriptRegistry).get(target);
+        const registry = $reg ? new WeakRef($reg) : null;
+
+        //
+        if (name == $triggerLock) { delete this[$triggerLock]; return true; }
+
+        //
+        const oldValue = target[name];
+        const result = Reflect.deleteProperty(target, name);
+
+        //
+        if (!this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) { registry?.deref?.()?.trigger?.(name, null, oldValue); }
+        return result;
     }
 }
 
