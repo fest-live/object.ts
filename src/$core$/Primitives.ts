@@ -88,22 +88,28 @@ export const delayedOrInstantBehavior = (delay = 100) => {
 
 //
 export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Under,T>, stateName = ""): refValid<Under,T> => {
-    if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null || target?.[$extractKey$]) return target as refValid<Under,T>;
-    if (target instanceof Promise || target instanceof WeakRef) return target as refValid<Under,T>; // promise forbidden
+    if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || isReactive(target)) {
+        return target as refValid<Under,T>;
+    }
 
     //
-    const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
-    if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return target as refValid<Under,T>;
-    if (unwrap instanceof Promise || unwrap instanceof WeakRef) return target as refValid<Under,T>; // promise forbidden
+    if ((target = deref?.(target)) == null || target instanceof Promise || target instanceof WeakRef || isReactive(target)) {
+        return target as refValid<Under,T>; // promise forbidden
+    }
 
     //
-    let reactive = target;
+    const unwrap: any = target;
+    if (unwrap == null ||
+        typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") ||
+        unwrap instanceof Promise || unwrap instanceof WeakRef
+    ) { return unwrap as refValid<Under,T>; };
+
+    //
+    let reactive = unwrap;
     if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target as Under[]); return reactive; } else
     if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target as Map<any, Under>); return reactive; } else
     if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target as Set<Under>); return reactive; } else
     if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); return reactive; }
-
-    //
     return reactive;
 }
 

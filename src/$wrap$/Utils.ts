@@ -93,17 +93,17 @@ export const safe = (target)=>{
 
 //
 export const unwrap = (arr)=>{ return arr?.[$extractKey$] ?? arr?.["@target"] ?? arr; }
-export const deref  = (target?: any, discountValue: boolean|null = true)=>{
+export const deref  = (target?: any, discountValue: boolean|null = false)=>{
+    const original = target;
     if (isPrimitive(target) || typeof target == "symbol") return target;
-    if (target != null && typeof target == "object" || typeof target == "function") {
-        //const val = unwrap((!discountValue && hasValue(target)) ? target?.value : target);
-        const val = target;
-        let from = (val != null && (typeof val == "object" || typeof val == "function")) ? val : target;
-        if (from == null || target == from) return target;
-        if (from instanceof WeakRef || typeof from?.deref == "function")
-            { from = deref(from?.deref?.(), discountValue); } else
-            { from = deref(from, discountValue); }
-        return from;
+    if (target != null && (target instanceof WeakRef || ("deref" in target && typeof target?.deref == "function"))) { target = target?.deref?.(); };
+    if (target != null && (typeof target == "object" || typeof target == "function")) {
+        target = unwrap(target);
+        const $val = discountValue && hasValue(target) && target?.value;
+        if ($val != null && (typeof $val == "object" || typeof $val == "function"))
+            { target = $val; }
+        if (original != target)
+            { return deref(target, discountValue); }
     }
     return target;
 }
