@@ -2,14 +2,48 @@ import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../$wrap$/Utils";
 import { autoRef, isReactive, makeReactive, triggerWithDelay } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../$wrap$/Symbol";
-import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType } from "fest/core";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
 //
 export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
+
+//
+/*
 export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
     const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
     const usb = subscribe([cond, "value"], (val) => { if (cur != null && (typeof cur == "object" || typeof cur == "function")) cur.value = val ? ifTrue : ifFalse; });
     addToCallChain(cur, Symbol.dispose, usb); return cur;
+}*/
+
+//
+export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
+    if (isPrimitive(cond)) return cond ? ifTrue : ifFalse;
+
+    //
+    const getTrue = ()=>{ return ifTrue; };
+    const getFalse = ()=>{ return ifFalse; };
+
+    //
+    const valueOf = (n?: any)=>{
+        if (n != null) { cond.value = hasValue(n) ? n?.value : n; };
+        const cnd = hasValue(cond) ? cond?.value : cond;
+        return cnd ? getTrue() : getFalse();
+    }
+
+    // truly reflective
+    const r = makeReactive({
+        [$value]: valueOf(),
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(valueOf() ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(valueOf() ?? this[$value], hint); },
+        set value(v) { this[$value] = valueOf(v); },
+        get value() { return (this[$value] = valueOf() ?? this[$value]); }
+    });
+
+    //
+    const usb = subscribe([cond, "value"], (val)=>{ r?.[$trigger]?.(); });
+    addToCallChain(r, Symbol.dispose, usb);
+    return r;
 }
 
 // alias
@@ -138,7 +172,7 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
 
             //
             const nv = $getValue(val);
-            if (nv !== a_tmp[a_prop]) {
+            if (isNotEqual(a_tmp[a_prop], nv)) {
                 $avoidTrigger(b_tmp, ()=>{ a_tmp[a_prop] = nv; });
             };
         } else {
@@ -219,7 +253,16 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
 
     //
-    const cmp = (v?: any)=>cb?.(/*ws?.deref?.()*/  v ?? src?.[0]?.[a_prop], a_prop, v != undefined ? src?.[0]?.[a_prop] : null);
+    const cmp = (v?: any)=>{
+        let oldValue: any = undefined;
+        if (v != undefined) {
+            oldValue = src[0][a_prop];
+            src[0][a_prop] = v;
+        }
+        return cb?.(src?.[0]?.[a_prop], a_prop, oldValue);
+    };
+
+    //
     const isPromise = false; const initial = cmp();
     const rf: refValid<Under> = makeReactive({
         [$promise]: isPromise ? initial : null,
@@ -242,7 +285,11 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
     if (isPrimitive(src)) return src;
 
     //
-    if (Array.isArray(src) && isArrayInvalidKey(srcProp, src)) { return; }
+    if (Array.isArray(src)) {
+        if (isArrayInvalidKey(src?.[1], src)) { return; } else { src = src?.[0]; };
+    }
+
+    //
     if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
 
     // truly reflective

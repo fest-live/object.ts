@@ -4,32 +4,23 @@ import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess,
 import { deref, type keyType, refValid } from "../$wrap$/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
+//
 // Safe getter with global re-entrancy guard to avoid recursive accessor loops
 const __safeGetGuard = new WeakMap<any, Set<any>>();
-export const safeGet = (obj: any, key: any, rec?: any) => {
-    //const result = Reflect.get(obj, key, rec != null ? rec : obj);
-    //return typeof result == "function" ? bindCtx(obj, result) : result;
-
-    //
+export const safeGet = (obj: any, key: any) => {
     if (obj == null) { return undefined; }
     let active = __safeGetGuard.get(obj);
     if (!active) { active = new Set(); __safeGetGuard.set(obj, active); }
     if (active.has(key)) { return null; }
     active.add(key);
-
-    //
-    let result = undefined;
     try {
-        result = Reflect.get(obj, key, rec != null ? rec : obj);
+        return Reflect.get(obj, key, obj);
     } catch (_e) {
-        result = undefined;
+        return undefined;
     } finally {
         active.delete(key);
         if (active.size === 0) { __safeGetGuard.delete(obj); }
     }
-
-    //
-    return typeof result == "function" ? bindCtx(obj, result) : result;
 }
 
 // get reactive primitives (if native iterator is available, use it)
@@ -45,30 +36,30 @@ const systemGet = (target, name, registry)=>{
 
     //
     if ($extK.indexOf(name) >= 0)     { return safeGet(target, name) ?? target; }
-    if (name == $value)               { return safeGet(target, name) ?? safeGet(target, "value"); }
-    if (name == $registryKey$)        { return registry; } // @ts-ignore
-    if (name == Symbol.observable)    { return registry?.compatible; } // @ts-ignore
+    if (name == $value)               { return safeGet(target, name) ?? target?.value; }
+    if (name == $registryKey$)        { return registry?.deref?.(); } // @ts-ignore
+    if (name == Symbol.observable)    { return registry?.deref?.()?.compatible; } // @ts-ignore
     if (name == Symbol.subscribe)     { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
-    if (name == Symbol.iterator)      { return safeGet(target, name) ?? target; }
-    if (name == Symbol.asyncIterator) { return safeGet(target, name) ?? target; }
-    if (name == Symbol.dispose)       { return (prop?)=>{ safeGet(target, Symbol.dispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
-    if (name == Symbol.asyncDispose)  { return (prop?)=>{ safeGet(target, Symbol.asyncDispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
+    if (name == Symbol.iterator)      { return safeGet(target, name)?.bind?.(target); }
+    if (name == Symbol.asyncIterator) { return safeGet(target, name)?.bind?.(target); }
+    if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
+    if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
     if (name == Symbol.toPrimitive)   { return (hint?)=>{
-        if (typeof safeGet(target, Symbol.toPrimitive) == "function") { return safeGet(target, Symbol.toPrimitive)?.(hint); };
-        if (safeGet(target, "value") != null && hasValue(target)) { return tryParseByHint(safeGet(target, "value"), hint); }
+        if (typeof safeGet(target, Symbol.toPrimitive) == "function") { return (safeGet(target, Symbol.toPrimitive) as any)?.(hint); };
+        if (hasValue(target)) { return tryParseByHint(target.value, hint); }
     } }
-    if (name == Symbol.toStringTag) { return ()=>{
-        if (typeof safeGet(target, Symbol.toStringTag) == "function") { return safeGet(target, Symbol.toStringTag)?.(); };
-        if (safeGet(target, "value") != null && hasValue(target) && isPrimitive(safeGet(target, "value"))) { return String(safeGet(target, "value") ?? "") || ""; };
-        return String(safeGet(target, "toString")?.() ?? safeGet(target, "valueOf")?.() ?? target);
+    if (name == Symbol.toStringTag)   { return ()=>{
+        if (typeof safeGet(target, Symbol.toStringTag) == "function") { return (safeGet(target, Symbol.toStringTag) as any)?.(); };
+        if (hasValue(target) && isPrimitive((safeGet(target, "value") as any))) { return String((safeGet(target, "value") as any) ?? "") || ""; };
+        return String(target?.toString?.() ?? target?.valueOf?.() ?? target);
     } }
 }
 
 //
 const observableAPIMethods = (target, name, registry)=>{
     if (name == "subscribe") {
-        return registry?.compatible?.[name] ?? ((handler)=>{
+        return registry?.deref?.()?.compatible?.[name] ?? ((handler)=>{
             if (typeof handler == "function") {
                 return subscribe(target, handler);
             } else
@@ -189,25 +180,25 @@ export class ObserveArrayMethod {
 const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
     const removedItems = (Number.isInteger(oldLen) && Number.isInteger(newLen) && newLen < oldLen) ? target.slice(newLen, oldLen) : [];
     if (!self[$triggerLock] && oldLen !== newLen) {
-        const registry = (subscriptRegistry).get(target);
+        const $reg = (subscriptRegistry).get(target);
 
         // emit removals if shrunk
         if (removedItems.length === 1) {
-            registry?.trigger?.(newLen, null, removedItems[0], "@remove");
+            $reg?.trigger?.(newLen, null, removedItems[0], "@remove");
         } else if (removedItems.length > 1) {
-            registry?.trigger?.(newLen, null, removedItems, "@removeAll");
-            removedItems.forEach((item, I) => registry?.trigger?.(newLen + I, null, item, "@remove"));
+            $reg?.trigger?.(newLen, null, removedItems, "@removeAll");
+            removedItems.forEach((item, I) => $reg?.trigger?.(newLen + I, null, item, "@remove"));
         }
 
         // emit additions if grown (holes are considered added undefined entries)
         const addedCount = (Number.isInteger(oldLen) && Number.isInteger(newLen) && newLen > oldLen)
             ? (newLen - oldLen) : 0;
         if (addedCount === 1) {
-            registry?.trigger?.(oldLen, undefined, null, "@add");
+            $reg?.trigger?.(oldLen, undefined, null, "@add");
         } else if (addedCount > 1) {
             const added = Array(addedCount).fill(undefined);
-            registry?.trigger?.(oldLen, added, null, "@addAll");
-            added.forEach((_, I) => registry?.trigger?.(oldLen + I, undefined, null, "@add"));
+            $reg?.trigger?.(oldLen, added, null, "@addAll");
+            added.forEach((_, I) => $reg?.trigger?.(oldLen + I, undefined, null, "@add"));
         }
     }
 }
@@ -226,25 +217,29 @@ export class ReactiveArray {
     // TODO: some target with target[n] may has also reactive target[n]?.value, which (sometimes) needs to observe too...
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
-        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
-            return typeof safeGet(target, name) == "function" ? safeGet(target, name)?.bind?.(target) : safeGet(target, name);
+        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name) >= 0 && target?.[name] != null && target?.[name] != target) {
+            return typeof safeGet(target, name) == "function" ? (safeGet(target, name) as any)?.bind?.(target) : safeGet(target, name);
         };
 
         //
-        const registry = (subscriptRegistry).get(target);
-        const sys = systemGet(target, name, registry); if (sys != null) return sys;
-        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
+        const $reg = (subscriptRegistry).get(target);
+        const sys = systemGet(target, name, $reg); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, $reg); if (obs != null) return obs;
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = 0)=>{ return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), safeGet(target, key), "@set"); }; }
+        if (name == $trigger) { return (key = 0)=>{ if (!this[$triggerLock]) {
+            this[$triggerLock] = true;
+            (subscriptRegistry).get(target)?.trigger?.(key, target?.[key], target?.[key], "@set");
+            delete this[$triggerLock];
+        } return key; }; }
         if (name == "@target" || name == $extractKey$) return target;
 
         // that case: target[n]?.(?{.?value})?
         const got = safeGet(target, name) ?? (name == "value" ? safeGet(target, $value) : null);
         if (typeof got == "function") { return new Proxy(typeof got == "function" ? got?.bind?.(target) : got, new ObserveArrayMethod(name, target, this)); };
         return got;
-    }
+}
 
     //
     set(target, name, value) {
@@ -270,7 +265,9 @@ export class ReactiveArray {
 
         //
         if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(old, value)) {
-            (subscriptRegistry)?.get?.(target)?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
+            this[$triggerLock] = true;
+            (subscriptRegistry).get(target)?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
+            delete this[$triggerLock];
         }
 
         //
@@ -293,8 +290,10 @@ export class ReactiveArray {
 
         //
         if (!this[$triggerLock] && (name != "length" && name != $triggerLock && typeof name != "symbol")) {
-            if (old != null) {
-                (subscriptRegistry).get(target)?.trigger?.(name, name, old, typeof name == "number" ? "@delete" : null);
+            if (old != null && typeof name == "number") {
+                this[$triggerLock] = true;
+                (subscriptRegistry).get(target)?.trigger?.(name, null, old, typeof name == "number" ? "@delete" : null);
+                delete this[$triggerLock];
             }
         }
 
@@ -311,36 +310,39 @@ export class ReactiveObject {
     // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
         if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
-            return typeof safeGet(target, name) == "function" ? bindCtx(target, safeGet(target, name)) : safeGet(target, name);
+            return typeof safeGet(target, name) == "function" ? (safeGet(target, name) as any)?.bind?.(target) : safeGet(target, name);
         };
 
         //
-        const registry = (subscriptRegistry).get(target);
-        const sys = systemGet(target, name, registry); if (sys != null) return sys;
-        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
+        const $reg = (subscriptRegistry).get(target);
+        const sys = systemGet(target, name, $reg); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, $reg); if (obs != null) return obs;
 
         // drop into value if has
-        if (safeGet(target, name) == null && name != "value" && hasValue(target) && (typeof safeGet(target, "value") == "object" || typeof safeGet(target, "value") == "function") && safeGet(target, "value") != null && safeGet(safeGet(target, "value"), name) != null) {
-            target = safeGet(target, "value");
+        if (safeGet(target, name) == null && name != "value" && hasValue(target) && (typeof target?.value == "object" || typeof target?.value == "function") && target?.value != null && target?.value?.[name] != null) {
+            target = target?.value;
         }
 
         //
         // redirect to value key
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), safeGet(target, key)); }; }
+        if (name == $trigger) { return (key = "value")=>{ if (!this[$triggerLock]) {
+            this[$triggerLock] = true;
+            (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), safeGet(target, key));
+            delete this[$triggerLock];
+        } return key; } };
 
         //
         if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
         if (name == Symbol.toPrimitive) { return (hint?)=>{
-            if (isPrimitive(safeGet(target, "value")) && hasValue(target))
-                { return tryParseByHint(safeGet(target, "value"), hint); };
-            return tryParseByHint(safeGet(target, Symbol.toPrimitive)?.(), hint);
+            if (hasValue(target) && isPrimitive(target?.value))
+                { return tryParseByHint(target.value, hint); };
+            return tryParseByHint((safeGet(target, Symbol.toPrimitive) as any)?.(), hint);
         }}
-        if (name == "toString") { return () => { if (isPrimitive(safeGet(target, "value"))) { return String(safeGet(target, "value") ?? "") || ""; }; return target?.toString?.(); } }
-        if (name == "valueOf" ) { return () => { if (isPrimitive(safeGet(target, "value"))) { return tryParseByHint(safeGet(target, "value")); }; return tryParseByHint(safeGet(target, "valueOf")?.()); } }
-
-        //
-        return safeGet(target, name) ?? (name == "value" ? safeGet(target, $value) : safeGet(target, name));
+        if (name == "toString") { return () => { if (isPrimitive(target?.value)) { return String(target?.value ?? "") || ""; }; return target?.toString?.(); } }
+        if (name == "valueOf" ) { return () => { if (isPrimitive(target?.value)) { return tryParseByHint(target.value); }; return tryParseByHint(target?.valueOf?.()); } }
+        // Use safeGet for guarded access
+        return bindCtx(target, safeGet(target, name) ?? (name == "value" ? target?.[$value] : null));
     }
 
     //
@@ -363,15 +365,17 @@ export class ReactiveObject {
 
             // drop into value if has
             const $original = target;
-            if (safeGet(target, name) == null && name != "value" && hasValue(target) && (typeof safeGet(target, "value") == "object" || typeof safeGet(target, "value") == "function") && safeGet(target, "value") != null && safeGet(safeGet(target, "value"), name) != null) {
+            if (safeGet(target, name) == null && name != "value" && hasValue(target) && (typeof target?.value == "object" || typeof target?.value == "function") && target?.value != null && target?.value?.[name] != null) {
                 target = safeGet(target, "value");
             }
 
             //
             if (typeof name == "symbol" && !(safeGet(target, name) != null && name in target)) return;
             const oldValue = name == "value" ? (safeGet(target, $value) ?? safeGet(target, name)) : safeGet(target, name); target[name] = v; const newValue = safeGet(target, name) ?? v;
-            if (!this[$triggerLock] && typeof name != "symbol" && (safeGet(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) {
-                (subscriptRegistry)?.get?.($original)?.trigger?.(name, v, oldValue);
+            if (!this[$triggerLock] && typeof name != "symbol" && (target?.[$isNotEqual]?.bind?.(target) ?? isNotEqual)?.(oldValue, newValue)) {
+                this[$triggerLock] = true;
+                (subscriptRegistry)?.get?.($original)?.trigger?.(name, newValue, oldValue);
+                delete this[$triggerLock];
             };
             return true;
         })
@@ -386,10 +390,18 @@ export class ReactiveObject {
         const result = Reflect.deleteProperty(target, name);
 
         //
-        if (!this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) { (subscriptRegistry).get(target)?.trigger?.(name, null, oldValue); }
+        if (oldValue != null && !this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) {
+            this[$triggerLock] = true;
+            (subscriptRegistry).get(target)?.trigger?.(name, null, oldValue);
+            delete this[$triggerLock];
+        }
         return result;
     }
 }
+
+
+
+
 
 
 
@@ -400,15 +412,14 @@ export class ReactiveMap {
 
     //
     get(target, name: keyType, ctx) {
-        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
-            return typeof safeGet(target, name) == "function" ?
-                bindCtx(target, safeGet(target, name)) : safeGet(target, name);
+        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && target?.[name] != null && target?.[name] != target) {
+            return typeof safeGet(target, name) == "function" ? (safeGet(target, name) as any)?.bind?.(target) : safeGet(target, name);
         };
 
         //
-        const registry = (subscriptRegistry).get(target);
-        const sys = systemGet(target, name, registry); if (sys != null) return sys;
-        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
+        const $reg = (subscriptRegistry).get(target);
+        const sys = systemGet(target, name, $reg); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, $reg); if (obs != null) return obs;
 
         //
         const tp = (safeGet(target, $extractKey$) ?? safeGet(target, $originalKey$) ?? target);
@@ -417,14 +428,23 @@ export class ReactiveMap {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key)=>{ if (key != null) { return (subscriptRegistry).get(target)?.trigger?.(key, target?.get?.(key), target?.get?.(key), "@set"); } }; }
+        if (name == $trigger) { return (key)=>{ if (key != null) { if (!this[$triggerLock]) {
+            this[$triggerLock] = true;
+            (subscriptRegistry).get(target)?.trigger?.(key, target?.get?.(key), target?.get?.(key), "@set");
+            delete this[$triggerLock];
+        } return key; } }; }
 
         //
         if (name == "clear") {
             return () => {
                 const oldValues: any = Array.from(target?.entries?.() || []), result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue); }
+
+                    if (!this[$triggerLock]) {
+                        this[$triggerLock] = true;
+                        (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue);
+                        delete this[$triggerLock];
+                    }
                 });
                 return result;
             };
@@ -434,7 +454,11 @@ export class ReactiveMap {
         if (name == "delete") {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop), result = valueOrFx(prop);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue); }
+                if (!this[$triggerLock]) {
+                    this[$triggerLock] = true;
+                    (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue);
+                    delete this[$triggerLock];
+                }
                 return result;
             };
         }
@@ -443,7 +467,11 @@ export class ReactiveMap {
         if (name == "set") {
             return (prop, value) => potentiallyAsyncMap(value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue); } };
+                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) {
+                    this[$triggerLock] = true;
+                    (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue);
+                    delete this[$triggerLock];
+                } };
                 return result;
             });
         }
@@ -484,29 +512,37 @@ export class ReactiveSet {
 
     //
     get(target, name: keyType, ctx) {
-        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
-            return typeof safeGet(target, name) == "function" ? bindCtx(target, safeGet(target, name)) : safeGet(target, name);
+        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && target?.[name] != null && target?.[name] != target) {
+            return typeof safeGet(target, name) == "function" ? (safeGet(target, name) as any)?.bind?.(target) : safeGet(target, name);
         };
 
         //
-        const registry = (subscriptRegistry).get(target);
-        const sys = systemGet(target, name, registry); if (sys != null) return sys;
-        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
+        const $reg = (subscriptRegistry).get(target);
+        const sys = systemGet(target, name, $reg); if (sys != null) return sys;
+        const obs = observableAPIMethods(target, name, $reg); if (obs != null) return obs;
 
         // redirect to value key
-        const tp = (safeGet(target, $extractKey$) ?? safeGet(target, $originalKey$) ?? target);
-        const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/safeGet(tp, name));
-        if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return valueOrFx; }
+        const tp = (target[$extractKey$] ?? target[$originalKey$] ?? target);
+        const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/tp?.[name]);
+        if (typeof name == "symbol" && (name in target || target?.[name] != null)) { return valueOrFx; }
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key)=>{ if (key != null) { return (subscriptRegistry).get(target)?.trigger?.(key, target?.has?.(key), target?.has?.(key)); } }; }
+        if (name == $trigger) { return (key)=>{ if (key != null) { if (!this[$triggerLock]) {
+            this[$triggerLock] = true;
+            (subscriptRegistry).get(target)?.trigger?.(key, target?.has?.(key), target?.has?.(key));
+            delete this[$triggerLock];
+        } return key; } }; }
 
         //
         if (name == "clear") {
             return () => {
                 const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
-                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue); } });
+                oldValues.forEach((oldValue)=>{ if (oldValue != null && !this[$triggerLock]) {
+                    this[$triggerLock] = true;
+                    (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue);
+                    delete this[$triggerLock];
+                } });
                 return result;
             };
         }
@@ -515,7 +551,11 @@ export class ReactiveSet {
         if (name == "delete") {
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue); }
+                if (oldValue != null && !this[$triggerLock]) {
+                    this[$triggerLock] = true;
+                    (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue);
+                    delete this[$triggerLock];
+                }
                 return result;
             };
         }
@@ -525,7 +565,11 @@ export class ReactiveSet {
             // TODO: add potentially async set
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock] && !oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue); } };
+                if (isNotEqual(oldValue, value) && !this[$triggerLock]) {
+                    this[$triggerLock] = true;
+                    (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue);
+                    delete this[$triggerLock];
+                };
                 return result;
             };
         }
