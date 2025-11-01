@@ -44,7 +44,7 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
 
         //
         const tProp = (prop != Symbol.iterator) ? prop : null;
-        if (tProp != null) { callByProp(unwrap, tProp, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
+        if (tProp != null && tProp != Symbol.iterator) { callByProp(unwrap, tProp, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
         let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap); if (self?.[Symbol.dispose]) return;
 
         //

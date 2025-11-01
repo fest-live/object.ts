@@ -77,7 +77,7 @@ export class Subscript {
 
             // sort by history order
             return Promise.all([...(arr?.entries?.()||[])]
-                ?.filter?.(([_, $nm])=>($nm == name || $nm == forAll))
+                ?.filter?.(([_, $nm])=>($nm == name || $nm == forAll || $nm == null))
                 ?.map?.(([cb, $nm]) => this.$safeExec(cb, value, name, oldValue, ...etc))||[]);;
         };
 
@@ -109,16 +109,16 @@ export class Subscript {
 
         //
         this.#listeners?.set?.(cb, prop || forAll);
-        return () => this.unsubscribe(cb, prop ?? forAll);
+        return () => this.unsubscribe(cb, prop || forAll);
     }
 
     //
     unsubscribe(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (cb != null && typeof cb == "function") {
             const listeners = this.#listeners;
-            if (listeners?.has?.(cb)) {
+            if (listeners?.has?.(cb) && (listeners?.get?.(cb) == prop || prop == null || prop == forAll)) {
                 listeners?.delete?.(cb);
-                return () => this.subscribe(cb, prop);
+                return () => this.subscribe(cb, prop || forAll);
             }
         }
         return this.#listeners?.clear?.();
