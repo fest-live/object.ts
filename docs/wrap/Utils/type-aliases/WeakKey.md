@@ -10,4 +10,4 @@
 type WeakKey = object | Function;
 ```
 
-Defined in: wrap/Utils.ts:44
+Defined in: [wrap/Utils.ts:44](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/Utils.ts#L44)

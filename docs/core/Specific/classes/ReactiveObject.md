@@ -6,7 +6,7 @@
 
 # Class: ReactiveObject
 
-Defined in: core/Specific.ts:307
+Defined in: [core/Specific.ts:307](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L307)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: core/Specific.ts:307
 new ReactiveObject(): ReactiveObject;
 ```
 
-Defined in: core/Specific.ts:309
+Defined in: [core/Specific.ts:309](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L309)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: core/Specific.ts:309
 optional [$triggerLock]: boolean;
 ```
 
-Defined in: core/Specific.ts:308
+Defined in: [core/Specific.ts:308](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L308)
 
 ## Methods
 
@@ -43,7 +43,7 @@ apply(
    args): unknown;
 ```
 
-Defined in: core/Specific.ts:347
+Defined in: [core/Specific.ts:347](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L347)
 
 #### Parameters
 
@@ -74,7 +74,7 @@ construct(
    newT): unknown;
 ```
 
-Defined in: core/Specific.ts:349
+Defined in: [core/Specific.ts:349](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L349)
 
 #### Parameters
 
@@ -102,7 +102,7 @@ Defined in: core/Specific.ts:349
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:381
+Defined in: [core/Specific.ts:381](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L381)
 
 #### Parameters
 
@@ -129,7 +129,7 @@ get(
    ctx): any;
 ```
 
-Defined in: core/Specific.ts:312
+Defined in: [core/Specific.ts:312](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L312)
 
 #### Parameters
 
@@ -157,7 +157,7 @@ Defined in: core/Specific.ts:312
 getOwnPropertyDescriptor(target, key): undefined | TypedPropertyDescriptor<any>;
 ```
 
-Defined in: core/Specific.ts:353
+Defined in: [core/Specific.ts:353](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L353)
 
 #### Parameters
 
@@ -181,7 +181,7 @@ Defined in: core/Specific.ts:353
 has(target, prop): boolean;
 ```
 
-Defined in: core/Specific.ts:358
+Defined in: [core/Specific.ts:358](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L358)
 
 #### Parameters
 
@@ -205,7 +205,7 @@ Defined in: core/Specific.ts:358
 isExtensible(target): boolean;
 ```
 
-Defined in: core/Specific.ts:350
+Defined in: [core/Specific.ts:350](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L350)
 
 #### Parameters
 
@@ -225,7 +225,7 @@ Defined in: core/Specific.ts:350
 ownKeys(target): (string | symbol)[];
 ```
 
-Defined in: core/Specific.ts:348
+Defined in: [core/Specific.ts:348](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L348)
 
 #### Parameters
 
@@ -248,7 +248,7 @@ set(
    value): any;
 ```
 
-Defined in: core/Specific.ts:359
+Defined in: [core/Specific.ts:359](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L359)
 
 #### Parameters
 

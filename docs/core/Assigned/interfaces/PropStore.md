@@ -6,7 +6,7 @@
 
 # Interface: PropStore
 
-Defined in: core/Assigned.ts:142
+Defined in: [core/Assigned.ts:142](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L142)
 
 ## Properties
 
@@ -16,7 +16,7 @@ Defined in: core/Assigned.ts:142
 optional bound: any;
 ```
 
-Defined in: core/Assigned.ts:144
+Defined in: [core/Assigned.ts:144](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L144)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: core/Assigned.ts:144
 optional cmpfx: any;
 ```
 
-Defined in: core/Assigned.ts:145
+Defined in: [core/Assigned.ts:145](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L145)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: core/Assigned.ts:145
 optional compute: any;
 ```
 
-Defined in: core/Assigned.ts:146
+Defined in: [core/Assigned.ts:146](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L146)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: core/Assigned.ts:146
 optional dispose: any;
 ```
 
-Defined in: core/Assigned.ts:147
+Defined in: [core/Assigned.ts:147](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L147)
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: core/Assigned.ts:147
 optional unsub: any;
 ```
 
-Defined in: core/Assigned.ts:143
+Defined in: [core/Assigned.ts:143](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L143)

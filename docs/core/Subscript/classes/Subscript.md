@@ -6,7 +6,7 @@
 
 # Class: Subscript
 
-Defined in: core/Subscript.ts:46
+Defined in: [core/Subscript.ts:46](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L46)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: core/Subscript.ts:46
 new Subscript(): Subscript;
 ```
 
-Defined in: core/Subscript.ts:68
+Defined in: [core/Subscript.ts:68](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L68)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: core/Subscript.ts:68
 compatible: any;
 ```
 
-Defined in: core/Subscript.ts:47
+Defined in: [core/Subscript.ts:47](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L47)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: core/Subscript.ts:47
 triggerLock: boolean;
 ```
 
-Defined in: core/Subscript.ts:52
+Defined in: [core/Subscript.ts:52](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L52)
 
 ## Accessors
 
@@ -52,7 +52,7 @@ Defined in: core/Subscript.ts:52
 get iterator(): any;
 ```
 
-Defined in: core/Subscript.ts:135
+Defined in: [core/Subscript.ts:135](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L135)
 
 ##### Returns
 
@@ -66,7 +66,7 @@ Defined in: core/Subscript.ts:135
 $safeExec(cb, ...args): Subscript | Promise<unknown>;
 ```
 
-Defined in: core/Subscript.ts:55
+Defined in: [core/Subscript.ts:55](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L55)
 
 #### Parameters
 
@@ -92,7 +92,7 @@ subscribe(cb, prop?):
   | () => void | () => (() => void | (() => ... | undefined)) | undefined;
 ```
 
-Defined in: core/Subscript.ts:107
+Defined in: [core/Subscript.ts:107](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L107)
 
 #### Parameters
 
@@ -121,7 +121,7 @@ trigger(
 etc?): undefined | Promise<unknown>;
 ```
 
-Defined in: core/Subscript.ts:129
+Defined in: [core/Subscript.ts:129](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L129)
 
 #### Parameters
 
@@ -155,7 +155,7 @@ unsubscribe(cb?, prop?):
   | () => undefined | () => void | (() => (() => void | ...) | undefined);
 ```
 
-Defined in: core/Subscript.ts:116
+Defined in: [core/Subscript.ts:116](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L116)
 
 #### Parameters
 
@@ -180,7 +180,7 @@ Defined in: core/Subscript.ts:116
 wrap(nw): any;
 ```
 
-Defined in: core/Subscript.ts:106
+Defined in: [core/Subscript.ts:106](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Subscript.ts#L106)
 
 #### Parameters
 

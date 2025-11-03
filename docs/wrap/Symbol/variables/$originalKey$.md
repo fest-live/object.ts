@@ -10,4 +10,4 @@
 const $originalKey$: typeof $originalKey$;
 ```
 
-Defined in: wrap/Symbol.ts:10
+Defined in: [wrap/Symbol.ts:10](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/Symbol.ts#L10)

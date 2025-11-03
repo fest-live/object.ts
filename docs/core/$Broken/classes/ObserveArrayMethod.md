@@ -6,7 +6,7 @@
 
 # Class: ObserveArrayMethod
 
-Defined in: core/$Broken.ts:76
+Defined in: [core/$Broken.ts:76](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L76)
 
 ## Constructors
 
@@ -19,7 +19,7 @@ new ObserveArrayMethod(
    handle): ObserveArrayMethod;
 ```
 
-Defined in: core/$Broken.ts:78
+Defined in: [core/$Broken.ts:78](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L78)
 
 #### Parameters
 
@@ -50,7 +50,7 @@ apply(
    args): any;
 ```
 
-Defined in: core/$Broken.ts:86
+Defined in: [core/$Broken.ts:86](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L86)
 
 #### Parameters
 
@@ -81,7 +81,7 @@ get(
    rec): any;
 ```
 
-Defined in: core/$Broken.ts:85
+Defined in: [core/$Broken.ts:85](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L85)
 
 #### Parameters
 

@@ -6,7 +6,7 @@
 
 # Class: AssignObjectHandler
 
-Defined in: wrap/AssignObject.ts:6
+Defined in: [wrap/AssignObject.ts:6](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L6)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: wrap/AssignObject.ts:6
 new AssignObjectHandler(): AssignObjectHandler;
 ```
 
-Defined in: wrap/AssignObject.ts:7
+Defined in: [wrap/AssignObject.ts:7](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L7)
 
 #### Returns
 
@@ -33,7 +33,7 @@ apply(
    args): unknown;
 ```
 
-Defined in: wrap/AssignObject.ts:10
+Defined in: [wrap/AssignObject.ts:10](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L10)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ construct(
    newT): unknown;
 ```
 
-Defined in: wrap/AssignObject.ts:9
+Defined in: [wrap/AssignObject.ts:9](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L9)
 
 #### Parameters
 
@@ -92,7 +92,7 @@ Defined in: wrap/AssignObject.ts:9
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: wrap/AssignObject.ts:8
+Defined in: [wrap/AssignObject.ts:8](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L8)
 
 #### Parameters
 
@@ -119,7 +119,7 @@ get(
    ctx): any;
 ```
 
-Defined in: wrap/AssignObject.ts:13
+Defined in: [wrap/AssignObject.ts:13](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L13)
 
 #### Parameters
 
@@ -147,7 +147,7 @@ Defined in: wrap/AssignObject.ts:13
 has(target, prop): boolean;
 ```
 
-Defined in: wrap/AssignObject.ts:11
+Defined in: [wrap/AssignObject.ts:11](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L11)
 
 #### Parameters
 
@@ -174,7 +174,7 @@ set(
    value): boolean;
 ```
 
-Defined in: wrap/AssignObject.ts:12
+Defined in: [wrap/AssignObject.ts:12](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/wrap/AssignObject.ts#L12)
 
 #### Parameters
 

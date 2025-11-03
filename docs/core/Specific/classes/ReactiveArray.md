@@ -6,7 +6,7 @@
 
 # Class: ReactiveArray
 
-Defined in: core/Specific.ts:218
+Defined in: [core/Specific.ts:218](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L218)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: core/Specific.ts:218
 new ReactiveArray(): ReactiveArray;
 ```
 
-Defined in: core/Specific.ts:220
+Defined in: [core/Specific.ts:220](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L220)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: core/Specific.ts:220
 optional [$triggerLock]: boolean;
 ```
 
-Defined in: core/Specific.ts:219
+Defined in: [core/Specific.ts:219](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L219)
 
 ## Methods
 
@@ -40,7 +40,7 @@ Defined in: core/Specific.ts:219
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:281
+Defined in: [core/Specific.ts:281](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L281)
 
 #### Parameters
 
@@ -67,7 +67,7 @@ get(
    rec): any;
 ```
 
-Defined in: core/Specific.ts:228
+Defined in: [core/Specific.ts:228](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L228)
 
 #### Parameters
 
@@ -95,7 +95,7 @@ Defined in: core/Specific.ts:228
 has(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:224
+Defined in: [core/Specific.ts:224](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L224)
 
 #### Parameters
 
@@ -122,7 +122,7 @@ set(
    value): boolean;
 ```
 
-Defined in: core/Specific.ts:250
+Defined in: [core/Specific.ts:250](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L250)
 
 #### Parameters
 

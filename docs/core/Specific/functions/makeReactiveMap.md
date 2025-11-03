@@ -10,7 +10,7 @@
 function makeReactiveMap<Under, K>(map): any;
 ```
 
-Defined in: core/Specific.ts:565
+Defined in: [core/Specific.ts:565](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L565)
 
 ## Type Parameters
 

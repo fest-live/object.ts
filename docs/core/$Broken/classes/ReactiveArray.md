@@ -6,7 +6,7 @@
 
 # Class: ReactiveArray
 
-Defined in: core/$Broken.ts:209
+Defined in: [core/$Broken.ts:209](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L209)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: core/$Broken.ts:209
 new ReactiveArray(): ReactiveArray;
 ```
 
-Defined in: core/$Broken.ts:211
+Defined in: [core/$Broken.ts:211](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L211)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: core/$Broken.ts:211
 optional [$triggerLock]: boolean;
 ```
 
-Defined in: core/$Broken.ts:210
+Defined in: [core/$Broken.ts:210](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L210)
 
 ## Methods
 
@@ -40,7 +40,7 @@ Defined in: core/$Broken.ts:210
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/$Broken.ts:278
+Defined in: [core/$Broken.ts:278](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L278)
 
 #### Parameters
 
@@ -67,7 +67,7 @@ get(
    rec): any;
 ```
 
-Defined in: core/$Broken.ts:219
+Defined in: [core/$Broken.ts:219](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L219)
 
 #### Parameters
 
@@ -95,7 +95,7 @@ Defined in: core/$Broken.ts:219
 has(target, name): boolean;
 ```
 
-Defined in: core/$Broken.ts:215
+Defined in: [core/$Broken.ts:215](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L215)
 
 #### Parameters
 
@@ -122,7 +122,7 @@ set(
    value): boolean;
 ```
 
-Defined in: core/$Broken.ts:245
+Defined in: [core/$Broken.ts:245](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/$Broken.ts#L245)
 
 #### Parameters
 
