@@ -1,39 +1,40 @@
 {
     "name": "@fest/object",
-    "description": "JS objects utils",
-    "version": "1.0.0alpha",
+    "description": "JS reactive utilities and object helpers for JavaScript",
+    "version": "0.0.0",
     "private": false,
     "type": "module",
     "index": "./dist/object.js",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "require": "./dist/object.js"
+        }
+    },
     "scripts": {
         "test": "vite --host 0.0.0.0",
         "dev": "vite --host 0.0.0.0",
-        "worker": "vite build",
         "watch": "vite build --watch",
-        "build": "vite build --config vite.config.js",
-        "build-wp": "webpack build --mode=production",
+        "build": "vite build --config vite.config.js && npm run docs && npm run docs:md",
         "preview": "vite preview",
-        "build-docs": "typedoc src/index.ts --out ./docs --tsconfig ./tsconfig.json --excludeExternals --excludePrivate --excludeProtected --skipErrorChecking"
+        "docs": "typedoc ./src/index.ts --options ./typedoc.json --out ./docs --tsconfig ./tsconfig.json --excludeExternals --excludePrivate --excludeProtected --skipErrorChecking",
+        "docs:clean": "rm -rf ./docs && typedoc --options ./typedoc.json",
+        "docs:md": "typedoc --options ./typedoc.md.json",
+        "docs:md:clean": "rm -rf ./docs-md && typedoc --options ./typedoc.md.json"
     },
-    "browserslist": [
-        "last 1 chrome version",
-        "last 1 edge version"
-    ],
     "devDependencies": {
         "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^12.1.0",
-        "@sass-fairy/list": "^1.2.4",
         "@types/node": "^22.8.1",
-        "autoprefixer": "^10.4.16",
         "esbuild": "^0.25.0",
         "eslint": "^9.13.0",
         "eslint-config-prettier": "^9.1.0",
-        "terser": "^5.34.1",
         "typedoc": "^0.28.5",
+        "typedoc-plugin-markdown": "^4.9.0",
         "typescript": "^5.9.2",
-        "vite": ">=7.1.11",
+        "vite": ">=7.1.5",
         "vite-plugin-dynamic-import": "^1.6.0",
-        "vite-plugin-external": "^4.3.1",
+        "vite-plugin-external": "^6.2.2",
         "vite-plugin-optimizer": "^1.4.3"
     }
 }
