@@ -1,16 +1,14 @@
-# Object.ts &nbsp;
+# Object.TS
 
-<img src="https://img.shields.io/github/license/unite-2-re/object.ts?style=flat-square" alt="License"> <img src="https://img.shields.io/github/stars/unite-2-re/object.ts?style=flat-square" alt="Stars"> <img src="https://img.shields.io/github/last-commit/unite-2-re/object.ts?style=flat-square" alt="Last Commit">
+<img src="https://img.shields.io/github/license/fest-live/object.ts?style=flat-square" alt="License"> <img src="https://img.shields.io/github/stars/fest-live/object.ts?style=flat-square" alt="Stars"> <img src="https://img.shields.io/github/last-commit/fest-live/object.ts?style=flat-square" alt="Last Commit">
 
-> **Reactive utilities and object helpers for JavaScript**
-
-[![npm version](https://img.shields.io/npm/v/object.ts?style=flat-square)](https://www.npmjs.com/package/object.ts)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/unite-2-re/object.ts/ci.yml?branch=main&style=flat-square)](https://github.com/unite-2-re/object.ts/actions)
-[![Coverage Status](https://img.shields.io/codecov/c/github/unite-2-re/object.ts?style=flat-square)](https://codecov.io/gh/unite-2-re/object.ts)
+[![npm version](https://img.shields.io/npm/v/object.ts?style=flat-square)](https://www.npmjs.com/package/@fest/object.ts)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/fest-live/object.ts/ci.yml?branch=main&style=flat-square)](https://github.com/fest-live/object.ts/actions)
+[![Coverage Status](https://img.shields.io/codecov/c/github/fest-live/object.ts?style=flat-square)](https://codecov.io/gh/fest-live/object.ts)
 
 ---
 
-**Object.ts** is a lightweight library providing reactive primitives and object utilities for JavaScript. It is a minor sibling of [`Uniform.TS`](https://github.com/unite-2-re/uniform.ts), originally created in early 2024 and partially revisited in 2025. The library is primarily used in internal projects and is designed to be compatible with modern reactive libraries.
+**Object.ts** is a lightweight library providing reactive primitives and object utilities for JavaScript. It is a minor sibling of [`Uniform.TS`](https://github.com/fest-live/uniform.ts), originally created in early 2024 and partially revisited in 2025. The library is primarily used in internal projects and is designed to be compatible with modern reactive libraries.
 
 ## Table of Contents
 
@@ -31,51 +29,19 @@
 - **Efficient reactivity:** Triggers only on actual value changes.
 - **Compatibility:** Works with recent versions of popular reactive libraries.
 
-## Installation
+---
 
-```bash
-npm install object.ts
-```
+## Usage & Examples
 
-or
-
-```bash
-yarn add object.ts
-```
-
-## Usage
-
-```js
-import { makeReactive, ref, subscribe } from 'object.ts';
-
-const state = makeReactive({ count: 0 });
-
-const unsubscribe = subscribe(state, () => {
-  console.log('State changed:', state.count);
-});
-
-state.count = 1; // Triggers subscriber
-unsubscribe();   // Unsubscribe when needed
-```
-
-## API Reference
-
-### Reactivity
+### Reactivity (basics)
 
 - **`makeReactive(initial)`**
   Creates a reactive primitive from an existing object.
 
-- **`subscribe(obj, [key], callback)`**
+- **`subscribe(obj, callback)`**
   Subscribes to changes in an observable object, `Set`, or `Map`.
   - Supports `[obj, key]` to subscribe to a specific property.
   - Returns an unsubscribe function.
-
-- **`deref(obj)`**
-  Dereferences a `WeakRef` or `.value`-based object.
-
-- **`promised(obj)`**
-  Wraps an awaitable promise as a reactive value.
-  - Reacts only to `Promise.resolve`.
 
 - **`ref(initial)`**
   Creates an observable reference with a `value` property.
@@ -84,39 +50,135 @@ unsubscribe();   // Unsubscribe when needed
   Similar to `ref`, but computes its value from a reactive source.
   - Setting the value has no effect on the source.
 
-- **`unified(...objs)`**
-  Combines multiple observable objects into one (read-only).
-
-- **`remap(obj, cb)`**
-  Creates a remapped reactive object with a different keyset (read-only).
-
-- **`weak(initial)`**
-  Like `ref`, but the `value` is always a `WeakRef` and may disappear without notification.
-
 - **`conditional(cond, ifTrue, ifFalse)`**
   Reactive value that switches between `ifTrue` and `ifFalse` based on `cond.value`.
 
-- **`safe(target)`**
-  Prepares an object for serialization to JSON or [JSOX](https://github.com/d3x0r/JSOX).
+### Install
 
-### DOM Utilities
+```bash
+npm i @fest/object
+```
 
-- **`matchMediaRef(mediaValue)`**
-  Creates a reactive `ref` based on a `matchMedia` query.
+### Importing
 
-- **`localStorageRef(name, initial)`**
-  Creates a persistent reactive `ref` synchronized with `localStorage`.
-  - Note: Does not currently react to changes from other tabs or windows with the same key.
+```ts
+import {
+  ref,
+  numberRef,
+  stringRef,
+  booleanRef,
+  autoRef,
+  promised,
+  makeReactive,
+  subscribe,
+  observe,
+  unsubscribe,
+  derivate,
+  bindBy,
+  safe
+} from "@fest/object";
+```
 
-## Related Projects
+### Quick start
 
-- [**BLU.E**](https://github.com/unite-2-re/BLU.E) (2025) — Built on top of Object.ts.
-- [**Uniform.TS**](https://github.com/unite-2-re/uniform.ts) — The major sibling project.
+```ts
+const state = makeReactive({ count: 0, user: { name: "Ada" } });
+
+const stop = subscribe(state, (value, prop) => {
+  console.log("changed:", prop, value[prop as keyof typeof value]);
+});
+
+state.count = 1;
+stop?.();
+```
+
+### Primitive refs
+
+```ts
+const n = numberRef(0);
+const s = stringRef("hello");
+const b = booleanRef(false);
+
+n.value++;            // 1
+s.value = s + "!";    // "hello!"
+b.value = 1;          // true (truthy coercion)
+```
+
+#### Auto ref and promised
+
+```ts
+const r1 = autoRef(true);     // booleanRef
+const r2 = autoRef(42);       // numberRef
+const r3 = autoRef("hi");    // stringRef
+const r4 = ref<any>({ a: 1 });
+
+const later = promised(fetch("/api").then(r => r.status));
+subscribe(later, () => console.log("ready:", later.value));
+```
+
+### Observing collections and properties
+
+```ts
+const list = makeReactive([1, 2, 3]);
+const bag  = makeReactive(new Set(["a", "b"]));
+const map  = makeReactive(new Map([["x", 1]]));
+
+const unAll = observe(list, (v, prop) => console.log("list changed", prop));
+const unBag = observe(bag,  (v, prop) => console.log("set changed", prop));
+const unMap = observe(map,  (v, prop) => console.log("map changed", prop));
+
+const person = makeReactive({ name: "Ada", age: 36 });
+const unName = subscribe([person, "name"], (v) => console.log("name:", v));
+
+person.name = "Grace";
+unAll?.(); unBag?.(); unMap?.(); unName?.();
+```
+
+### Deriving and binding
+
+```ts
+const source = makeReactive({ x: 1, y: 2 });
+
+// Read-only derivative
+const sum = derivate(source, s => ({ sum: s.x + s.y }));
+subscribe(sum, () => console.log("sum:", sum.sum));
+
+// Two-way bind by shape
+const target: any = { x: 0, y: 0 };
+bindBy(target, source);
+
+source.x = 3; // target.x becomes 3
+```
+
+### Safe serialization
+
+```ts
+const complex = makeReactive({ d: new Date(), w: new WeakRef({ a: 1 }) });
+JSON.stringify(safe(complex));
+```
+
+### Notes
+
+- Subscriptions fire only on actual changes.
+- `observe` adapts `Set`/`Map` to emit iteration changes.
+- To stop listening, keep the disposer returned by `subscribe`/`observe` and call it.
+***
+
+## Modules
+
+- [core/Assigned](core/Assigned/README.md)
+- [core/Legacy](core/Legacy/README.md)
+- [core/Mainline](core/Mainline/README.md)
+- [core/Primitives](core/Primitives/README.md)
+- [core/Specific](core/Specific/README.md)
+- [core/Subscript](core/Subscript/README.md)
+- [index](index/README.md)
+- [wrap/AssignObject](wrap/AssignObject/README.md)
+- [wrap/Symbol](wrap/Symbol/README.md)
+- [wrap/Utils](wrap/Utils/README.md)
+
+---
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-> For more information, see the [GitHub repository](https://github.com/unite-2-re/object.ts).
