@@ -63,7 +63,7 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
 export const observe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
     if (Array.isArray(tg)) { return subscribe([tg, Symbol.iterator], cb, ctx); }
     if (tg instanceof Set) { return subscribe([observableBySet(tg) as any, Symbol.iterator], cb, ctx); }
-    if (tg instanceof Map) { return subscribe([observableByMap(tg) as any, Symbol.iterator], cb, ctx); }
+    if (tg instanceof Map) { return subscribe(tg, cb, ctx); }
     return subscribe(tg, cb, ctx);
 }
 
