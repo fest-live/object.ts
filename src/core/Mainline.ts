@@ -60,6 +60,13 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
 }
 
 //
+export const makeArrayObservable = (tg)=>{
+    if (tg instanceof Set) return observableBySet(tg);
+    if (tg instanceof Set) return observableByMap(tg);
+    return tg;
+}
+
+//
 export const observe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
     if (Array.isArray(tg)) { return subscribe([tg, Symbol.iterator], cb, ctx); }
     if (tg instanceof Set) { return subscribe([observableBySet(tg) as any, Symbol.iterator], cb, ctx); }
