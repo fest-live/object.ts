@@ -33,24 +33,24 @@ export const safeGet = (obj: any, key: any, rec?: any) => {
 }
 
 // get reactive primitives (if native iterator is available, use it)
-const systemGet = (target, name, registry)=>{
+const systemGet = (target: any, name: any, registry: any)=>{
     if (target == null || isPrimitive(target)) { return target; }
 
     //
-    const exists = ["deref", "bind", "@target", $originalKey$, $extractKey$, $registryKey$]?.indexOf(name) < 0 ? safeGet(target, name)?.bind?.(target) : null;
+    const exists = ["deref", "bind", "@target", $originalKey$, $extractKey$, $registryKey$]?.indexOf(name as any) < 0 ? safeGet(target, name as any)?.bind?.(target) : null;
     if (exists != null) return null;
 
     //
     const $extK = [$extractKey$, $originalKey$];
 
     //
-    if ($extK.indexOf(name) >= 0)     { return safeGet(target, name) ?? target; }
+    if ($extK.indexOf(name as any) >= 0)     { return safeGet(target, name as any) ?? target; }
     if (name == $value)               { return safeGet(target, name) ?? safeGet(target, "value"); }
     if (name == $registryKey$)        { return registry; } // @ts-ignore
     if (name == Symbol.observable)    { return registry?.compatible; } // @ts-ignore
     if (name == Symbol.subscribe)     { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
-    if (name == Symbol.iterator)      { return safeGet(target, name) ?? target; }
-    if (name == Symbol.asyncIterator) { return safeGet(target, name) ?? target; }
+    if (name == Symbol.iterator)      { return safeGet(target, name as any); }
+    if (name == Symbol.asyncIterator) { return safeGet(target, name as any); }
     if (name == Symbol.dispose)       { return (prop?)=>{ safeGet(target, Symbol.dispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
     if (name == Symbol.asyncDispose)  { return (prop?)=>{ safeGet(target, Symbol.asyncDispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
@@ -226,12 +226,12 @@ export class ReactiveArray {
     // TODO: some target with target[n] may has also reactive target[n]?.value, which (sometimes) needs to observe too...
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
-        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
+        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
             return typeof safeGet(target, name) == "function" ? safeGet(target, name)?.bind?.(target) : safeGet(target, name);
         };
 
         //
-        const registry = (subscriptRegistry).get(target);
+        const registry = (subscriptRegistry)?.get?.(target);
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
