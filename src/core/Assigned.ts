@@ -285,9 +285,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
     if (isPrimitive(src)) return src;
 
     //
-    if (Array.isArray(src)) {
-        if (isArrayInvalidKey(src?.[1], src)) { return; } else { src = src?.[0]; };
-    }
+    if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
 
     //
     if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
