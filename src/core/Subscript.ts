@@ -53,15 +53,24 @@ export class Subscript {
 
     // production version
     $safeExec(cb, ...args) {
-        if (!cb || this.#flags.has(cb)) return this;
+        if (!cb || this.#flags.has(cb)) return;
 
         //
         this.#flags.add(cb);
-        const result = (Array.isArray(args) ?
-            Promise?.try?.(cb, ...args as [any, any, any, any]) :
-            Promise?.try?.(cb, args))?.catch?.(console.warn.bind(console));
-        this.#flags.delete(cb);
-        return result;
+        try {
+            // @ts-ignore
+            const res = cb(...args);
+            // Handle promises if returned, but don't force them
+            if (res && typeof res.then === 'function') {
+                // @ts-ignore
+                return res.catch(console.warn);
+            }
+            return res;
+        } catch (e) {
+            console.warn(e);
+        } finally {
+            this.#flags.delete(cb);
+        }
     }
 
     //
@@ -71,15 +80,7 @@ export class Subscript {
         this.#flags = new WeakSet();
 
         //
-        const weak = new WeakRef(this), listeners = new WeakRef(this.#listeners);
-        const caller = (name, value = null, oldValue?: any, ...etc: any[]) => {
-            const arr = listeners?.deref?.();
-
-            // sort by history order
-            return Promise.all([...(arr?.entries?.()||[])]
-                ?.filter?.(([_, $nm])=>($nm == name || $nm == forAll || $nm == null))
-                ?.map?.(([cb, $nm]) => this.$safeExec(cb, value, name, oldValue, ...etc))||[]);;
-        };
+        const weak = new WeakRef(this);
 
         // compatible with https://github.com/WICG/observable
         // mostly, only for subscribers (virtual Observable)
@@ -93,13 +94,36 @@ export class Subscript {
 
         // initiate generator, and do next
         this.#iterator = {
-            next(args: any) {
-                if (args) { Array.isArray(args) ? caller(...args as [any, any, any, any]) : caller(args); };
+            next: (args: any) => {
+                if (args) {
+                    Array.isArray(args) ? this.#dispatch(...args as [any, any, any, any]) : this.#dispatch(args);
+                }
             }
         }
 
         //
         this.compatible = ()=>this.#native;
+    }
+
+    // Optimized dispatch method replacing the closure 'caller'
+    #dispatch(name, value = null, oldValue?: any, ...etc: any[]) {
+        const listeners = this.#listeners;
+        if (listeners.size === 0) return;
+
+        let promises: Promise<any>[] | null = null;
+
+        // Direct iteration avoiding array allocation
+        for (const [cb, prop] of listeners) {
+            if (prop === name || prop === forAll || prop === null) {
+                const res = this.$safeExec(cb, value, name, oldValue, ...etc);
+                if (res && typeof res.then === 'function') {
+                    if (!promises) promises = [];
+                    promises.push(res);
+                }
+            }
+        }
+
+        if (promises) return Promise.all(promises);
     }
 
     //
@@ -128,7 +152,16 @@ export class Subscript {
     // if catch will also fail, will cause another unhandled reject (will no repeating)
     trigger(name: keyType|null, value?: any|null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
-        return Promise.try(this.#iterator.next?.bind(this.#iterator), [name, value, oldValue, ...etc])?.catch?.(console.warn.bind(console));;
+
+        try {
+            const res = this.#dispatch(name, value, oldValue, ...etc);
+            if (res && typeof res.then === 'function') {
+                return res.catch(console.warn);
+            }
+            return res; // Return sync result or undefined
+        } catch (e) {
+            console.warn(e);
+        }
     }
 
     //
