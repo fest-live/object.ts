@@ -411,8 +411,8 @@ export class ReactiveMap {
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
-        const tp = (safeGet(target, $extractKey$) ?? safeGet(target, $originalKey$) ?? target);
-        const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/safeGet(tp, name));
+        target = (safeGet(target, $extractKey$) ?? safeGet(target, $originalKey$) ?? target);
+        const valueOrFx = bindCtx(target, /*Reflect.get(, name, ctx)*/safeGet(target, name));
         if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return valueOrFx; }
 
         //
@@ -494,8 +494,8 @@ export class ReactiveSet {
         const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         // redirect to value key
-        const tp = (safeGet(target, $extractKey$) ?? safeGet(target, $originalKey$) ?? target);
-        const valueOrFx = bindCtx(tp, /*Reflect.get(, name, ctx)*/safeGet(tp, name));
+        target = (safeGet(target, $extractKey$) ?? safeGet(target, $originalKey$) ?? target);
+        const valueOrFx = bindCtx(target, safeGet(target, name));
         if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return valueOrFx; }
 
         //
