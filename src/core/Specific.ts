@@ -4,28 +4,70 @@ import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess,
 import { deref, type keyType, refValid } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
-// Safe getter with global re-entrancy guard to avoid recursive accessor loops
+//
 const __safeGetGuard = new WeakMap<any, Set<any>>();
+function isGetter(obj, propName) {
+    let got = true;
+    try { // @ts-ignore
+        __safeGetGuard?.getOrInsert?.(obj, new Set())?.add?.(propName);
+        if (__safeGetGuard?.get?.(obj)?.has?.(propName)) { got = true; }
+        const descriptor = Reflect.getOwnPropertyDescriptor(obj, propName);
+        got = (typeof descriptor?.get == "function");
+    } catch (e) {
+        got = true;
+    } finally {
+        __safeGetGuard?.get?.(obj)?.delete?.(propName);
+    }
+    return got;
+}
+
+//
+export const fallThrough = (obj: any, key: any) => {
+    if (isPrimitive(obj)) return obj;
+
+    //
+    const value = safeGet(obj, key);
+    if (value == null && key != "value") {
+        const tmp = safeGet(obj, "value");
+        if (tmp != null && !isPrimitive(tmp))
+            { return fallThrough(tmp, key); } else
+            { return value; };
+    } else
+        // temp-fix: functions isn't supported correctly
+        if (key == "value" && value != null && !isPrimitive(value) && (typeof value != "function")) {
+            return fallThrough(value, key) ?? value;
+        }
+    return value;
+}
+
+// Safe getter with global re-entrancy guard to avoid recursive accessor loops
 export const safeGet = (obj: any, key: any, rec?: any) => {
     //const result = Reflect.get(obj, key, rec != null ? rec : obj);
     //return typeof result == "function" ? bindCtx(obj, result) : result;
 
     //
-    if (obj == null) { return undefined; }
-    let active = __safeGetGuard.get(obj);
-    if (!active) { active = new Set(); __safeGetGuard.set(obj, active); }
-    if (active.has(key)) { return null; }
-    active.add(key);
-
-    //
     let result = undefined;
-    try {
-        result = Reflect.get(obj, key, rec != null ? rec : obj);
-    } catch (_e) {
-        result = undefined;
-    } finally {
-        active.delete(key);
-        if (active.size === 0) { __safeGetGuard.delete(obj); }
+    if (obj == null) { return obj; }
+
+    // @ts-ignore
+    let active = __safeGetGuard.getOrInsert(obj, new Set());
+    if (active?.has?.(key)) { return null; }
+
+    // directly return if not a getter
+    if (!isGetter(obj, key)) {
+        result ??= Reflect.get(obj, key, rec != null ? rec : obj);
+    } else {
+        active?.add?.(key);
+
+        //
+        try {
+            result = Reflect.get(obj, key, rec != null ? rec : obj);
+        } catch (_e) {
+            result = undefined;
+        } finally {
+            active.delete(key);
+            if (active?.size === 0) { __safeGetGuard?.delete?.(obj); }
+        }
     }
 
     //
@@ -331,16 +373,20 @@ export class ReactiveObject {
 
         //
         if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
-        if (name == Symbol.toPrimitive) { return (hint?)=>{
-            if (isPrimitive(safeGet(target, "value")) && hasValue(target))
-                { return tryParseByHint(safeGet(target, "value"), hint); };
-            return tryParseByHint(safeGet(target, Symbol.toPrimitive)?.(), hint);
-        }}
-        if (name == "toString") { return () => { if (isPrimitive(safeGet(target, "value"))) { return String(safeGet(target, "value") ?? "") || ""; }; return target?.toString?.(); } }
-        if (name == "valueOf" ) { return () => { if (isPrimitive(safeGet(target, "value"))) { return tryParseByHint(safeGet(target, "value")); }; return tryParseByHint(safeGet(target, "valueOf")?.()); } }
+        if (name == Symbol.toPrimitive) {
+            return (hint?) => {
+                const ft = fallThrough(target, name);
+                if (isPrimitive(ft)) { return tryParseByHint(ft, hint); };
+                return tryParseByHint(ft?.[Symbol.toPrimitive]?.(), hint);
+            }
+        }
 
         //
-        return safeGet(target, name) ?? (name == "value" ? safeGet(target, $value) : safeGet(target, name));
+        if (name == "toString") { return () => { const ft = fallThrough(target, name); if (isPrimitive(ft)) { return String(ft ?? "") || ""; }; return (ft?.toString?.() || String(ft ?? "") || ""); } }
+        if (name == "valueOf" ) { return () => { const ft = fallThrough(target, name); if (isPrimitive(ft)) { return tryParseByHint(ft); }; return tryParseByHint(ft?.[Symbol.toPrimitive]?.() || ft); } }
+
+        //
+        return fallThrough(target, name);
     }
 
     //
@@ -351,7 +397,17 @@ export class ReactiveObject {
 
     //
     getOwnPropertyDescriptor(target, key) {
-        return Reflect.getOwnPropertyDescriptor(target, key);
+        let got: TypedPropertyDescriptor<any> | undefined = undefined;
+        try { // @ts-ignore
+            __safeGetGuard?.getOrInsert?.(target, new Set())?.add?.(key);
+            if (__safeGetGuard?.get?.(target)?.has?.(key)) { got = undefined; }
+            got = Reflect.getOwnPropertyDescriptor(target, key);
+        } catch (e) {
+            got = undefined;
+        } finally {
+            __safeGetGuard?.get?.(target)?.delete?.(key);
+        }
+        return got;
     }
 
     // supports nested "value" objects
@@ -465,8 +521,20 @@ export class ReactiveMap {
     construct(target, args, newT) { return Reflect.construct(target, args, newT); }
     ownKeys(target) { return Reflect.ownKeys(target); }
     isExtensible(target) { return Reflect.isExtensible(target); }
+
+    //
     getOwnPropertyDescriptor(target, key) {
-        return Reflect.getOwnPropertyDescriptor(target, key);
+        let got: TypedPropertyDescriptor<any> | undefined = undefined;
+        try { // @ts-ignore
+            __safeGetGuard?.getOrInsert?.(target, new Set())?.add?.(key);
+            if (__safeGetGuard?.get?.(target)?.has?.(key)) { got = undefined; }
+            got = Reflect.getOwnPropertyDescriptor(target, key);
+        } catch (e) {
+            got = undefined;
+        } finally {
+            __safeGetGuard?.get?.(target)?.delete?.(key);
+        }
+        return got;
     }
 
     //
@@ -547,8 +615,20 @@ export class ReactiveSet {
     construct(target, args, newT) { return Reflect.construct(target, args, newT); }
     ownKeys(target) { return Reflect.ownKeys(target); }
     isExtensible(target) { return Reflect.isExtensible(target); }
+
+    //
     getOwnPropertyDescriptor(target, key) {
-        return Reflect.getOwnPropertyDescriptor(target, key);
+        let got: TypedPropertyDescriptor<any> | undefined = undefined;
+        try { // @ts-ignore
+            __safeGetGuard?.getOrInsert?.(target, new Set())?.add?.(key);
+            if (__safeGetGuard?.get?.(target)?.has?.(key)) { got = undefined; }
+            got = Reflect.getOwnPropertyDescriptor(target, key);
+        } catch (e) {
+            got = undefined;
+        } finally {
+            __safeGetGuard?.get?.(target)?.delete?.(key);
+        }
+        return got;
     }
 
     //
