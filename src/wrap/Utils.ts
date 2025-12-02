@@ -108,11 +108,13 @@ export const deref  = (target?: any, discountValue: boolean|null = false)=>{
     return target;
 }
 
-// experimental promise support
-export const withPromise = (target, cb)=>{
-    if (typeof target?.then == "function") return target?.then?.(cb);
-    if (typeof target?.promise?.then == "function") return target?.promise?.then?.(cb);
-    return cb(target);
+//
+export const isThenable = (val: any): val is PromiseLike<any> => val != null && typeof val.then === "function";
+export const withPromise = (target, cb) => {
+    if (isPrimitive(target) || typeof target == "function") { return cb?.(target); };
+    if (isThenable(target)) return target.then(cb);
+    if (target?.promise && isThenable(target.promise)) return target.promise.then(cb);
+    return cb?.(target);
 }
 
 //

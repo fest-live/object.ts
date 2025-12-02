@@ -1,5 +1,5 @@
 import { $extractKey$ } from "../wrap/Symbol";
-import { deref, type keyType } from "../wrap/Utils";
+import { deref, isThenable, type keyType } from "../wrap/Utils";
 import { WR } from "fest/core";
 
 //
@@ -49,7 +49,7 @@ export class Subscript {
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
-    #triggerLock = new Map<keyType, boolean>();
+    #triggerLock = new Set<keyType>();
 
     // production version
     $safeExec(cb, ...args) {
@@ -109,6 +109,7 @@ export class Subscript {
         const listeners = this.#listeners;
         if (listeners.size === 0) return;
 
+        //
         let promises: Promise<any>[] | null = null;
 
         // Direct iteration avoiding array allocation
@@ -116,13 +117,15 @@ export class Subscript {
             if (prop === name || prop === forAll || prop === null) {
                 const res = this.$safeExec(cb, value, name, oldValue, ...etc);
                 if (res && typeof res.then === 'function') {
-                    if (!promises) promises = [];
+                    if (promises == null) promises = [];
                     promises.push(res);
                 }
             }
         }
 
-        if (promises) return Promise.all(promises);
+        //
+        if (promises != null) return Promise.all(promises);
+        return undefined;
     }
 
     //
@@ -154,24 +157,23 @@ export class Subscript {
 
         //
         if (name != null && this.#triggerLock.has(name)) return;
-        if (name != null) this.#triggerLock.set(name, true);
+        if (name != null) this.#triggerLock.add(name);
 
         //
-        const $promised = Promise.withResolvers();
+        const $promised = Promise.withResolvers<any[]>();
+
+        //
         queueMicrotask(() => {
             try {
-                const res = this.#dispatch(name, value, oldValue, ...etc);
-                let $result: Promise<any[]> | undefined | any = res;
-                if (res && typeof res.then === 'function') {
-                    $result = res.catch(console.warn) as Promise<any[]>;
-                }
-                $promised.resolve($result); // Return sync result or undefined
+                const res = this.#dispatch(name, value, oldValue, ...etc) as Promise<any[]> | undefined | any;
+                //if (isThenable(res)) { (res as any)?.catch?.(console.warn); }
+                $promised.resolve(res ?? []);
             } catch (e) { $promised.reject(e); console.warn(e); }
             finally { if (name != null) this.#triggerLock.delete(name); }
         });
 
         //
-        return $promised.promise as Promise<any[]>;
+        return $promised.promise;
     }
 
     //
