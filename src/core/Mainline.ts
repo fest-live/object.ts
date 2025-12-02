@@ -18,6 +18,15 @@ export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Un
 
 //
 export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
+
+    // inputs now can be regally subscribed directly
+    if (typeof HTMLInputElement != "undefined" && tg instanceof HTMLInputElement) {
+        const $opt: any = { }; let oldValue = tg?.value;
+        const $cb = (ev: any) => { cb?.(ev?.target?.value, "value", oldValue); oldValue = ev?.target?.value; };
+        (tg as any)?.addEventListener?.("change", $cb, $opt);
+        return () => (tg as any)?.removeEventListener?.("change", $cb, $opt);
+    }
+
     // use custom subscribe if available
     if (tg?.[$subscribe] != null && typeof tg?.[$subscribe] == "function") {
         return tg?.[$subscribe]?.(cb);
@@ -62,7 +71,7 @@ export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>,
 //
 export const makeArrayObservable = (tg)=>{
     if (tg instanceof Set) return observableBySet(tg);
-    if (tg instanceof Set) return observableByMap(tg);
+    if (tg instanceof Map) return observableByMap(tg);
     return tg;
 }
 

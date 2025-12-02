@@ -1,6 +1,6 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../wrap/Utils";
-import { autoRef, isReactive, makeReactive, triggerWithDelay } from "./Primitives";
+import { makeReactive, isReactive, triggerWithDelay } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../wrap/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
@@ -42,8 +42,7 @@ export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any
 
     //
     const usb = subscribe([cond, "value"], (val)=>{ r?.[$trigger]?.(); });
-    addToCallChain(r, Symbol.dispose, usb);
-    return r;
+    addToCallChain(r, Symbol.dispose, usb); return r;
 }
 
 // alias
@@ -282,8 +281,18 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 }
 
 //
-export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = null, initial?: any, behavior?: any): refValid<Under> => {
+export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = "value", initial?: any, behavior?: any): refValid<Under> => {
     if (isPrimitive(src)) return src;
+
+    // isn't needed to proxy reactive value, it's already reactive
+    if (srcProp && hasValue(src?.[srcProp]) && isReactive(src?.[srcProp])) {
+        return src?.[srcProp];
+    }
+
+    // legally use in LUR.E/GLit properties
+    if (srcProp && typeof src?.getProperty == "function" && isReactive(src?.getProperty?.(srcProp))) {
+        return src?.getProperty?.(srcProp);
+    }
 
     //
     if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
