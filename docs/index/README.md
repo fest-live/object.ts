@@ -140,6 +140,12 @@ Re-exports [link](../core/Assigned/functions/link.md)
 
 ***
 
+### makeArrayObservable
+
+Re-exports [makeArrayObservable](../core/Mainline/functions/makeArrayObservable.md)
+
+***
+
 ### makeObjectAssignable
 
 Re-exports [makeObjectAssignable](../wrap/AssignObject/functions/makeObjectAssignable.md)

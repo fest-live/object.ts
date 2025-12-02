@@ -11,7 +11,7 @@ function unified<Under>(...subs): refValid<any, {
 }>;
 ```
 
-Defined in: [core/Assigned.ts:67](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Assigned.ts#L67)
+Defined in: [core/Assigned.ts:67](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L67)
 
 ## Type Parameters
 

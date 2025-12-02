@@ -10,7 +10,7 @@
 function makeReactiveArray<Under>(arr): any;
 ```
 
-Defined in: [core/Specific.ts:563](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Specific.ts#L563)
+Defined in: [core/Specific.ts:643](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Specific.ts#L643)
 
 ## Type Parameters
 

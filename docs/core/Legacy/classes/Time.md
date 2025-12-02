@@ -6,7 +6,7 @@
 
 # Class: Time
 
-Defined in: [core/Legacy.ts:28](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L28)
+Defined in: [core/Legacy.ts:28](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L28)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: [core/Legacy.ts:28](https://github.com/fest-live/object.ts/blob/286e
 new Time(): AxTime;
 ```
 
-Defined in: [core/Legacy.ts:29](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L29)
+Defined in: [core/Legacy.ts:29](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L29)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: [core/Legacy.ts:29](https://github.com/fest-live/object.ts/blob/286e
 static looping: Map<string, Function>;
 ```
 
-Defined in: [core/Legacy.ts:32](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L32)
+Defined in: [core/Legacy.ts:32](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L32)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [core/Legacy.ts:32](https://github.com/fest-live/object.ts/blob/286e
 static registry: FinalizationRegistry<unknown>;
 ```
 
-Defined in: [core/Legacy.ts:33](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L33)
+Defined in: [core/Legacy.ts:33](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L33)
 
 ## Accessors
 
@@ -52,7 +52,7 @@ Defined in: [core/Legacy.ts:33](https://github.com/fest-live/object.ts/blob/286e
 get static raf(): Promise<unknown>;
 ```
 
-Defined in: [core/Legacy.ts:34](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L34)
+Defined in: [core/Legacy.ts:34](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L34)
 
 ##### Returns
 
@@ -66,7 +66,7 @@ Defined in: [core/Legacy.ts:34](https://github.com/fest-live/object.ts/blob/286e
 available(elapsed, fn): boolean;
 ```
 
-Defined in: [core/Legacy.ts:42](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L42)
+Defined in: [core/Legacy.ts:42](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L42)
 
 #### Parameters
 
@@ -90,7 +90,7 @@ Defined in: [core/Legacy.ts:42](https://github.com/fest-live/object.ts/blob/286e
 cached(fn, interval): (...args) => any;
 ```
 
-Defined in: [core/Legacy.ts:40](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L40)
+Defined in: [core/Legacy.ts:40](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L40)
 
 #### Parameters
 
@@ -126,7 +126,7 @@ Defined in: [core/Legacy.ts:40](https://github.com/fest-live/object.ts/blob/286e
 protect(fn, interval): (...args) => any;
 ```
 
-Defined in: [core/Legacy.ts:41](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L41)
+Defined in: [core/Legacy.ts:41](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L41)
 
 #### Parameters
 
@@ -162,7 +162,7 @@ Defined in: [core/Legacy.ts:41](https://github.com/fest-live/object.ts/blob/286e
 static cached(fn, interval): (...args) => any;
 ```
 
-Defined in: [core/Legacy.ts:36](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L36)
+Defined in: [core/Legacy.ts:36](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L36)
 
 #### Parameters
 
@@ -198,7 +198,7 @@ Defined in: [core/Legacy.ts:36](https://github.com/fest-live/object.ts/blob/286e
 static protect(fn, interval): (...args) => any;
 ```
 
-Defined in: [core/Legacy.ts:35](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L35)
+Defined in: [core/Legacy.ts:35](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L35)
 
 #### Parameters
 
@@ -234,7 +234,7 @@ Defined in: [core/Legacy.ts:35](https://github.com/fest-live/object.ts/blob/286e
 static rafLoop(fn, ctx): Promise<boolean>;
 ```
 
-Defined in: [core/Legacy.ts:54](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L54)
+Defined in: [core/Legacy.ts:54](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L54)
 
 #### Parameters
 
@@ -258,7 +258,7 @@ Defined in: [core/Legacy.ts:54](https://github.com/fest-live/object.ts/blob/286e
 static symbol(name): symbol;
 ```
 
-Defined in: [core/Legacy.ts:37](https://github.com/fest-live/object.ts/blob/286e8fe84b447878d1612b2d3b1a1882e45303e4/src/core/Legacy.ts#L37)
+Defined in: [core/Legacy.ts:37](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L37)
 
 #### Parameters
 

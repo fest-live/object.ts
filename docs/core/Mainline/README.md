@@ -11,6 +11,7 @@
 - [bindBy](functions/bindBy.md)
 - [bindByKey](functions/bindByKey.md)
 - [derivate](functions/derivate.md)
+- [makeArrayObservable](functions/makeArrayObservable.md)
 - [observe](functions/observe.md)
 - [subscribe](functions/subscribe.md)
 - [unsubscribe](functions/unsubscribe.md)

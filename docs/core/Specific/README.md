@@ -16,6 +16,7 @@
 
 ## Functions
 
+- [fallThrough](functions/fallThrough.md)
 - [makeReactiveArray](functions/makeReactiveArray.md)
 - [makeReactiveMap](functions/makeReactiveMap.md)
 - [makeReactiveObject](functions/makeReactiveObject.md)
