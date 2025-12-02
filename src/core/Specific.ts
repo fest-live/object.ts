@@ -86,7 +86,7 @@ const systemGet = (target: any, name: any, registry: any)=>{
     const $extK = [$extractKey$, $originalKey$];
 
     //
-    if ($extK.indexOf(name as any) >= 0)     { return safeGet(target, name as any) ?? target; }
+    if ($extK.indexOf(name as any) >= 0) { return safeGet(target, name as any) ?? target; }
     if (name == $value)               { return safeGet(target, name) ?? safeGet(target, "value"); }
     if (name == $registryKey$)        { return registry; } // @ts-ignore
     if (name == Symbol.observable)    { return registry?.compatible; } // @ts-ignore
@@ -96,15 +96,17 @@ const systemGet = (target: any, name: any, registry: any)=>{
     if (name == Symbol.dispose)       { return (prop?)=>{ safeGet(target, Symbol.dispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
     if (name == Symbol.asyncDispose)  { return (prop?)=>{ safeGet(target, Symbol.asyncDispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+
+    /*
     if (name == Symbol.toPrimitive)   { return (hint?)=>{
-        if (typeof safeGet(target, Symbol.toPrimitive) == "function") { return safeGet(target, Symbol.toPrimitive)?.(hint); };
+        if (typeof safeGet(target, name) == "function") { return safeGet(target, name)?.(hint); };
         if (safeGet(target, "value") != null && hasValue(target)) { return tryParseByHint(safeGet(target, "value"), hint); }
     } }
     if (name == Symbol.toStringTag) { return ()=>{
-        if (typeof safeGet(target, Symbol.toStringTag) == "function") { return safeGet(target, Symbol.toStringTag)?.(); };
+        if (typeof safeGet(target, name) == "function") { return safeGet(target, name)?.(); };
         if (safeGet(target, "value") != null && hasValue(target) && isPrimitive(safeGet(target, "value"))) { return String(safeGet(target, "value") ?? "") || ""; };
         return String(safeGet(target, "toString")?.() ?? safeGet(target, "valueOf")?.() ?? target);
-    } }
+    } }*/
 }
 
 //
@@ -378,20 +380,51 @@ export class ReactiveObject {
 
         //
         if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
+
+        //
         if (name == Symbol.toPrimitive) {
             return (hint?) => {
                 const ft = fallThrough(target, name);
-                if (isPrimitive(ft)) { return tryParseByHint(ft, hint); };
-                return tryParseByHint(ft?.[Symbol.toPrimitive]?.(), hint);
+                if (safeGet(ft, name)) return safeGet(ft, name)?.(hint);
+                if (isPrimitive(ft)) return tryParseByHint(ft, hint);
+                if (isPrimitive(safeGet(ft, "value"))) return tryParseByHint(safeGet(ft, "value"), hint);
+                return tryParseByHint(safeGet(ft, "value") ?? ft, hint);
             }
         }
 
         //
-        if (name == "toString") { return () => { const ft = fallThrough(target, name); if (isPrimitive(ft)) { return String(ft ?? "") || ""; }; return (ft?.toString?.() || String(ft ?? "") || ""); } }
-        if (name == "valueOf" ) { return () => { const ft = fallThrough(target, name); if (isPrimitive(ft)) { return tryParseByHint(ft); }; return tryParseByHint(ft?.[Symbol.toPrimitive]?.() || ft); } }
+        if (name == Symbol.toStringTag) {
+            return () => {
+                const ft = fallThrough(target, name);
+                if (safeGet(ft, Symbol.toStringTag)) return safeGet(ft, Symbol.toStringTag)?.();
+                if (isPrimitive(ft)) return String(ft ?? "") || "";
+                if (isPrimitive(safeGet(ft, "value"))) return String(safeGet(ft, "value") ?? "") || "";
+                return String(safeGet(ft, "value") ?? ft ?? "") || "";
+            }
+        }
 
         //
-        return fallThrough(target, name);
+        if (name == "toString") {
+            return () => {
+                const ft = fallThrough(target, name);
+                if (safeGet(ft, name)) return safeGet(ft, name)?.();
+                if (safeGet(ft, Symbol.toPrimitive)) return safeGet(ft, Symbol.toPrimitive)?.();
+                if (isPrimitive(ft)) return String(ft ?? "") || "";
+                if (isPrimitive(safeGet(ft, "value"))) return String(safeGet(ft, "value") ?? "") || "";
+                return String(safeGet(ft, "value") ?? ft ?? "") || "";
+            }
+        }
+
+        //
+        if (name == "valueOf") {
+            return () => {
+                const ft = fallThrough(target, name);
+                if (ft?.[Symbol.toPrimitive]) return ft?.[name]?.();
+                if (isPrimitive(ft)) return ft;
+                if (isPrimitive(ft?.value)) return ft?.value;
+                return ft?.value ?? ft;
+            }
+        }
     }
 
     //
