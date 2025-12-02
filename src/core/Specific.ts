@@ -96,6 +96,7 @@ const systemGet = (target: any, name: any, registry: any)=>{
     if (name == Symbol.dispose)       { return (prop?)=>{ safeGet(target, Symbol.dispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
     if (name == Symbol.asyncDispose)  { return (prop?)=>{ safeGet(target, Symbol.asyncDispose)?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
     if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+    if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
 
     /*
     if (name == Symbol.toPrimitive)   { return (hint?)=>{
@@ -379,9 +380,6 @@ export class ReactiveObject {
         }
 
         //
-        if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
-
-        //
         if (name == Symbol.toPrimitive) {
             return (hint?) => {
                 const ft = fallThrough(target, name);
@@ -396,7 +394,7 @@ export class ReactiveObject {
         if (name == Symbol.toStringTag) {
             return () => {
                 const ft = fallThrough(target, name);
-                if (safeGet(ft, Symbol.toStringTag)) return safeGet(ft, Symbol.toStringTag)?.();
+                if (safeGet(ft, name)) return safeGet(ft, name)?.();
                 if (isPrimitive(ft)) return String(ft ?? "") || "";
                 if (isPrimitive(safeGet(ft, "value"))) return String(safeGet(ft, "value") ?? "") || "";
                 return String(safeGet(ft, "value") ?? ft ?? "") || "";
@@ -408,7 +406,7 @@ export class ReactiveObject {
             return () => {
                 const ft = fallThrough(target, name);
                 if (safeGet(ft, name)) return safeGet(ft, name)?.();
-                if (safeGet(ft, Symbol.toPrimitive)) return safeGet(ft, Symbol.toPrimitive)?.();
+                if (safeGet(ft, Symbol.toStringTag)) return safeGet(ft, Symbol.toStringTag)?.();
                 if (isPrimitive(ft)) return String(ft ?? "") || "";
                 if (isPrimitive(safeGet(ft, "value"))) return String(safeGet(ft, "value") ?? "") || "";
                 return String(safeGet(ft, "value") ?? ft ?? "") || "";
@@ -419,12 +417,19 @@ export class ReactiveObject {
         if (name == "valueOf") {
             return () => {
                 const ft = fallThrough(target, name);
-                if (ft?.[Symbol.toPrimitive]) return ft?.[name]?.();
+                if (safeGet(ft, name)) return safeGet(ft, name)?.();
+                if (safeGet(ft, Symbol.toPrimitive)) return safeGet(ft, Symbol.toPrimitive)?.();
                 if (isPrimitive(ft)) return ft;
-                if (isPrimitive(ft?.value)) return ft?.value;
-                return ft?.value ?? ft;
+                if (isPrimitive(safeGet(ft, "value"))) return safeGet(ft, "value");
+                return safeGet(ft, "value") ?? ft;
             }
         }
+
+        //
+        if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
+
+        //
+        return fallThrough(target, name);
     }
 
     //
