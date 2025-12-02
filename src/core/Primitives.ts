@@ -116,6 +116,7 @@ export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Un
 
 //
 export const isReactive = (target: any) => {
+    if (typeof HTMLInputElement != "undefined" && target instanceof HTMLInputElement) { return true; }
     return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$subscribe] || subscriptRegistry?.has?.(target)));
 }
 
