@@ -369,7 +369,12 @@ export class ReactiveObject {
         //
         // redirect to value key
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = "value")=>{ return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), safeGet(target, key)); }; }
+        if (name == $trigger) {
+            return (key = "value") => {
+                const potentiallyOld = safeGet(target, key == "value" ? $value : key);
+                return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), potentiallyOld ?? safeGet(target, key));
+            };
+        }
 
         //
         if (typeof name == "symbol" && (name in target || safeGet(target, name) != null)) { return safeGet(target, name); }
