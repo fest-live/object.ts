@@ -49,7 +49,7 @@ export class Subscript {
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
-    triggerLock: boolean;
+    #triggerLock = new Map<keyType, boolean>();
 
     // production version
     $safeExec(cb, ...args) {
@@ -75,7 +75,6 @@ export class Subscript {
 
     //
     constructor() {
-        this.triggerLock = false;
         this.#listeners = new Map();
         this.#flags = new WeakSet();
 
@@ -153,15 +152,26 @@ export class Subscript {
     trigger(name: keyType|null, value?: any|null, oldValue?: any, ...etc: any[]) {
         if (typeof name == "symbol") return;
 
-        try {
-            const res = this.#dispatch(name, value, oldValue, ...etc);
-            if (res && typeof res.then === 'function') {
-                return res.catch(console.warn);
-            }
-            return res; // Return sync result or undefined
-        } catch (e) {
-            console.warn(e);
-        }
+        //
+        if (name != null && this.#triggerLock.has(name)) return;
+        if (name != null) this.#triggerLock.set(name, true);
+
+        //
+        const $promised = Promise.withResolvers();
+        queueMicrotask(() => {
+            try {
+                const res = this.#dispatch(name, value, oldValue, ...etc);
+                let $result: Promise<any[]> | undefined | any = res;
+                if (res && typeof res.then === 'function') {
+                    $result = res.catch(console.warn) as Promise<any[]>;
+                }
+                $promised.resolve($result); // Return sync result or undefined
+            } catch (e) { $promised.reject(e); console.warn(e); }
+            finally { if (name != null) this.#triggerLock.delete(name); }
+        });
+
+        //
+        return $promised.promise as Promise<any[]>;
     }
 
     //
