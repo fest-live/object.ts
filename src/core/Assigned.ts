@@ -1,6 +1,6 @@
 import { subscribe } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../wrap/Utils";
-import { makeReactive, isReactive, triggerWithDelay } from "./Primitives";
+import { makeReactive, isReactive, triggerWithDelay, recoverReactive } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../wrap/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
@@ -284,9 +284,15 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = "value", initial?: any, behavior?: any): refValid<Under> => {
     if (isPrimitive(src)) return src;
 
+    //
+    if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
+
+    //
+    if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
+
     // isn't needed to proxy reactive value, it's already reactive
     if (srcProp && hasValue(src?.[srcProp]) && isReactive(src?.[srcProp])) {
-        return src?.[srcProp];
+        return recoverReactive(src?.[srcProp]);
     }
 
     // legally use in LUR.E/GLit properties
@@ -294,13 +300,11 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
         return src?.getProperty?.(srcProp);
     }
 
-    //
-    if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
+    // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
+    //if (srcProp && !isReactive(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
+    //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
 
-    //
-    if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
-
-    // truly reflective
+    // truly reflective for object property key/index
     const r = makeReactive({
         [$value]: (src[srcProp] ??= initial ?? src[srcProp]),
         [$behavior]: behavior,
@@ -310,7 +314,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
         get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
     });
 
-    //
+    // a reason, why regular objects isn't reactive directly, and may be single directional
     const usb = subscribe([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
     addToCallChain(r, Symbol.dispose, usb);
     return r;

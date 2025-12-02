@@ -1,6 +1,6 @@
 import { subscribe, unsubscribe } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual } from "../wrap/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual, $subscribe } from "../wrap/Symbol";
 import { deref, type keyType, refValid } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
@@ -640,7 +640,12 @@ export class ReactiveSet {
 }
 
 //
-export const makeReactiveArray  = <Under = any>(arr: Under[]): refValid<Under> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
-export const makeReactiveObject = <Under = any>(obj: Under): refValid<Under> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
-export const makeReactiveMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
-export const makeReactiveSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };
+export const $isReactive = (target: any) => {
+    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$subscribe]));
+}
+
+//
+export const makeReactiveArray  = <Under = any>(arr: Under[]): refValid<Under> => { return ($isReactive(arr) ? arr : wrapWith(arr, new ReactiveArray())); };
+export const makeReactiveObject = <Under = any>(obj: Under): refValid<Under> => { return ($isReactive(obj) ? obj : wrapWith(obj, new ReactiveObject())); };
+export const makeReactiveMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return ($isReactive(map) ? map : wrapWith(map, new ReactiveMap())); };
+export const makeReactiveSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return ($isReactive(set) ? set : wrapWith(set, new ReactiveSet())); };

@@ -1,7 +1,8 @@
 import { tryParseByHint } from "fest/core";
 import { $value, $behavior, $promise, $extractKey$, $subscribe } from "../wrap/Symbol";
 import { deref, refValid } from "../wrap/Utils";
-import { makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
+import { $isReactive, makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
+import { subscriptRegistry } from "./Subscript";
 
 //
 export const numberRef = <Under = number>(initial?: any, behavior?: any): refValid<Under> => {
@@ -88,12 +89,12 @@ export const delayedOrInstantBehavior = (delay = 100) => {
 
 //
 export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Under,T>, stateName = ""): refValid<Under,T> => {
-    if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || isReactive(target)) {
+    if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || $isReactive(target)) {
         return target as refValid<Under,T>;
     }
 
     //
-    if ((target = deref?.(target)) == null || target instanceof Promise || target instanceof WeakRef || isReactive(target)) {
+    if ((target = deref?.(target)) == null || target instanceof Promise || target instanceof WeakRef || $isReactive(target)) {
         return target as refValid<Under,T>; // promise forbidden
     }
 
@@ -115,5 +116,10 @@ export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Un
 
 //
 export const isReactive = (target: any) => {
-    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$subscribe]));
+    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$subscribe] || subscriptRegistry?.has?.(target)));
+}
+
+//
+export const recoverReactive = (target: any): any => {
+    return isReactive(target) ? makeReactive(target) : null;
 }
