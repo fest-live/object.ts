@@ -1,8 +1,8 @@
-[**@fest/object v0.0.0**](../../../README.md)
+[**@fest-lib/object v0.0.0**](../../../README.md)
 
 ***
 
-[@fest/object](../../../README.md) / [core/$Broken](../README.md) / makeReactiveMap
+[@fest-lib/object](../../../README.md) / [core/$Broken](../README.md) / makeReactiveMap
 
 # Function: makeReactiveMap()
 

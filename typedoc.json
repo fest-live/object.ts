@@ -12,7 +12,7 @@
   "skipErrorChecking": true,
   "plugin": ["typedoc-plugin-markdown"],
   "theme": "default",
-  "name": "@fest/object API Documentation",
+  "name": "@fest-lib/object API Documentation",
   "categorizeByGroup": true,
   "categoryOrder": [
     "Object API",

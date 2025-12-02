@@ -1,8 +1,8 @@
-[**@fest/object v0.0.0**](../../../README.md)
+[**@fest-lib/object v0.0.0**](../../../README.md)
 
 ***
 
-[@fest/object](../../../README.md) / [wrap/Utils](../README.md) / subValid
+[@fest-lib/object](../../../README.md) / [wrap/Utils](../README.md) / subValid
 
 # Type Alias: subValid\<Under, T, K\>
 

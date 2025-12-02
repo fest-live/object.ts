@@ -1,5 +1,5 @@
 {
-    "name": "@fest/object",
+    "name": "@fest-lib/object",
     "description": "JS reactive utilities and object helpers for JavaScript",
     "version": "0.0.0",
     "private": false,

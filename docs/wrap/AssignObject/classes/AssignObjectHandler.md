@@ -1,8 +1,8 @@
-[**@fest/object v0.0.0**](../../../README.md)
+[**@fest-lib/object v0.0.0**](../../../README.md)
 
 ***
 
-[@fest/object](../../../README.md) / [wrap/AssignObject](../README.md) / AssignObjectHandler
+[@fest-lib/object](../../../README.md) / [wrap/AssignObject](../README.md) / AssignObjectHandler
 
 # Class: AssignObjectHandler
 

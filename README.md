@@ -2,7 +2,7 @@
 
 <img src="https://img.shields.io/github/license/fest-live/object.ts?style=flat-square" alt="License"> <img src="https://img.shields.io/github/stars/fest-live/object.ts?style=flat-square" alt="Stars"> <img src="https://img.shields.io/github/last-commit/fest-live/object.ts?style=flat-square" alt="Last Commit">
 
-[![npm version](https://img.shields.io/npm/v/object.ts?style=flat-square)](https://www.npmjs.com/package/@fest/object.ts)
+[![npm version](https://img.shields.io/npm/v/object.ts?style=flat-square)](https://www.npmjs.com/package/@fest-lib/object.ts)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/fest-live/object.ts/ci.yml?branch=main&style=flat-square)](https://github.com/fest-live/object.ts/actions)
 [![Coverage Status](https://img.shields.io/codecov/c/github/fest-live/object.ts?style=flat-square)](https://codecov.io/gh/fest-live/object.ts)
 
@@ -56,7 +56,7 @@
 ### Install
 
 ```bash
-npm i @fest/object
+npm i @fest-lib/object
 ```
 
 ### Importing
@@ -76,7 +76,7 @@ import {
   derivate,
   bindBy,
   safe
-} from "@fest/object";
+} from "@fest-lib/object";
 ```
 
 ### Quick start

@@ -1,8 +1,8 @@
-[**@fest/object v0.0.0**](../../../README.md)
+[**@fest-lib/object v0.0.0**](../../../README.md)
 
 ***
 
-[@fest/object](../../../README.md) / [core/Primitives](../README.md) / stringRef
+[@fest-lib/object](../../../README.md) / [core/Primitives](../README.md) / stringRef
 
 # Function: stringRef()
 
