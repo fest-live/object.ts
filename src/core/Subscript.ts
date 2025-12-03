@@ -1,5 +1,5 @@
 import { $extractKey$ } from "../wrap/Symbol";
-import { deref, isThenable, type keyType } from "../wrap/Utils";
+import { deref, type keyType } from "../wrap/Utils";
 import { WR } from "fest/core";
 
 //
@@ -52,15 +52,44 @@ export class Subscript {
     #triggerLock = new Set<keyType>();
 
     // production version
-    $safeExec(cb, ...args): Promise<any> | undefined {
-        if (!cb || this.#flags.has(cb)) return; this.#flags.add(cb);
-        return Promise.try(cb, ...args)?.finally?.(()=>this.#flags.delete(cb));
+    $safeExec(cb, ...args) {
+        if (!cb || this.#flags.has(cb)) return;
+
+        //
+        this.#flags.add(cb);
+        try {
+            // @ts-ignore
+            const res = cb(...args);
+            // Handle promises if returned, but don't force them
+            if (res && typeof res.then === 'function') {
+                // @ts-ignore
+                return res.catch(console.warn);
+            }
+            return res;
+        } catch (e) {
+            console.warn(e);
+        } finally {
+            this.#flags.delete(cb);
+        }
     }
 
     //
     constructor() {
         this.#listeners = new Map();
         this.#flags = new WeakSet();
+
+        //
+        const weak = new WeakRef(this);
+
+        // compatible with https://github.com/WICG/observable
+        // mostly, only for subscribers (virtual Observable)
+        const controller = function (subscriber) {
+            const handler = subscriber?.next?.bind?.(subscriber);
+            return completeWithUnsub(subscriber, weak, handler);
+        }
+
+        // @ts-ignore
+        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
 
         // initiate generator, and do next
         this.#iterator = {
@@ -71,31 +100,21 @@ export class Subscript {
             }
         }
 
-        // compatible with https://github.com/WICG/observable
-        // mostly, only for subscribers (virtual Observable)
-        const weak = new WeakRef(this);
-        const controller = function (subscriber) {
-            const handler = subscriber?.next?.bind?.(subscriber);
-            return completeWithUnsub(subscriber, weak, handler);
-        }
-
-        // @ts-ignore
-        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
+        //
         this.compatible = ()=>this.#native;
     }
 
     // Optimized dispatch method replacing the closure 'caller'
     #dispatch(name, value = null, oldValue?: any, ...etc: any[]) {
         const listeners = this.#listeners;
-        if (listeners.size === 0) return;
+        if (!listeners?.size) return;
 
         // Direct iteration avoiding array allocation
-        const collected = Array.from(listeners?.entries?.() ?? [])?.map?.(([cb, prop]) => {
-            if (prop === name || prop === forAll || prop === null) {
-                return this.$safeExec(cb, value, name, oldValue, ...etc);
-            }
-        })?.filter?.((res: any) => res != null);
-        return Promise.allSettled(collected)?.catch?.(console.warn.bind(console));
+        let promises: Promise<any>[] = Array.from(listeners?.entries?.() ?? []).map?.(([cb, prop]) => {
+            if (prop === name || prop === forAll || prop === null) { return this.$safeExec(cb, value, name, oldValue, ...etc); }
+            return undefined;
+        })?.filter?.((res: any) => res && typeof res.then === 'function');
+        return promises?.length ? Promise.allSettled(promises) : undefined;
     }
 
     //
@@ -130,17 +149,16 @@ export class Subscript {
         if (name != null) this.#triggerLock.add(name);
 
         //
-        const $promised = Promise.withResolvers<any>();
+        const $promised = Promise.withResolvers<any[]>();
         queueMicrotask(() => {
-            Promise.try(this.#dispatch.bind(this), name, value, oldValue, ...etc)
-                ?.then?.($promised?.resolve?.bind?.($promised))
-                ?.catch?.($promised?.reject?.bind?.($promised))
+            try
+                { $promised.resolve((this.#dispatch(name, value, oldValue, ...etc) as Promise<any[]> | undefined | any) ?? []); } catch (e)
+                { $promised.reject(e); console.warn(e); } finally
+                { if (name != null) this.#triggerLock.delete(name); }
         });
 
         //
-        return $promised?.promise
-            ?.catch?.(console.warn.bind(console))
-            ?.finally?.(() => { if (name != null) this.#triggerLock.delete(name); });
+        return $promised.promise;
     }
 
     //
