@@ -1,8 +1,9 @@
-import { callByAllProp, callByProp, isKeyType, objectAssign } from "fest/core";
+import { callByAllProp, callByProp, isKeyType, isPrimitive, objectAssign } from "fest/core";
 import { $extractKey$, $registryKey$, $subscribe } from "../wrap/Symbol";
-import { addToCallChain, safe, withPromise, type keyType, subValid, refValid } from "../wrap/Utils";
+import { addToCallChain, safe, withPromise, type keyType, subValid, refValid, isThenable } from "../wrap/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
+import { isReactive } from "./Primitives";
 
 //
 export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => { // @ts-ignore
@@ -17,62 +18,100 @@ export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Un
 }
 
 //
-export const subscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
+type callable = (value: any, prop: keyType, old?: any, operation?: string | null) => void;
+type subscript = (target: any, prop: keyType | null, cb: callable, ctx?: any) => any;
+export const specializedSubscribe = new WeakMap<any, subscript>();
 
-    // inputs now can be regally subscribed directly
-    if (typeof HTMLInputElement != "undefined" && tg instanceof HTMLInputElement) {
-        const $opt: any = { }; let oldValue = tg?.value;
-        const $cb = (ev: any) => { cb?.(ev?.target?.value, "value", oldValue); oldValue = ev?.target?.value; };
-        (tg as any)?.addEventListener?.("change", $cb, $opt);
-        return () => (tg as any)?.removeEventListener?.("change", $cb, $opt);
-    }
-
-    // use custom subscribe if available
-    if (tg?.[$subscribe] != null && typeof tg?.[$subscribe] == "function") {
-        return tg?.[$subscribe]?.(cb);
-    }
-
-    //
-    if (typeof tg == "symbol" || tg == null || !(typeof tg == "object" || typeof tg == "function")) return;
-
-    //
-    const isPair = (Array.isArray(tg) && tg?.length == 2) && /*(["object", "function"].indexOf(typeof tg?.[0]) >= 0) &&*/ (isKeyType(tg?.[1]) || (Array.isArray(tg?.[0]) && tg?.[1] == Symbol.iterator));
-    const prop = isPair && (typeof tg?.[1] != "object" && typeof tg?.[1] != "function") ? tg?.[1] : null;
-
-    // tg?.[0] ?? tg now isn't allowed anymore, because it's not safe
-    if (!(tg = (isPair && (prop != null)) ? tg?.[0] : tg)) return;
-
-    // no hope...
-    if (typeof tg == "symbol" || !(typeof tg == "object" || typeof tg == "function") || tg == null) { cb?.(tg, prop, null); return; };
-
-    // temp ban with dispose
-    return withPromise(tg, (target: any) => { if (!target) return;
-        if (typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || target == null) return;
-        let unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target; if (!unwrap) return;
-        if (typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") || unwrap == null) return;
-
-        //
-        const tProp = (prop != Symbol.iterator) ? prop : null;
-
-        //
-        queueMicrotask(() => {
-            if (tProp != null && tProp != Symbol.iterator) { callByProp(unwrap, tProp, cb, ctx); } else { callByAllProp(unwrap, cb, ctx); }
-        });
-
-        //
-        let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap); if (self?.[Symbol.dispose]) return;
-
-        //
-        let unsub: any = self?.subscribe?.(cb, tProp);
-        addToCallChain(unsub, Symbol.dispose, unsub);
-        addToCallChain(unsub, Symbol.asyncDispose, unsub);
-        addToCallChain(unwrap, Symbol.dispose, unsub);
-        addToCallChain(unwrap, Symbol.asyncDispose, unsub);
-
-        //
-        return unsub;
-    });
+//
+const checkValidObj = (obj: any) => {
+    if (typeof obj == "symbol" || obj == null || !(typeof obj == "object" || typeof obj == "function")) return;
+    return obj;
 }
+
+//
+export const subscribeDirectly: subscript = (target: any, prop: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => { if (!target) return;
+    if (!checkValidObj(target)) return;
+    const tProp = (prop != Symbol.iterator) ? prop : null;
+
+    //
+    queueMicrotask(() => {
+        if (tProp != null && tProp != Symbol.iterator) { callByProp(target, tProp, cb, ctx); } else { callByAllProp(target, cb, ctx); }
+    });
+
+    //
+    let registry = target?.[$registryKey$] ?? (subscriptRegistry).get(target);
+    let unSub: any = registry?.subscribe?.(cb, tProp);
+    if (target?.[Symbol.dispose]) return unSub;
+
+    //
+    addToCallChain(unSub, Symbol.dispose, unSub);
+    addToCallChain(unSub, Symbol.asyncDispose, unSub);
+    addToCallChain(target, Symbol.dispose, unSub);
+    addToCallChain(target, Symbol.asyncDispose, unSub);
+    return unSub;
+}
+
+//
+export const subscribeInput: subscript = (tg: HTMLInputElement, _: keyType | null, cb: (value: any, _: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
+    // inputs now can be regally subscribed directly
+    const $opt: any = { }; let oldValue = tg?.value;
+    const $cb = (ev: any) => { cb?.(ev?.target?.value, "value", oldValue); oldValue = ev?.target?.value; };
+    (tg as any)?.addEventListener?.("change", $cb, $opt);
+    return () => (tg as any)?.removeEventListener?.("change", $cb, $opt);
+}
+
+//
+const checkIsPaired = (tg: any) => {
+    return (Array.isArray(tg) && tg?.length == 2 && checkValidObj(tg?.[0])) && (isKeyType(tg?.[1]) || tg?.[1] == Symbol.iterator);
+}
+
+// split from prop pairs
+export const subscribePaired: subscript = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, _: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
+    const prop = isKeyType(tg?.[1]) ? tg?.[1] : null;
+    return subscribe(tg?.[0], prop, cb, ctx);
+}
+
+//
+export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
+    return obj?.then?.((obj: any) => subscribe?.(obj, prop, cb, ctx))?.catch?.((e: any) => { console.warn(e); return null; });
+}
+
+//
+export const subscribe = (obj: any, prop: keyType | callable | null, cb: callable, ctx: any | null = null) => {
+    if (typeof prop == "function") { cb = prop; prop = null; }
+
+    //
+    if (isPrimitive(obj) || typeof obj == "symbol") { return queueMicrotask(() => { return cb?.(obj, null as any, null, null); }); }
+    if (typeof obj?.[$subscribe] == "function") {
+        return obj?.[$subscribe]?.(cb, prop, ctx);
+    } else
+    if (checkValidObj(obj)) {
+        obj = obj?.[$extractKey$] ?? obj;
+
+        //
+        if (specializedSubscribe?.has?.(obj)) {
+            return specializedSubscribe?.get?.(obj)?.(obj, prop, cb, ctx);
+        }
+
+        //
+        if (isReactive(obj) || (checkIsPaired(obj) && isReactive(obj?.[0]))) {
+            // when no exists, add a new specialized subscribe function
+            if (isThenable(obj)) //@ts-ignore
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, prop, cb, ctx); } else
+            if (checkIsPaired(obj))  //@ts-ignore
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribePaired)?.(obj, prop, cb, ctx); } else
+            if (typeof HTMLInputElement != "undefined" && obj instanceof HTMLInputElement)  //@ts-ignore
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, prop, cb, ctx); } else  //@ts-ignore
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(obj, prop, cb, ctx); }
+        } else {
+            return queueMicrotask(() => {
+                if (checkIsPaired(obj)) { return callByProp?.(obj?.[0], obj?.[1] as any, cb, ctx); }
+                if (prop != null && prop != Symbol.iterator) { return callByProp?.(obj, prop, cb, ctx); }
+                return callByAllProp?.(obj, cb, ctx);
+            });
+        }
+    }
+};
 
 //
 export const makeArrayObservable = (tg)=>{
@@ -102,11 +141,11 @@ export const unsubscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T
 
 //
 export const bindBy = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, watch?) => {
-    subscribe(reactive, (v, p) => { objectAssign(target, v, p, true); });
+    subscribe(reactive, null, (v, p) => { objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); } }, { deep: true });
     return target;
 };
 
 //
 export const derivate = <Under = any, T = refValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
-export const bindByKey = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, key = () => "") => subscribe(reactive, (value, id) => { if (id == key()) { objectAssign(target, value, null, true); } });
+export const bindByKey = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, key = () => "") => subscribe(reactive, null, (value, p) => { if (p == key()) { objectAssign(target, value, null, true); } });
