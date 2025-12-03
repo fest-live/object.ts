@@ -34,12 +34,17 @@ export const subscribeDirectly: subscript = (target: any, prop: keyType | null, 
     const tProp = (prop != Symbol.iterator) ? prop : null;
 
     //
+    let registry = target?.[$registryKey$] ?? (subscriptRegistry).get(target);
+
+    //
+    target = target?.[$extractKey$] ?? target;
+
+    //
     queueMicrotask(() => {
         if (tProp != null && tProp != Symbol.iterator) { callByProp(target, tProp, cb, ctx); } else { callByAllProp(target, cb, ctx); }
     });
 
     //
-    let registry = target?.[$registryKey$] ?? (subscriptRegistry).get(target);
     let unSub: any = registry?.subscribe?.(cb, tProp);
     if (target?.[Symbol.dispose]) return unSub;
 
@@ -86,15 +91,14 @@ export const subscribe = (obj: any, prop: keyType | callable | null, cb: callabl
         return obj?.[$subscribe]?.(cb, prop, ctx);
     } else
     if (checkValidObj(obj)) {
+        const wrapped = obj;
         obj = obj?.[$extractKey$] ?? obj;
-
-        //
         if (specializedSubscribe?.has?.(obj)) {
-            return specializedSubscribe?.get?.(obj)?.(obj, prop, cb, ctx);
+            return specializedSubscribe?.get?.(obj)?.(wrapped, prop, cb, ctx);
         }
 
         //
-        if (isReactive(obj) || (checkIsPaired(obj) && isReactive(obj?.[0]))) {
+        if (isReactive(wrapped) || (checkIsPaired(obj) && isReactive(obj?.[0]))) {
             // when no exists, add a new specialized subscribe function
             if (isThenable(obj)) //@ts-ignore
                 { return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, prop, cb, ctx); } else
@@ -102,7 +106,7 @@ export const subscribe = (obj: any, prop: keyType | callable | null, cb: callabl
                 { return specializedSubscribe?.getOrInsert?.(obj, subscribePaired)?.(obj, prop, cb, ctx); } else
             if (typeof HTMLInputElement != "undefined" && obj instanceof HTMLInputElement)  //@ts-ignore
                 { return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, prop, cb, ctx); } else  //@ts-ignore
-                { return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(obj, prop, cb, ctx); }
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(wrapped, prop, cb, ctx); }
         } else {
             return queueMicrotask(() => {
                 if (checkIsPaired(obj)) { return callByProp?.(obj?.[0], obj?.[1] as any, cb, ctx); }
