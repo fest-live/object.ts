@@ -6,6 +6,14 @@
 
 # core/Mainline
 
+## Variables
+
+- [specializedSubscribe](variables/specializedSubscribe.md)
+- [subscribeDirectly](variables/subscribeDirectly.md)
+- [subscribeInput](variables/subscribeInput.md)
+- [subscribePaired](variables/subscribePaired.md)
+- [subscribeThenable](variables/subscribeThenable.md)
+
 ## Functions
 
 - [bindBy](functions/bindBy.md)

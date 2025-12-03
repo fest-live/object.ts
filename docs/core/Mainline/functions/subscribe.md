@@ -7,37 +7,32 @@
 # Function: subscribe()
 
 ```ts
-function subscribe<Under, T>(
-   tg, 
+function subscribe(
+   obj, 
+   prop, 
    cb, 
-   ctx): any;
+   ctx?): any;
 ```
 
-Defined in: [core/Mainline.ts:20](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Mainline.ts#L20)
-
-## Type Parameters
-
-### Under
-
-`Under` = `any`
-
-### T
-
-`T` = `any`
+Defined in: [core/Mainline.ts:85](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Mainline.ts#L85)
 
 ## Parameters
 
-### tg
+### obj
 
-[`subValid`](../../../wrap/Utils/type-aliases/subValid.md)\<`Under`, `T`\>
+`any`
+
+### prop
+
+[`keyType`](../../../wrap/Utils/type-aliases/keyType.md) | `callable` | `null`
 
 ### cb
 
-(`value`, `prop`, `old?`, `operation?`) => `void`
+`callable` = `...`
 
-### ctx
+### ctx?
 
-`any` = `null`
+`any`
 
 ## Returns
 

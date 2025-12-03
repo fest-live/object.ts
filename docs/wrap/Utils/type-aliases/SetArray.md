@@ -10,7 +10,7 @@
 type SetArray<T> = SetArrayMethods<T> & object;
 ```
 
-Defined in: [wrap/Utils.ts:169](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/wrap/Utils.ts#L169)
+Defined in: [wrap/Utils.ts:171](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/Utils.ts#L171)
 
 ## Type Declaration
 

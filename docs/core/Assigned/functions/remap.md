@@ -13,7 +13,7 @@ function remap<Under>(
    dest?): any;
 ```
 
-Defined in: [core/Assigned.ts:55](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L55)
+Defined in: [core/Assigned.ts:54](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L54)
 
 ## Type Parameters
 

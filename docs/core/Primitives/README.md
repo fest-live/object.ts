@@ -16,6 +16,7 @@
 - [makeReactive](functions/makeReactive.md)
 - [numberRef](functions/numberRef.md)
 - [promised](functions/promised.md)
+- [recoverReactive](functions/recoverReactive.md)
 - [ref](functions/ref.md)
 - [stringRef](functions/stringRef.md)
 - [triggerWithDelay](functions/triggerWithDelay.md)

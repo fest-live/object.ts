@@ -10,7 +10,7 @@
 function makeArrayObservable(tg): any;
 ```
 
-Defined in: [core/Mainline.ts:63](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Mainline.ts#L63)
+Defined in: [core/Mainline.ts:121](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Mainline.ts#L121)
 
 ## Parameters
 

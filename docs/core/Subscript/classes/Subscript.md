@@ -6,7 +6,7 @@
 
 # Class: Subscript
 
-Defined in: [core/Subscript.ts:46](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L46)
+Defined in: [core/Subscript.ts:46](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L46)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: [core/Subscript.ts:46](https://github.com/fest-live/object.ts/blob/e
 new Subscript(): Subscript;
 ```
 
-Defined in: [core/Subscript.ts:77](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L77)
+Defined in: [core/Subscript.ts:77](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L77)
 
 #### Returns
 
@@ -30,17 +30,7 @@ Defined in: [core/Subscript.ts:77](https://github.com/fest-live/object.ts/blob/e
 compatible: any;
 ```
 
-Defined in: [core/Subscript.ts:47](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L47)
-
-***
-
-### triggerLock
-
-```ts
-triggerLock: boolean;
-```
-
-Defined in: [core/Subscript.ts:52](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L52)
+Defined in: [core/Subscript.ts:47](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L47)
 
 ## Accessors
 
@@ -52,7 +42,7 @@ Defined in: [core/Subscript.ts:52](https://github.com/fest-live/object.ts/blob/e
 get iterator(): any;
 ```
 
-Defined in: [core/Subscript.ts:168](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L168)
+Defined in: [core/Subscript.ts:180](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L180)
 
 ##### Returns
 
@@ -66,7 +56,7 @@ Defined in: [core/Subscript.ts:168](https://github.com/fest-live/object.ts/blob/
 $safeExec(cb, ...args): any;
 ```
 
-Defined in: [core/Subscript.ts:55](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L55)
+Defined in: [core/Subscript.ts:55](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L55)
 
 #### Parameters
 
@@ -92,7 +82,7 @@ subscribe(cb, prop?):
   | undefined;
 ```
 
-Defined in: [core/Subscript.ts:131](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L131)
+Defined in: [core/Subscript.ts:133](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L133)
 
 #### Parameters
 
@@ -118,10 +108,10 @@ trigger(
    name, 
    value?, 
    oldValue?, ...
-   etc?): Promise<void | any[]> | undefined;
+   etc?): Promise<any[]> | undefined;
 ```
 
-Defined in: [core/Subscript.ts:153](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L153)
+Defined in: [core/Subscript.ts:155](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L155)
 
 #### Parameters
 
@@ -143,7 +133,7 @@ Defined in: [core/Subscript.ts:153](https://github.com/fest-live/object.ts/blob/
 
 #### Returns
 
-`Promise`\<`void` \| `any`[]\> \| `undefined`
+`Promise`\<`any`[]\> \| `undefined`
 
 ***
 
@@ -155,7 +145,7 @@ unsubscribe(cb?, prop?):
   | () => () => void | (() => (() => void | ...) | undefined) | undefined;
 ```
 
-Defined in: [core/Subscript.ts:140](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L140)
+Defined in: [core/Subscript.ts:142](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L142)
 
 #### Parameters
 
@@ -180,7 +170,7 @@ Defined in: [core/Subscript.ts:140](https://github.com/fest-live/object.ts/blob/
 wrap(nw): any;
 ```
 
-Defined in: [core/Subscript.ts:130](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L130)
+Defined in: [core/Subscript.ts:132](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L132)
 
 #### Parameters
 

@@ -28,6 +28,7 @@
 
 - [addToCallChain](functions/addToCallChain.md)
 - [deref](functions/deref.md)
+- [isThenable](functions/isThenable.md)
 - [safe](functions/safe.md)
 - [unwrap](functions/unwrap.md)
 - [withPromise](functions/withPromise.md)

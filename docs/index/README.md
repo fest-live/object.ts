@@ -200,6 +200,12 @@ Re-exports [PropStore](../core/Assigned/interfaces/PropStore.md)
 
 ***
 
+### recoverReactive
+
+Re-exports [recoverReactive](../core/Primitives/functions/recoverReactive.md)
+
+***
+
 ### ref
 
 Re-exports [ref](../core/Primitives/functions/ref.md)
@@ -224,6 +230,12 @@ Re-exports [safe](../wrap/Utils/functions/safe.md)
 
 ***
 
+### specializedSubscribe
+
+Re-exports [specializedSubscribe](../core/Mainline/variables/specializedSubscribe.md)
+
+***
+
 ### stringRef
 
 Re-exports [stringRef](../core/Primitives/functions/stringRef.md)
@@ -233,6 +245,30 @@ Re-exports [stringRef](../core/Primitives/functions/stringRef.md)
 ### subscribe
 
 Re-exports [subscribe](../core/Mainline/functions/subscribe.md)
+
+***
+
+### subscribeDirectly
+
+Re-exports [subscribeDirectly](../core/Mainline/variables/subscribeDirectly.md)
+
+***
+
+### subscribeInput
+
+Re-exports [subscribeInput](../core/Mainline/variables/subscribeInput.md)
+
+***
+
+### subscribePaired
+
+Re-exports [subscribePaired](../core/Mainline/variables/subscribePaired.md)
+
+***
+
+### subscribeThenable
+
+Re-exports [subscribeThenable](../core/Mainline/variables/subscribeThenable.md)
 
 ***
 

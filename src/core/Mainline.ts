@@ -82,7 +82,7 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
 }
 
 //
-export const subscribe = (obj: any, prop: keyType | callable | null, cb: callable, ctx: any | null = null) => {
+export const subscribe = (obj: any, prop: keyType | callable | null, cb: callable = ()=>{}, ctx?: any) => {
     if (typeof prop == "function") { cb = prop; prop = null; }
 
     //

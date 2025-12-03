@@ -10,7 +10,7 @@
 const createReactiveSet: <V>(set?) => Set<V>;
 ```
 
-Defined in: [core/Legacy.ts:8](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Legacy.ts#L8)
+Defined in: [core/Legacy.ts:8](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Legacy.ts#L8)
 
 ## Type Parameters
 

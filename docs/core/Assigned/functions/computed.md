@@ -14,7 +14,7 @@ function computed<Under, OutputUnder>(
    prop?): any;
 ```
 
-Defined in: [core/Assigned.ts:249](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L249)
+Defined in: [core/Assigned.ts:248](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L248)
 
 ## Type Parameters
 

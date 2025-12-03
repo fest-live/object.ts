@@ -13,7 +13,7 @@ function triggerWithDelay<Under>(
    delay): any;
 ```
 
-Defined in: [core/Primitives.ts:77](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Primitives.ts#L77)
+Defined in: [core/Primitives.ts:78](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Primitives.ts#L78)
 
 ## Type Parameters
 

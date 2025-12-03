@@ -10,7 +10,7 @@
 function wrapWith(what, handle): any;
 ```
 
-Defined in: [core/Subscript.ts:36](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Subscript.ts#L36)
+Defined in: [core/Subscript.ts:36](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Subscript.ts#L36)
 
 ## Parameters
 

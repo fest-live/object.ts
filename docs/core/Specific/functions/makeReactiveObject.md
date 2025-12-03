@@ -10,7 +10,7 @@
 function makeReactiveObject<Under>(obj): any;
 ```
 
-Defined in: [core/Specific.ts:644](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Specific.ts#L644)
+Defined in: [core/Specific.ts:692](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Specific.ts#L692)
 
 ## Type Parameters
 

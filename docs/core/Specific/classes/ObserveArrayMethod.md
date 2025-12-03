@@ -6,7 +6,7 @@
 
 # Class: ObserveArrayMethod
 
-Defined in: [core/Specific.ts:127](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Specific.ts#L127)
+Defined in: [core/Specific.ts:130](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Specific.ts#L130)
 
 ## Constructors
 
@@ -19,7 +19,7 @@ new ObserveArrayMethod(
    handle): ObserveArrayMethod;
 ```
 
-Defined in: [core/Specific.ts:129](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Specific.ts#L129)
+Defined in: [core/Specific.ts:132](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Specific.ts#L132)
 
 #### Parameters
 
@@ -50,7 +50,7 @@ apply(
    args): any;
 ```
 
-Defined in: [core/Specific.ts:137](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Specific.ts#L137)
+Defined in: [core/Specific.ts:140](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Specific.ts#L140)
 
 #### Parameters
 
@@ -81,7 +81,7 @@ get(
    rec): any;
 ```
 
-Defined in: [core/Specific.ts:136](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Specific.ts#L136)
+Defined in: [core/Specific.ts:139](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Specific.ts#L139)
 
 #### Parameters
 

@@ -6,7 +6,7 @@
 
 # Interface: PropStore
 
-Defined in: [core/Assigned.ts:143](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L143)
+Defined in: [core/Assigned.ts:142](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L142)
 
 ## Properties
 
@@ -16,7 +16,7 @@ Defined in: [core/Assigned.ts:143](https://github.com/fest-live/object.ts/blob/e
 optional bound: any;
 ```
 
-Defined in: [core/Assigned.ts:145](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L145)
+Defined in: [core/Assigned.ts:144](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L144)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [core/Assigned.ts:145](https://github.com/fest-live/object.ts/blob/e
 optional cmpfx: any;
 ```
 
-Defined in: [core/Assigned.ts:146](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L146)
+Defined in: [core/Assigned.ts:145](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L145)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [core/Assigned.ts:146](https://github.com/fest-live/object.ts/blob/e
 optional compute: any;
 ```
 
-Defined in: [core/Assigned.ts:147](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L147)
+Defined in: [core/Assigned.ts:146](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L146)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [core/Assigned.ts:147](https://github.com/fest-live/object.ts/blob/e
 optional dispose: any;
 ```
 
-Defined in: [core/Assigned.ts:148](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L148)
+Defined in: [core/Assigned.ts:147](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L147)
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: [core/Assigned.ts:148](https://github.com/fest-live/object.ts/blob/e
 optional unsub: any;
 ```
 
-Defined in: [core/Assigned.ts:144](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Assigned.ts#L144)
+Defined in: [core/Assigned.ts:143](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L143)

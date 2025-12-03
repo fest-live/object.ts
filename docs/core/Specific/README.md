@@ -16,6 +16,7 @@
 
 ## Functions
 
+- [$isReactive](functions/$isReactive.md)
 - [fallThrough](functions/fallThrough.md)
 - [makeReactiveArray](functions/makeReactiveArray.md)
 - [makeReactiveMap](functions/makeReactiveMap.md)

@@ -10,7 +10,7 @@
 function isReactive(target): boolean;
 ```
 
-Defined in: [core/Primitives.ts:117](https://github.com/fest-live/object.ts/blob/ed41651393dc7ae0634f0ceb8071830cf5c46166/src/core/Primitives.ts#L117)
+Defined in: [core/Primitives.ts:118](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Primitives.ts#L118)
 
 ## Parameters
 
