@@ -78,19 +78,6 @@ export class Subscript {
         this.#listeners = new Map();
         this.#flags = new WeakSet();
 
-        //
-        const weak = new WeakRef(this);
-
-        // compatible with https://github.com/WICG/observable
-        // mostly, only for subscribers (virtual Observable)
-        const controller = function (subscriber) {
-            const handler = subscriber?.next?.bind?.(subscriber);
-            return completeWithUnsub(subscriber, weak, handler);
-        }
-
-        // @ts-ignore
-        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
-
         // initiate generator, and do next
         this.#iterator = {
             next: (args: any) => {
@@ -100,7 +87,18 @@ export class Subscript {
             }
         }
 
-        //
+
+
+        // compatible with https://github.com/WICG/observable
+        // mostly, only for subscribers (virtual Observable)
+        const weak = new WeakRef(this);
+        const controller = function (subscriber) {
+            const handler = subscriber?.next?.bind?.(subscriber);
+            return completeWithUnsub(subscriber, weak, handler);
+        }
+
+        // @ts-ignore
+        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
         this.compatible = ()=>this.#native;
     }
 
