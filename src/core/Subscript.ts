@@ -52,44 +52,15 @@ export class Subscript {
     #triggerLock = new Set<keyType>();
 
     // production version
-    $safeExec(cb, ...args) {
-        if (!cb || this.#flags.has(cb)) return;
-
-        //
-        this.#flags.add(cb);
-        try {
-            // @ts-ignore
-            const res = cb(...args);
-            // Handle promises if returned, but don't force them
-            if (res && typeof res.then === 'function') {
-                // @ts-ignore
-                return res.catch(console.warn);
-            }
-            return res;
-        } catch (e) {
-            console.warn(e);
-        } finally {
-            this.#flags.delete(cb);
-        }
+    $safeExec(cb, ...args): Promise<any> | undefined {
+        if (!cb || this.#flags.has(cb)) return; this.#flags.add(cb);
+        return Promise.try(cb, ...args)?.finally?.(()=>this.#flags.delete(cb));
     }
 
     //
     constructor() {
         this.#listeners = new Map();
         this.#flags = new WeakSet();
-
-        //
-        const weak = new WeakRef(this);
-
-        // compatible with https://github.com/WICG/observable
-        // mostly, only for subscribers (virtual Observable)
-        const controller = function (subscriber) {
-            const handler = subscriber?.next?.bind?.(subscriber);
-            return completeWithUnsub(subscriber, weak, handler);
-        }
-
-        // @ts-ignore
-        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
 
         // initiate generator, and do next
         this.#iterator = {
@@ -100,7 +71,16 @@ export class Subscript {
             }
         }
 
-        //
+        // compatible with https://github.com/WICG/observable
+        // mostly, only for subscribers (virtual Observable)
+        const weak = new WeakRef(this);
+        const controller = function (subscriber) {
+            const handler = subscriber?.next?.bind?.(subscriber);
+            return completeWithUnsub(subscriber, weak, handler);
+        }
+
+        // @ts-ignore
+        this.#native = (typeof Observable != "undefined" ? (new Observable(controller)) : null)
         this.compatible = ()=>this.#native;
     }
 
@@ -109,23 +89,13 @@ export class Subscript {
         const listeners = this.#listeners;
         if (listeners.size === 0) return;
 
-        //
-        let promises: Promise<any>[] | null = null;
-
         // Direct iteration avoiding array allocation
-        for (const [cb, prop] of listeners) {
+        const collected = Array.from(listeners?.entries?.() ?? [])?.map?.(([cb, prop]) => {
             if (prop === name || prop === forAll || prop === null) {
-                const res = this.$safeExec(cb, value, name, oldValue, ...etc);
-                if (res && typeof res.then === 'function') {
-                    if (promises == null) promises = [];
-                    promises.push(res);
-                }
+                return this.$safeExec(cb, value, name, oldValue, ...etc);
             }
-        }
-
-        //
-        if (promises != null) return Promise.all(promises);
-        return undefined;
+        })?.filter?.((res: any) => res != null);
+        return Promise.allSettled(collected)?.catch?.(console.warn.bind(console));
     }
 
     //
@@ -160,20 +130,17 @@ export class Subscript {
         if (name != null) this.#triggerLock.add(name);
 
         //
-        const $promised = Promise.withResolvers<any[]>();
-
-        //
+        const $promised = Promise.withResolvers<any>();
         queueMicrotask(() => {
-            try {
-                const res = this.#dispatch(name, value, oldValue, ...etc) as Promise<any[]> | undefined | any;
-                //if (isThenable(res)) { (res as any)?.catch?.(console.warn); }
-                $promised.resolve(res ?? []);
-            } catch (e) { $promised.reject(e); console.warn(e); }
-            finally { if (name != null) this.#triggerLock.delete(name); }
+            Promise.try(this.#dispatch.bind(this), name, value, oldValue, ...etc)
+                ?.then?.($promised?.resolve?.bind?.($promised))
+                ?.catch?.($promised?.reject?.bind?.($promised))
         });
 
         //
-        return $promised.promise;
+        return $promised?.promise
+            ?.catch?.(console.warn.bind(console))
+            ?.finally?.(() => { if (name != null) this.#triggerLock.delete(name); });
     }
 
     //
