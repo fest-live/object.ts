@@ -285,6 +285,18 @@ export class ReactiveArray {
         if (name == $trigger) { return (key = 0)=>{ return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), safeGet(target, key), "@set"); }; }
         if (name == "@target" || name == $extractKey$) return target;
 
+        //
+        if (name == "x") { return () => { return target?.x ?? target?.[0]; }; };
+        if (name == "y") { return () => { return target?.y ?? target?.[1]; }; };
+        if (name == "z") { return () => { return target?.z ?? target?.[2]; }; };
+        if (name == "w") { return () => { return target?.w ?? target?.[3]; }; };
+
+        //
+        if (name == "r") { return () => { return target?.r ?? target?.[0]; }; };
+        if (name == "g") { return () => { return target?.g ?? target?.[1]; }; };
+        if (name == "b") { return () => { return target?.b ?? target?.[2]; }; };
+        if (name == "a") { return () => { return target?.a ?? target?.[3]; }; };
+
         // that case: target[n]?.(?{.?value})?
         const got = safeGet(target, name) ?? (name == "value" ? safeGet(target, $value) : null);
         if (typeof got == "function") { return new Proxy(typeof got == "function" ? got?.bind?.(target) : got, new ObserveArrayMethod(name, target, this)); };
@@ -304,7 +316,20 @@ export class ReactiveArray {
 
         // array property changes
         const old = safeGet(target, name);
-        const got = Reflect.set(target, name, value);
+
+        //
+        const xyzw = ["x", "y", "z", "w"];
+        const rgba = ["r", "g", "b", "a"];
+
+        //
+        const xyzw_idx = xyzw.indexOf(name);
+        const rgba_idx = rgba.indexOf(name);
+
+        //
+        let got = false;
+        if (xyzw_idx >= 0) { got = Reflect.set(target, xyzw_idx, value); } else
+        if (rgba_idx >= 0) { got = Reflect.set(target, rgba_idx, value); } else
+        { got = Reflect.set(target, name, value); }
 
         // bit different trigger rules
         if (name == "length") {
