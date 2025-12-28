@@ -1,5 +1,5 @@
 import { $extractKey$ } from "../wrap/Symbol";
-import { makeReactiveObject, ReactiveMap, ReactiveSet } from "./Specific";
+import { observeObject, ReactiveMap, ReactiveSet } from "./Specific";
 import { wrapWith } from "./Subscript";
 import { UUIDv4 } from "fest/core";
 
@@ -20,7 +20,7 @@ export const createReactive: any = (target: any, stateName = ""): any => {
     } else
 
     //
-    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); }
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = observeObject(target); }
     return reactive;
 }
 

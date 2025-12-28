@@ -1,6 +1,6 @@
-import { subscribe } from "./Mainline";
+import { affected } from "./Mainline";
 import { addToCallChain, refValid, subValid, type keyType } from "../wrap/Utils";
-import { makeReactive, isReactive, triggerWithDelay, recoverReactive } from "./Primitives";
+import { observe, isReactive, triggerWithDelay, recoverReactive } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../wrap/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
@@ -11,7 +11,7 @@ export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Un
 /*
 export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
     const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
-    const usb = subscribe([cond, "value"], (val) => { if (cur != null && (typeof cur == "object" || typeof cur == "function")) cur.value = val ? ifTrue : ifFalse; });
+    const usb = affected([cond, "value"], (val) => { if (cur != null && (typeof cur == "object" || typeof cur == "function")) cur.value = val ? ifTrue : ifFalse; });
     addToCallChain(cur, Symbol.dispose, usb); return cur;
 }*/
 
@@ -31,7 +31,7 @@ export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any
     }
 
     // truly reflective
-    const r = makeReactive({
+    const r = observe({
         [$value]: valueOf(),
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(valueOf() ?? this[$value] ?? "") || ""; },
@@ -41,7 +41,7 @@ export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any
     });
 
     //
-    const usb = subscribe([cond, "value"], (val)=>{ r?.[$trigger]?.(); });
+    const usb = affected([cond, "value"], (val)=>{ r?.[$trigger]?.(); });
     addToCallChain(r, Symbol.dispose, usb); return r;
 }
 
@@ -52,8 +52,8 @@ export const conditional = conditionalRef;
 // used for redirection properties
 // !one-directional
 export const remap = <Under = any>(sub: subValid<Under>, cb?: Function | null, dest?: any | null) => {
-    if (!dest) dest = makeReactive<Under>({});
-    const usb = subscribe(sub, (value, prop, old) => {
+    if (!dest) dest = observe<Under>({});
+    const usb = affected(sub, (value, prop, old) => {
         const got = cb?.(value, prop, old);
         if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
             if (isNotEqual(dest[prop], got)) dest[prop] = got;
@@ -64,18 +64,18 @@ export const remap = <Under = any>(sub: subValid<Under>, cb?: Function | null, d
 //
 // !one-directional
 export const unified = <Under = any>(...subs: subValid<Under>[]) => {
-    const dest = makeReactive({});
-    subs?.forEach?.((sub) => subscribe(sub, (value, prop, _) => {
+    const dest = observe({});
+    subs?.forEach?.((sub) => affected(sub, (value, prop, _) => {
         if (isNotEqual(dest[prop], value)) { dest[prop] = value; };
     })); return dest;
 }
 
 //
 export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, Set<Under>> => { // @ts-ignore
-    const obs: Under[] = makeReactive<Under[]>([]) as refValid<Under>; // @ts-ignore
+    const obs: Under[] = observe<Under[]>([]) as refValid<Under>; // @ts-ignore
     // Initialize with existing set entries
     obs.push(...Array.from(set?.values?.() || [])); // @ts-ignore
-    addToCallChain(obs, Symbol.dispose, subscribe(set, (value, _, old) => { // @ts-ignore
+    addToCallChain(obs, Symbol.dispose, affected(set, (value, _, old) => { // @ts-ignore
         if (isNotEqual(value, old)) {
             if (old == null && value != null) {
                 obs.push(value);
@@ -94,14 +94,14 @@ export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, S
 
 //
 export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Under, [any, Under][]> => { // @ts-ignore
-    const obs: [any, Under][] = makeReactive<[any, Under][]>([]) as refValid<Under>; // @ts-ignore
+    const obs: [any, Under][] = observe<[any, Under][]>([]) as refValid<Under>; // @ts-ignore
 
     // Initialize with existing map entries
     const initialEntries: [any, Under][] = Array.from(map.entries());
     obs.push(...initialEntries);
 
     //
-    addToCallChain(obs, Symbol.dispose, subscribe(map, (value, prop, old) => {
+    addToCallChain(obs, Symbol.dispose, affected(map, (value, prop, old) => {
         if (isNotEqual(value, old) || (old == null && value != null) || (old != null && value == null)) {
             if (old != null && value == null) {
                 // Map entry deleted (by name)
@@ -217,7 +217,7 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
         }));
 
         //
-        store.unsub = subscribe(b, compute);
+        store.unsub = affected(b, compute);
         store.cmpfx = cmpBFnc;
         addToCallChain(a_tmp, Symbol.dispose, store?.dispose);
         addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
@@ -264,7 +264,7 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 
     //
     const isPromise = false; const initial = cmp();
-    const rf: refValid<Under> = makeReactive({
+    const rf: refValid<Under> = observe({
         [$promise]: isPromise ? initial : null,
         [$value]: initial,
         [$behavior]: behavior,
@@ -275,7 +275,7 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
     });
 
     //
-    const usb = subscribe([src?.[0] ?? src, a_prop ?? "value"], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
+    const usb = affected([src?.[0] ?? src, a_prop ?? "value"], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
     //const usb = assign([rf, "value"], src, a_prop)
     addToCallChain(rf, Symbol.dispose, usb); return rf;
 }
@@ -305,7 +305,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
     //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
 
     // truly reflective for object property key/index
-    const r = makeReactive({
+    const r = observe({
         [$value]: (src[srcProp] ??= initial ?? src[srcProp]),
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
@@ -315,7 +315,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
     });
 
     // a reason, why regular objects isn't reactive directly, and may be single directional
-    const usb = subscribe([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
+    const usb = affected([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
     addToCallChain(r, Symbol.dispose, usb);
     return r;
 }
@@ -323,7 +323,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
 //
 export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): refValid<Under> => {
     let tm: any; //= triggerWithDelay(ref, cb, delay);
-    return subscribe([ref, "value"], (v) => {
+    return affected([ref, "value"], (v) => {
         if (!v && tm) { clearTimeout(tm); tm = null; } else
             if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
     });

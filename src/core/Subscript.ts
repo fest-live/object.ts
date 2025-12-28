@@ -7,14 +7,14 @@ const withUnsub = new WeakMap();
 const completeWithUnsub = (subscriber, weak: WeakRef<any>|WR<any>, handler: Subscript)=>{
     // @ts-ignore
     return withUnsub.getOrInsert(subscriber, ()=>{
-        const registry = weak?.deref?.(); registry?.subscribe?.(handler);
+        const registry = weak?.deref?.(); registry?.affected?.(handler);
         const savComplete = subscriber?.complete?.bind?.(subscriber);
-        const unsubscribe = () => { const r = savComplete?.(); registry?.unsubscribe?.(handler); return r; };
-        subscriber.complete = unsubscribe;
+        const unaffected = () => { const r = savComplete?.(); registry?.unaffected?.(handler); return r; };
+        subscriber.complete = unaffected;
         return {
-            unsubscribe,
-            [Symbol.dispose]: unsubscribe,
-            [Symbol.asyncDispose]: unsubscribe,
+            unaffected,
+            [Symbol.dispose]: unaffected,
+            [Symbol.asyncDispose]: unaffected,
         }
     });
 }
@@ -117,21 +117,23 @@ export class Subscript {
 
     //
     wrap(nw: any[] | unknown) { if (Array.isArray(nw)) { return wrapWith(nw, this); }; return nw; }
-    subscribe(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
+
+    //
+    affected(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (cb == null || (typeof cb != "function")) return;
 
         //
         this.#listeners?.set?.(cb, prop || forAll);
-        return () => this.unsubscribe(cb, prop || forAll);
+        return () => this.unaffected(cb, prop || forAll);
     }
 
     //
-    unsubscribe(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
+    unaffected(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
         if (cb != null && typeof cb == "function") {
             const listeners = this.#listeners;
             if (listeners?.has?.(cb) && (listeners?.get?.(cb) == prop || prop == null || prop == forAll)) {
                 listeners?.delete?.(cb);
-                return () => this.subscribe(cb, prop || forAll);
+                return () => this.affected(cb, prop || forAll);
             }
         }
         return this.#listeners?.clear?.();

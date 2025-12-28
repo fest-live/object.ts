@@ -1,4 +1,4 @@
-import { subscribe, unsubscribe } from "./Mainline";
+import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual } from "../wrap/Symbol";
 import { deref, type keyType, refValid } from "../wrap/Utils";
@@ -39,12 +39,12 @@ const systemGet = (target, name, registry)=>{
     if (name == $value)               { return safeGet(target, name) ?? target?.value; }
     if (name == $registryKey$)        { return registry?.deref?.(); } // @ts-ignore
     if (name == Symbol.observable)    { return registry?.deref?.()?.compatible; } // @ts-ignore
-    if (name == Symbol.subscribe)     { return (cb, prop?)=>subscribe(prop != null ? [target, prop] : target, cb); }
+    if (name == Symbol.subscribe)     { return (cb, prop?)=>affected(prop != null ? [target, prop] : target, cb); }
     if (name == Symbol.iterator)      { return safeGet(target, name)?.bind?.(target); }
     if (name == Symbol.asyncIterator) { return safeGet(target, name)?.bind?.(target); }
-    if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target)}; }
-    if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unsubscribe(prop != null ? [target, prop] : target); } } // @ts-ignore
-    if (name == Symbol.unsubscribe)   { return (prop?)=>unsubscribe(prop != null ? [target, prop] : target); }
+    if (name == Symbol.dispose)       { return (prop?)=>{ target?.[Symbol.dispose]?.(prop); unaffected(prop != null ? [target, prop] : target)}; }
+    if (name == Symbol.asyncDispose)  { return (prop?)=>{ target?.[Symbol.asyncDispose]?.(prop); unaffected(prop != null ? [target, prop] : target); } } // @ts-ignore
+    if (name == Symbol.unsubscribe)   { return (prop?)=>unaffected(prop != null ? [target, prop] : target); }
     if (name == Symbol.toPrimitive)   { return (hint?)=>{
         if (typeof safeGet(target, Symbol.toPrimitive) == "function") { return (safeGet(target, Symbol.toPrimitive) as any)?.(hint); };
         if (hasValue(target)) { return tryParseByHint(target.value, hint); }
@@ -61,10 +61,10 @@ const observableAPIMethods = (target, name, registry)=>{
     if (name == "subscribe") {
         return registry?.deref?.()?.compatible?.[name] ?? ((handler)=>{
             if (typeof handler == "function") {
-                return subscribe(target, handler);
+                return affected(target, handler);
             } else
             if ("next" in handler && handler?.next != null) {
-                const usub = subscribe(target, handler?.next), comp = handler?.["complete"];
+                const usub = affected(target, handler?.next), comp = handler?.["complete"];
                 handler["complete"] = (...args)=>{ usub?.(); return comp?.(...args); };
                 return handler["complete"];
             }
@@ -92,7 +92,7 @@ export class ObserveArrayMethod {
         // execute operation
         const result = Reflect.apply(target, ctx || this.#self, args);
         if (this.#handle?.[$triggerLock]) {
-            if (Array.isArray(result)) { return makeReactiveArray(result); }
+            if (Array.isArray(result)) { return observeArray(result); }
             return result;
         }
 
@@ -169,7 +169,7 @@ export class ObserveArrayMethod {
 
         //
         if (result == target) { return new Proxy(result as any, this.#handle); };
-        if (Array.isArray(result)) { return makeReactiveArray(result); }
+        if (Array.isArray(result)) { return observeArray(result); }
         return result;
     }
 }
@@ -604,7 +604,7 @@ export class ReactiveSet {
 }
 
 //
-export const makeReactiveArray  = <Under = any>(arr: Under[]): refValid<Under> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
-export const makeReactiveObject = <Under = any>(obj: Under): refValid<Under> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
-export const makeReactiveMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
-export const makeReactiveSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };
+export const observeArray  = <Under = any>(arr: Under[]): refValid<Under> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
+export const observeObject = <Under = any>(obj: Under): refValid<Under> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
+export const observeMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
+export const observeSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };

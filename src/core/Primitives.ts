@@ -1,13 +1,13 @@
 import { tryParseByHint } from "fest/core";
-import { $value, $behavior, $promise, $extractKey$, $subscribe } from "../wrap/Symbol";
+import { $value, $behavior, $promise, $extractKey$, $affected } from "../wrap/Symbol";
 import { deref, refValid } from "../wrap/Utils";
-import { $isReactive, makeReactiveArray, makeReactiveMap, makeReactiveObject, makeReactiveSet } from "./Specific";
+import { $isReactive, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
 
 //
 export const numberRef = <Under = number>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
-    const $r: refValid<Under> = makeReactive({
+    const $r: refValid<Under> = observe({
         [$promise]: isPromise ? initial : null,
         [$value]: isPromise ? 0 : (Number(deref(initial) || 0) || 0),
         [$behavior]: behavior,
@@ -21,7 +21,7 @@ export const numberRef = <Under = number>(initial?: any, behavior?: any): refVal
 //
 export const stringRef = <Under = string>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
-    const $r: refValid<Under> = makeReactive({
+    const $r: refValid<Under> = observe({
         [$promise]: isPromise ? initial : null,
         [$value]: (isPromise ? "" : String(deref(typeof initial == "number" ? String(initial) : (initial || "")))) ?? "",
         [$behavior]: behavior,
@@ -35,7 +35,7 @@ export const stringRef = <Under = string>(initial?: any, behavior?: any): refVal
 //
 export const booleanRef = <Under = boolean>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
-    const $r: refValid<Under> = makeReactive({
+    const $r: refValid<Under> = observe({
         [$promise]: isPromise ? initial : null,
         [$value]: (isPromise ? false : ((deref(initial) != null ? (typeof deref(initial) == "string" ? true : !!deref(initial)) : false) || false)) || false,
         [$behavior]: behavior,
@@ -49,7 +49,7 @@ export const booleanRef = <Under = boolean>(initial?: any, behavior?: any): refV
 //
 export const ref = <Under = any>(initial?: any, behavior?: any): refValid<Under> => {
     const isPromise = initial instanceof Promise || typeof initial?.then == "function";
-    const $r: refValid<Under> = makeReactive({
+    const $r: refValid<Under> = observe({
         [$promise]: isPromise ? initial : null,
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(this.value ?? "") || ""; },
@@ -64,7 +64,7 @@ export const autoRef = <Under = any>(typed: any, behavior?: any): refValid<Under
         case "boolean": return booleanRef<boolean>(typed, behavior);
         case "number" : return numberRef<number>(typed, behavior);
         case "string" : return stringRef<string>(typed, behavior);
-        case "object" : if (typed != null) { return makeReactive(typed); }
+        case "object" : if (typed != null) { return observe(typed); }
         default: return ref<Under>(typed, behavior);
     }
 }
@@ -88,7 +88,7 @@ export const delayedOrInstantBehavior = (delay = 100) => {
 }
 
 //
-export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Under,T>, stateName = ""): refValid<Under,T> => {
+export const observe = <Under = any, T=refValid<Under>>(target: refValid<Under,T>, stateName = ""): refValid<Under,T> => {
     if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || $isReactive(target)) {
         return target as refValid<Under,T>;
     }
@@ -107,20 +107,20 @@ export const makeReactive = <Under = any, T=refValid<Under>>(target: refValid<Un
 
     //
     let reactive = unwrap;
-    if (Array.isArray(unwrap)) { reactive = makeReactiveArray(target as Under[]); return reactive; } else
-    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = makeReactiveMap(target as Map<any, Under>); return reactive; } else
-    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = makeReactiveSet(target as Set<Under>); return reactive; } else
-    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = makeReactiveObject(target); return reactive; }
+    if (Array.isArray(unwrap)) { reactive = observeArray(target as Under[]); return reactive; } else
+    if (unwrap instanceof Map || unwrap instanceof WeakMap) { reactive = observeMap(target as Map<any, Under>); return reactive; } else
+    if (unwrap instanceof Set || unwrap instanceof WeakSet) { reactive = observeSet(target as Set<Under>); return reactive; } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = observeObject(target); return reactive; }
     return reactive;
 }
 
 //
 export const isReactive = (target: any) => {
     if (typeof HTMLInputElement != "undefined" && target instanceof HTMLInputElement) { return true; }
-    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$subscribe] || subscriptRegistry?.has?.(target)));
+    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected] || subscriptRegistry?.has?.(target)));
 }
 
 //
 export const recoverReactive = (target: any): any => {
-    return isReactive(target) ? makeReactive(target) : null;
+    return isReactive(target) ? observe(target) : null;
 }

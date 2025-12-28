@@ -1,5 +1,5 @@
 import { callByAllProp, callByProp, isKeyType, isPrimitive, objectAssign } from "fest/core";
-import { $extractKey$, $registryKey$, $subscribe } from "../wrap/Symbol";
+import { $extractKey$, $registryKey$, $affected } from "../wrap/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, subValid, refValid, isThenable } from "../wrap/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
@@ -9,10 +9,10 @@ import { isReactive } from "./Primitives";
 export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => { // @ts-ignore
     if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] != null) { return unwrap; } // @ts-ignore
     try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
-    unwrap[$subscribe] = (cb)=>{ // @ts-ignore
+    unwrap[$affected] = (cb)=>{ // @ts-ignore
         const observable = unwrap?.[Symbol?.observable];
-        observable?.()?.subscribe?.(cb);
-        return () => observable?.()?.unsubscribe?.(cb);
+        observable?.()?.affected?.(cb);
+        return () => observable?.()?.unaffected?.(cb);
     }; // @ts-ignore
     return unwrap;
 }
@@ -45,7 +45,7 @@ export const subscribeDirectly: subscript = (target: any, prop: keyType | null, 
     });
 
     //
-    let unSub: any = registry?.subscribe?.(cb, tProp);
+    let unSub: any = registry?.affected?.(cb, tProp);
     if (target?.[Symbol.dispose]) return unSub;
 
     //
@@ -73,22 +73,22 @@ const checkIsPaired = (tg: any) => {
 // split from prop pairs
 export const subscribePaired: subscript = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, _: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
     const prop = isKeyType(tg?.[1]) ? tg?.[1] : null;
-    return subscribe(tg?.[0], prop, cb, ctx);
+    return affected(tg?.[0], prop, cb, ctx);
 }
 
 //
 export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
-    return obj?.then?.((obj: any) => subscribe?.(obj, prop, cb, ctx))?.catch?.((e: any) => { console.warn(e); return null; });
+    return obj?.then?.((obj: any) => affected?.(obj, prop, cb, ctx))?.catch?.((e: any) => { console.warn(e); return null; });
 }
 
 //
-export const subscribe = (obj: any, prop: keyType | callable | null, cb: callable = ()=>{}, ctx?: any) => {
+export const affected = (obj: any, prop: keyType | callable | null, cb: callable = ()=>{}, ctx?: any) => {
     if (typeof prop == "function") { cb = prop; prop = null; }
 
     //
     if (isPrimitive(obj) || typeof obj == "symbol") { return queueMicrotask(() => { return cb?.(obj, null as any, null, null); }); }
-    if (typeof obj?.[$subscribe] == "function") {
-        return obj?.[$subscribe]?.(cb, prop, ctx);
+    if (typeof obj?.[$affected] == "function") {
+        return obj?.[$affected]?.(cb, prop, ctx);
     } else
     if (checkValidObj(obj)) {
         const wrapped = obj;
@@ -125,31 +125,31 @@ export const makeArrayObservable = (tg)=>{
 }
 
 //
-export const observe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
-    if (Array.isArray(tg)) { return subscribe([tg, Symbol.iterator], cb, ctx); }
-    if (tg instanceof Set) { return subscribe([observableBySet(tg) as any, Symbol.iterator], cb, ctx); }
-    if (tg instanceof Map) { return subscribe(tg, cb, ctx); }
-    return subscribe(tg, cb, ctx);
+export const iterated = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
+    if (Array.isArray(tg)) { return affected([tg, Symbol.iterator], cb, ctx); }
+    if (tg instanceof Set) { return affected([observableBySet(tg) as any, Symbol.iterator], cb, ctx); }
+    if (tg instanceof Map) { return affected(tg, cb, ctx); }
+    return affected(tg, cb, ctx);
 }
 
 //
-export const unsubscribe = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
+export const unaffected = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     return withPromise(tg, (target: any) => {
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
         const prop = isPair ? target?.[1] : null; target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
         const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target;
         let self = target?.[$registryKey$] ?? (subscriptRegistry).get(unwrap);
-        self?.unsubscribe?.(cb, prop);
+        self?.unaffected?.(cb, prop);
     });
 }
 
 //
 export const bindBy = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, watch?) => {
-    subscribe(reactive, null, (v, p) => { objectAssign(target, v, p, true); });
+    affected(reactive, null, (v, p) => { objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); } }, { deep: true });
     return target;
 };
 
 //
 export const derivate = <Under = any, T = refValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
-export const bindByKey = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, key = () => "") => subscribe(reactive, null, (value, p) => { if (p == key()) { objectAssign(target, value, null, true); } });
+export const bindByKey = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, key = () => "") => affected(reactive, null, (value, p) => { if (p == key()) { objectAssign(target, value, null, true); } });
