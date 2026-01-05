@@ -7,16 +7,17 @@
 # Function: booleanRef()
 
 ```ts
-function booleanRef<Under>(initial?, behavior?): any;
+function booleanRef(initial?, behavior?): observeValid<{
+  [$behavior]: any;
+  [$promise]: any;
+  [$value]: boolean;
+  get value(): any;
+  [toPrimitive]: any;
+  [toStringTag]: string;
+}>;
 ```
 
-Defined in: [core/Primitives.ts:36](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Primitives.ts#L36)
-
-## Type Parameters
-
-### Under
-
-`Under` = `boolean`
+Defined in: [core/Primitives.ts:38](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Primitives.ts#L38)
 
 ## Parameters
 
@@ -30,4 +31,11 @@ Defined in: [core/Primitives.ts:36](https://github.com/fest-live/object.ts/blob/
 
 ## Returns
 
-`any`
+[`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<\{
+  `[$behavior]`: `any`;
+  `[$promise]`: `any`;
+  `[$value]`: `boolean`;
+  get `value`(): `any`;
+  `[toPrimitive]`: `any`;
+  `[toStringTag]`: `string`;
+\}\>

@@ -6,11 +6,15 @@
 
 # index
 
+## Type Aliases
+
+- [refValid](type-aliases/refValid.md)
+
 ## References
 
-### $subscribe
+### $affected
 
-Re-exports [$subscribe](../wrap/Symbol/variables/$subscribe.md)
+Re-exports [$affected](../wrap/Symbol/variables/$affected.md)
 
 ***
 
@@ -29,6 +33,12 @@ Re-exports [$triggerLess](../wrap/Symbol/variables/$triggerLess.md)
 ### addToCallChain
 
 Re-exports [addToCallChain](../wrap/Utils/functions/addToCallChain.md)
+
+***
+
+### affected
+
+Re-exports [affected](../core/Mainline/functions/affected.md)
 
 ***
 
@@ -128,9 +138,15 @@ Re-exports [derivate](../core/Mainline/functions/derivate.md)
 
 ***
 
-### isReactive
+### isObservable
 
-Re-exports [isReactive](../core/Primitives/functions/isReactive.md)
+Re-exports [isObservable](../core/Primitives/functions/isObservable.md)
+
+***
+
+### iterated
+
+Re-exports [iterated](../core/Mainline/functions/iterated.md)
 
 ***
 
@@ -149,12 +165,6 @@ Re-exports [makeArrayObservable](../core/Mainline/functions/makeArrayObservable.
 ### makeObjectAssignable
 
 Re-exports [makeObjectAssignable](../wrap/AssignObject/functions/makeObjectAssignable.md)
-
-***
-
-### makeReactive
-
-Re-exports [makeReactive](../core/Primitives/functions/makeReactive.md)
 
 ***
 
@@ -178,7 +188,7 @@ Re-exports [observableBySet](../core/Assigned/functions/observableBySet.md)
 
 ### observe
 
-Re-exports [observe](../core/Mainline/functions/observe.md)
+Re-exports [observe](../core/Primitives/functions/observe.md)
 
 ***
 
@@ -212,12 +222,6 @@ Re-exports [ref](../core/Primitives/functions/ref.md)
 
 ***
 
-### refValid
-
-Re-exports [refValid](../wrap/Utils/type-aliases/refValid.md)
-
-***
-
 ### remap
 
 Re-exports [remap](../core/Assigned/functions/remap.md)
@@ -239,12 +243,6 @@ Re-exports [specializedSubscribe](../core/Mainline/variables/specializedSubscrib
 ### stringRef
 
 Re-exports [stringRef](../core/Primitives/functions/stringRef.md)
-
-***
-
-### subscribe
-
-Re-exports [subscribe](../core/Mainline/functions/subscribe.md)
 
 ***
 
@@ -284,15 +282,15 @@ Re-exports [triggerWithDelay](../core/Primitives/functions/triggerWithDelay.md)
 
 ***
 
-### unified
+### unaffected
 
-Re-exports [unified](../core/Assigned/functions/unified.md)
+Re-exports [unaffected](../core/Mainline/functions/unaffected.md)
 
 ***
 
-### unsubscribe
+### unified
 
-Re-exports [unsubscribe](../core/Mainline/functions/unsubscribe.md)
+Re-exports [unified](../core/Assigned/functions/unified.md)
 
 ***
 

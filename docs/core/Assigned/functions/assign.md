@@ -7,29 +7,29 @@
 # Function: assign()
 
 ```ts
-function assign<Under>(
+function assign<T>(
    a, 
    b, 
    prop): any;
 ```
 
-Defined in: [core/Assigned.ts:152](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L152)
+Defined in: [core/Assigned.ts:152](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Assigned.ts#L152)
 
 ## Type Parameters
 
-### Under
+### T
 
-`Under` = `any`
+`T` = `any`
 
 ## Parameters
 
 ### a
 
-`any`
+[`subValid`](../../../wrap/Utils/type-aliases/subValid.md)\<`T`\>
 
 ### b
 
-`any`
+[`subValid`](../../../wrap/Utils/type-aliases/subValid.md)\<`T`\>
 
 ### prop
 

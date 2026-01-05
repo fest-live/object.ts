@@ -7,10 +7,10 @@
 # Function: makeObjectAssignable()
 
 ```ts
-function makeObjectAssignable<Under>(obj): any;
+function makeObjectAssignable<Under>(obj): observeValid<Under>;
 ```
 
-Defined in: [wrap/AssignObject.ts:20](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L20)
+Defined in: [wrap/AssignObject.ts:20](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L20)
 
 ## Type Parameters
 
@@ -26,4 +26,4 @@ Defined in: [wrap/AssignObject.ts:20](https://github.com/fest-live/object.ts/blo
 
 ## Returns
 
-`any`
+[`observeValid`](../../Utils/type-aliases/observeValid.md)\<`Under`\>

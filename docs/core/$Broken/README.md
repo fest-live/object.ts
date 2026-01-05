@@ -16,8 +16,8 @@
 
 ## Functions
 
-- [makeReactiveArray](functions/makeReactiveArray.md)
-- [makeReactiveMap](functions/makeReactiveMap.md)
-- [makeReactiveObject](functions/makeReactiveObject.md)
-- [makeReactiveSet](functions/makeReactiveSet.md)
+- [observeArray](functions/observeArray.md)
+- [observeMap](functions/observeMap.md)
+- [observeObject](functions/observeObject.md)
+- [observeSet](functions/observeSet.md)
 - [safeGet](functions/safeGet.md)

@@ -8,18 +8,18 @@
 
 ## Classes
 
+- [ObserveArrayHandler](classes/ObserveArrayHandler.md)
 - [ObserveArrayMethod](classes/ObserveArrayMethod.md)
-- [ReactiveArray](classes/ReactiveArray.md)
-- [ReactiveMap](classes/ReactiveMap.md)
-- [ReactiveObject](classes/ReactiveObject.md)
-- [ReactiveSet](classes/ReactiveSet.md)
+- [ObserveMapHandler](classes/ObserveMapHandler.md)
+- [ObserveObjectHandler](classes/ObserveObjectHandler.md)
+- [ObserveSetHandler](classes/ObserveSetHandler.md)
 
 ## Functions
 
-- [$isReactive](functions/$isReactive.md)
+- [$isObservable](functions/$isObservable.md)
 - [fallThrough](functions/fallThrough.md)
-- [makeReactiveArray](functions/makeReactiveArray.md)
-- [makeReactiveMap](functions/makeReactiveMap.md)
-- [makeReactiveObject](functions/makeReactiveObject.md)
-- [makeReactiveSet](functions/makeReactiveSet.md)
+- [observeArray](functions/observeArray.md)
+- [observeMap](functions/observeMap.md)
+- [observeObject](functions/observeObject.md)
+- [observeSet](functions/observeSet.md)
 - [safeGet](functions/safeGet.md)

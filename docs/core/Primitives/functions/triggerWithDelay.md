@@ -7,19 +7,13 @@
 # Function: triggerWithDelay()
 
 ```ts
-function triggerWithDelay<Under>(
+function triggerWithDelay(
    ref, 
    cb, 
-   delay): any;
+   delay): number | undefined;
 ```
 
-Defined in: [core/Primitives.ts:78](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Primitives.ts#L78)
-
-## Type Parameters
-
-### Under
-
-`Under` = `any`
+Defined in: [core/Primitives.ts:82](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Primitives.ts#L82)
 
 ## Parameters
 
@@ -37,4 +31,4 @@ Defined in: [core/Primitives.ts:78](https://github.com/fest-live/object.ts/blob/
 
 ## Returns
 
-`any`
+`number` \| `undefined`

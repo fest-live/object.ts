@@ -7,20 +7,20 @@
 # Function: conditionalRef()
 
 ```ts
-function conditionalRef<Under>(
+function conditionalRef<T>(
    cond, 
    ifTrue, 
    ifFalse, 
-   behavior?): any;
+behavior?): observeValid<T>;
 ```
 
-Defined in: [core/Assigned.ts:19](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L19)
+Defined in: [core/Assigned.ts:19](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Assigned.ts#L19)
 
 ## Type Parameters
 
-### Under
+### T
 
-`Under` = `any`
+`T` = `any`
 
 ## Parameters
 
@@ -42,4 +42,4 @@ Defined in: [core/Assigned.ts:19](https://github.com/fest-live/object.ts/blob/07
 
 ## Returns
 
-`any`
+[`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<`T`\>

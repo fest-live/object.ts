@@ -8,6 +8,7 @@
 
 ## Variables
 
+- [$affected](variables/$affected.md)
 - [$behavior](variables/$behavior.md)
 - [$extractKey$](variables/$extractKey$.md)
 - [$fxy](variables/$fxy.md)
@@ -17,7 +18,6 @@
 - [$promise](variables/$promise.md)
 - [$registryKey$](variables/$registryKey$.md)
 - [$rootKey$](variables/$rootKey$.md)
-- [$subscribe](variables/$subscribe.md)
 - [$target](variables/$target.md)
 - [$trigger](variables/$trigger.md)
 - [$triggerLess](variables/$triggerLess.md)

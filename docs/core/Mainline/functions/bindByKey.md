@@ -7,23 +7,19 @@
 # Function: bindByKey()
 
 ```ts
-function bindByKey<Under, T>(
+function bindByKey<Under>(
    target, 
    reactive, 
    key): any;
 ```
 
-Defined in: [core/Mainline.ts:155](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Mainline.ts#L155)
+Defined in: [core/Mainline.ts:155](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Mainline.ts#L155)
 
 ## Type Parameters
 
 ### Under
 
 `Under` = `any`
-
-### T
-
-`T` = `any`
 
 ## Parameters
 
@@ -33,7 +29,7 @@ Defined in: [core/Mainline.ts:155](https://github.com/fest-live/object.ts/blob/0
 
 ### reactive
 
-[`subValid`](../../../wrap/Utils/type-aliases/subValid.md)\<`Under`, `T`\>
+[`subValid`](../../../wrap/Utils/type-aliases/subValid.md)\<`Under`\>
 
 ### key
 

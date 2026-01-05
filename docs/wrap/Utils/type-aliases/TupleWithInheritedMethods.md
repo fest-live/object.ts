@@ -10,7 +10,7 @@
 type TupleWithInheritedMethods<RV> = RV extends unknown ? [RV, keyType | Function] & ContainerMethods<RV> : never;
 ```
 
-Defined in: [wrap/Utils.ts:68](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/Utils.ts#L68)
+Defined in: [wrap/Utils.ts:74](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/Utils.ts#L74)
 
 ## Type Parameters
 

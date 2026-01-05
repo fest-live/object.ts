@@ -6,7 +6,7 @@
 
 # Class: AssignObjectHandler
 
-Defined in: [wrap/AssignObject.ts:6](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L6)
+Defined in: [wrap/AssignObject.ts:6](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L6)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: [wrap/AssignObject.ts:6](https://github.com/fest-live/object.ts/blob
 new AssignObjectHandler(): AssignObjectHandler;
 ```
 
-Defined in: [wrap/AssignObject.ts:7](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L7)
+Defined in: [wrap/AssignObject.ts:7](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L7)
 
 #### Returns
 
@@ -33,7 +33,7 @@ apply(
    args): unknown;
 ```
 
-Defined in: [wrap/AssignObject.ts:10](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L10)
+Defined in: [wrap/AssignObject.ts:10](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L10)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ construct(
    newT): unknown;
 ```
 
-Defined in: [wrap/AssignObject.ts:9](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L9)
+Defined in: [wrap/AssignObject.ts:9](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L9)
 
 #### Parameters
 
@@ -92,7 +92,7 @@ Defined in: [wrap/AssignObject.ts:9](https://github.com/fest-live/object.ts/blob
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: [wrap/AssignObject.ts:8](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L8)
+Defined in: [wrap/AssignObject.ts:8](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L8)
 
 #### Parameters
 
@@ -119,7 +119,7 @@ get(
    ctx): any;
 ```
 
-Defined in: [wrap/AssignObject.ts:13](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L13)
+Defined in: [wrap/AssignObject.ts:13](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L13)
 
 #### Parameters
 
@@ -147,7 +147,7 @@ Defined in: [wrap/AssignObject.ts:13](https://github.com/fest-live/object.ts/blo
 has(target, prop): boolean;
 ```
 
-Defined in: [wrap/AssignObject.ts:11](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L11)
+Defined in: [wrap/AssignObject.ts:11](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L11)
 
 #### Parameters
 
@@ -174,7 +174,7 @@ set(
    value): boolean;
 ```
 
-Defined in: [wrap/AssignObject.ts:12](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/wrap/AssignObject.ts#L12)
+Defined in: [wrap/AssignObject.ts:12](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/wrap/AssignObject.ts#L12)
 
 #### Parameters
 

@@ -7,23 +7,23 @@
 # Function: observableBySet()
 
 ```ts
-function observableBySet<Under>(set): refValid<Under, Set<Under>>;
+function observableBySet<T>(set): observeValid<T[]>;
 ```
 
-Defined in: [core/Assigned.ts:74](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L74)
+Defined in: [core/Assigned.ts:74](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Assigned.ts#L74)
 
 ## Type Parameters
 
-### Under
+### T
 
-`Under` = `any`
+`T` = `any`
 
 ## Parameters
 
 ### set
 
-`Set`\<`Under`\>
+`Set`\<`T`\>
 
 ## Returns
 
-[`refValid`](../../../wrap/Utils/type-aliases/refValid.md)\<`Under`, `Set`\<`Under`\>\>
+[`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<`T`[]\>

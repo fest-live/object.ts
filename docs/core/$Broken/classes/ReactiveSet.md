@@ -6,7 +6,7 @@
 
 # Class: ReactiveSet
 
-Defined in: [core/$Broken.ts:509](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L509)
+Defined in: [core/$Broken.ts:509](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L509)
 
 ## Constructors
 
@@ -16,7 +16,7 @@ Defined in: [core/$Broken.ts:509](https://github.com/fest-live/object.ts/blob/07
 new ReactiveSet(): ReactiveSet;
 ```
 
-Defined in: [core/$Broken.ts:511](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L511)
+Defined in: [core/$Broken.ts:511](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L511)
 
 #### Returns
 
@@ -30,7 +30,7 @@ Defined in: [core/$Broken.ts:511](https://github.com/fest-live/object.ts/blob/07
 optional [$triggerLock]: boolean = false;
 ```
 
-Defined in: [core/$Broken.ts:510](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L510)
+Defined in: [core/$Broken.ts:510](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L510)
 
 ## Methods
 
@@ -43,7 +43,7 @@ apply(
    args): unknown;
 ```
 
-Defined in: [core/$Broken.ts:590](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L590)
+Defined in: [core/$Broken.ts:590](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L590)
 
 #### Parameters
 
@@ -74,7 +74,7 @@ construct(
    newT): unknown;
 ```
 
-Defined in: [core/$Broken.ts:591](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L591)
+Defined in: [core/$Broken.ts:591](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L591)
 
 #### Parameters
 
@@ -102,7 +102,7 @@ Defined in: [core/$Broken.ts:591](https://github.com/fest-live/object.ts/blob/07
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: [core/$Broken.ts:599](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L599)
+Defined in: [core/$Broken.ts:599](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L599)
 
 #### Parameters
 
@@ -129,7 +129,7 @@ get(
    ctx): any;
 ```
 
-Defined in: [core/$Broken.ts:514](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L514)
+Defined in: [core/$Broken.ts:514](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L514)
 
 #### Parameters
 
@@ -157,7 +157,7 @@ Defined in: [core/$Broken.ts:514](https://github.com/fest-live/object.ts/blob/07
 getOwnPropertyDescriptor(target, key): TypedPropertyDescriptor<any> | undefined;
 ```
 
-Defined in: [core/$Broken.ts:594](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L594)
+Defined in: [core/$Broken.ts:594](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L594)
 
 #### Parameters
 
@@ -181,7 +181,7 @@ Defined in: [core/$Broken.ts:594](https://github.com/fest-live/object.ts/blob/07
 has(target, prop): boolean;
 ```
 
-Defined in: [core/$Broken.ts:589](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L589)
+Defined in: [core/$Broken.ts:589](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L589)
 
 #### Parameters
 
@@ -205,7 +205,7 @@ Defined in: [core/$Broken.ts:589](https://github.com/fest-live/object.ts/blob/07
 isExtensible(target): boolean;
 ```
 
-Defined in: [core/$Broken.ts:593](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L593)
+Defined in: [core/$Broken.ts:593](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L593)
 
 #### Parameters
 
@@ -225,7 +225,7 @@ Defined in: [core/$Broken.ts:593](https://github.com/fest-live/object.ts/blob/07
 ownKeys(target): (string | symbol)[];
 ```
 
-Defined in: [core/$Broken.ts:592](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L592)
+Defined in: [core/$Broken.ts:592](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L592)
 
 #### Parameters
 
@@ -248,7 +248,7 @@ set(
    value): boolean;
 ```
 
-Defined in: [core/$Broken.ts:582](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/$Broken.ts#L582)
+Defined in: [core/$Broken.ts:582](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/$Broken.ts#L582)
 
 #### Parameters
 

@@ -13,7 +13,7 @@ function derivate<Under, T>(
    watch?): any;
 ```
 
-Defined in: [core/Mainline.ts:154](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Mainline.ts#L154)
+Defined in: [core/Mainline.ts:154](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Mainline.ts#L154)
 
 ## Type Parameters
 
@@ -23,7 +23,7 @@ Defined in: [core/Mainline.ts:154](https://github.com/fest-live/object.ts/blob/0
 
 ### T
 
-`T` = `any`
+`T` = [`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<`Under`\>
 
 ## Parameters
 

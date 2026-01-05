@@ -7,16 +7,16 @@
 # Function: promised()
 
 ```ts
-function promised<Under>(promise, behavior?): any;
+function promised(promise, behavior?): observeValid<{
+  [$behavior]: any;
+  [$promise]: any;
+  value: any;
+  [toPrimitive]: any;
+  [toStringTag]: string;
+}>;
 ```
 
-Defined in: [core/Primitives.ts:73](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Primitives.ts#L73)
-
-## Type Parameters
-
-### Under
-
-`Under` = `any`
+Defined in: [core/Primitives.ts:77](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Primitives.ts#L77)
 
 ## Parameters
 
@@ -30,4 +30,10 @@ Defined in: [core/Primitives.ts:73](https://github.com/fest-live/object.ts/blob/
 
 ## Returns
 
-`any`
+[`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<\{
+  `[$behavior]`: `any`;
+  `[$promise]`: `any`;
+  `value`: `any`;
+  `[toPrimitive]`: `any`;
+  `[toStringTag]`: `string`;
+\}\>

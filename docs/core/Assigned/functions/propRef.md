@@ -7,26 +7,26 @@
 # Function: propRef()
 
 ```ts
-function propRef<Under>(
+function propRef<T>(
    src, 
    srcProp, 
    initial?, 
    behavior?): any;
 ```
 
-Defined in: [core/Assigned.ts:284](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L284)
+Defined in: [core/Assigned.ts:284](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Assigned.ts#L284)
 
 ## Type Parameters
 
-### Under
+### T
 
-`Under` = `any`
+`T` = `any`
 
 ## Parameters
 
 ### src
 
-`any`
+[`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<`T`\>
 
 ### srcProp
 

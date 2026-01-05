@@ -7,30 +7,30 @@
 # Function: computed()
 
 ```ts
-function computed<Under, OutputUnder>(
+function computed<T, OT>(
    src, 
    cb?, 
    behavior?, 
-   prop?): any;
+prop?): observeValid<OT>;
 ```
 
-Defined in: [core/Assigned.ts:248](https://github.com/fest-live/object.ts/blob/07201027b5853c0f6be880b9006c5e66cb0b9554/src/core/Assigned.ts#L248)
+Defined in: [core/Assigned.ts:248](https://github.com/fest-live/object.ts/blob/9c7e7454d5cde6f79afa05bc9b999ff94be2998e/src/core/Assigned.ts#L248)
 
 ## Type Parameters
 
-### Under
+### T
 
-`Under` = `any`
+`T` = `any`
 
-### OutputUnder
+### OT
 
-`OutputUnder` = `Under`
+`OT` = `T`
 
 ## Parameters
 
 ### src
 
-`any`
+[`subValid`](../../../wrap/Utils/type-aliases/subValid.md)\<`T`\>
 
 ### cb?
 
@@ -46,4 +46,4 @@ Defined in: [core/Assigned.ts:248](https://github.com/fest-live/object.ts/blob/0
 
 ## Returns
 
-`any`
+[`observeValid`](../../../wrap/Utils/type-aliases/observeValid.md)\<`OT`\>

@@ -1,4 +1,8 @@
-# OUTDATED PARTS OF README
+# OUTDATED DOCUMENTATION
+
+⚠️ **This file contains outdated API documentation.** The current API has changed significantly. Please refer to the main README.md for the latest documentation.
+
+The information below represents the old API from earlier versions of Object.ts and is kept for historical reference only.
 
 ## Installation
 
@@ -76,6 +80,24 @@ unsubscribe();   // Unsubscribe when needed
 - **`localStorageRef(name, initial)`**
   Creates a persistent reactive `ref` synchronized with `localStorage`.
   - Note: Does not currently react to changes from other tabs or windows with the same key.
+
+## Breaking Changes
+
+### Function Name Changes
+
+| Old API | New API |
+|---------|---------|
+| `makeReactive(obj)` | `observe(obj)` |
+| `subscribe(obj, cb)` | `affected(obj, cb)` |
+| `observe(obj, cb)` | `iterated(obj, cb)` |
+
+### Removed Functions
+
+- `deref()` - Replaced with utility functions
+- `weak()` - No longer available
+- `unified()` - Replaced with `bindBy` and `derivate`
+- `matchMediaRef()` - Moved to separate library
+- `localStorageRef()` - Moved to separate library
 
 ## Related Projects
 

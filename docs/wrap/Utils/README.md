@@ -9,15 +9,20 @@
 ## Type Aliases
 
 - [AnyFn](type-aliases/AnyFn.md)
+- [AnySuitable](type-aliases/AnySuitable.md)
 - [ContainerMethods](type-aliases/ContainerMethods.md)
 - [keyType](type-aliases/keyType.md)
+- [MapLike](type-aliases/MapLike.md)
 - [MethodKeys](type-aliases/MethodKeys.md)
 - [MethodsOf](type-aliases/MethodsOf.md)
-- [refValid](type-aliases/refValid.md)
+- [observeSpecificKeys](type-aliases/observeSpecificKeys.md)
+- [observeValid](type-aliases/observeValid.md)
 - [SetArray](type-aliases/SetArray.md)
+- [SetLike](type-aliases/SetLike.md)
 - [subValid](type-aliases/subValid.md)
 - [TupleVariadicWithInheritedMethods](type-aliases/TupleVariadicWithInheritedMethods.md)
 - [TupleWithInheritedMethods](type-aliases/TupleWithInheritedMethods.md)
+- [Ui](type-aliases/Ui.md)
 - [WeakKey](type-aliases/WeakKey.md)
 
 ## Variables
