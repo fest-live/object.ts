@@ -54,15 +54,21 @@ export type ContainerMethods<X> =
     X extends Function ? MethodsOf<Function> :
     {};
 
+// extends by [key: symbol] internals, such as Symbol.observable, Symbol.dispose, $trigger$, etc...
+export type observeSpecificKeys<T extends Record<keyType, any> = any> = T & {
+    [K in keyof T]: T[K] extends AnySuitable<keyType, any> ? Ui<T[K], keyType, any> : T[K];
+}[keyof T & keyType];
+
 //
-export type refValid<Under = any, T = any, K = any> =
-    | T & MethodsOf<T>
-    | Under[] & MethodsOf<Array<Under>>
-    | Map<K, Under> & MethodsOf<Map<K, Under>>
-    | Set<Under> & MethodsOf<Set<Under>>
-    | WeakMap<(K extends WeakKey ? K : never), Under> & MethodsOf<WeakMap<(K extends WeakKey ? K : never), Under>>
-    | WeakSet<(Under extends WeakKey ? Under : never)> & MethodsOf<WeakSet<(Under extends WeakKey ? Under : never)>>
-    | Function & MethodsOf<Function>;
+export type MapLike<K = any, V = any> = Map<K, V> | WeakMap<K extends WeakKey ? K : never, V> | Record<K extends keyType ? K : never, V>;
+export type SetLike<V = any, _ = unknown> = Set<V> | WeakSet<V extends WeakKey ? V : never> | V[];
+export type AnySuitable<K = any, V = any|unknown> = Function | Record<K extends keyType ? K : never, V> | MapLike<K, V> | SetLike<K, V extends unknown ? V : unknown>;
+export type Ui<W extends AnySuitable<any, any>, K = any, V = any> = W | W[] | AnySuitable<K, V> | AnySuitable<K, V>[];
+export type observeValid<T = any> = T & {
+    value?: any;
+    [key: symbol]: any;
+    [key: string]: any;
+};
 
 //
 export type TupleWithInheritedMethods<RV> =
@@ -73,10 +79,10 @@ export type TupleVariadicWithInheritedMethods<RV> =
     RV extends unknown ? ([RV, keyType | Function, ...any[]] & ContainerMethods<RV>) : never;
 
 //
-export type subValid<Under = any, T = any, K = any> =
-    | refValid<Under, T, K>
-    | TupleWithInheritedMethods<refValid<Under, T, K>>
-    | TupleVariadicWithInheritedMethods<refValid<Under, T, K>>;
+export type subValid<T = any> =
+    | observeValid<T>
+    | TupleWithInheritedMethods<observeValid<T>>
+    | TupleVariadicWithInheritedMethods<observeValid<T>>;
 
 //
 export const $originalObjects$ = new WeakMap();

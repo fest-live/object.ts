@@ -1,7 +1,7 @@
 import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual, $affected } from "../wrap/Symbol";
-import { deref, type keyType, refValid } from "../wrap/Utils";
+import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
 //
@@ -260,7 +260,7 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
 
 //
-export class ReactiveArray {
+export class ObserveArrayHandler {
     [$triggerLock]?: boolean;
     constructor() {
     }
@@ -374,7 +374,7 @@ export class ReactiveArray {
 }
 
 //
-export class ReactiveObject {
+export class ObserveObjectHandler<T=any> {
     [$triggerLock]?: boolean;
     constructor() {}
 
@@ -519,7 +519,8 @@ export class ReactiveObject {
 
 
 //
-export class ReactiveMap {
+export class ObserveMapHandler<K=any, V=any> {
+    [$triggerLock]?: boolean;
     constructor() { }
 
     //
@@ -614,7 +615,7 @@ export class ReactiveMap {
 }
 
 //
-export class ReactiveSet {
+export class ObserveSetHandler<T=any> {
     [$triggerLock]?: boolean = false;
     constructor() {}
 
@@ -708,12 +709,12 @@ export class ReactiveSet {
 }
 
 //
-export const $isReactive = (target: any) => {
+export const $isObservable = (target: any) => {
     return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected]));
 }
 
 //
-export const observeArray  = <Under = any>(arr: Under[]): refValid<Under> => { return ($isReactive(arr) ? arr : wrapWith(arr, new ReactiveArray())); };
-export const observeObject = <Under = any>(obj: Under): refValid<Under> => { return ($isReactive(obj) ? obj : wrapWith(obj, new ReactiveObject())); };
-export const observeMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return ($isReactive(map) ? map : wrapWith(map, new ReactiveMap())); };
-export const observeSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return ($isReactive(set) ? set : wrapWith(set, new ReactiveSet())); };
+export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => { return ($isObservable(arr) ? arr : wrapWith(arr, new ObserveArrayHandler())); };
+export const observeObject = <T = any>(obj: T): observeValid<T> => { return ($isObservable(obj) ? (obj as observeValid<T>) : wrapWith(obj, new ObserveObjectHandler())); };
+export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => { return ($isObservable(map) ? map : wrapWith(map, new ObserveMapHandler())); };
+export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => { return ($isObservable(set) ? set : wrapWith(set, new ObserveSetHandler())); };

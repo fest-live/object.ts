@@ -1,12 +1,12 @@
 import { callByAllProp, callByProp, isKeyType, isPrimitive, objectAssign } from "fest/core";
 import { $extractKey$, $registryKey$, $affected } from "../wrap/Symbol";
-import { addToCallChain, safe, withPromise, type keyType, subValid, refValid, isThenable } from "../wrap/Utils";
+import { addToCallChain, safe, withPromise, type keyType, subValid, observeValid, isThenable } from "../wrap/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
-import { isReactive } from "./Primitives";
+import { isObservable } from "./Primitives";
 
 //
-export const useObservable = <Under = any>(unwrap: refValid<Under>): refValid<Under> => { // @ts-ignore
+export const useObservable = <Under = any>(unwrap: any): observeValid<Under> => { // @ts-ignore
     if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] != null) { return unwrap; } // @ts-ignore
     try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
     unwrap[$affected] = (cb)=>{ // @ts-ignore
@@ -71,7 +71,7 @@ const checkIsPaired = (tg: any) => {
 }
 
 // split from prop pairs
-export const subscribePaired: subscript = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, _: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
+export const subscribePaired: subscript = <Under = any>(tg: subValid<Under>, _: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
     const prop = isKeyType(tg?.[1]) ? tg?.[1] : null;
     return affected(tg?.[0], prop, cb, ctx);
 }
@@ -98,7 +98,7 @@ export const affected = (obj: any, prop: keyType | callable | null, cb: callable
         }
 
         //
-        if (isReactive(wrapped) || (checkIsPaired(obj) && isReactive(obj?.[0]))) {
+        if (isObservable(wrapped) || (checkIsPaired(obj) && isObservable(obj?.[0]))) {
             // when no exists, add a new specialized subscribe function
             if (isThenable(obj)) //@ts-ignore
                 { return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, prop, cb, ctx); } else
@@ -125,15 +125,15 @@ export const makeArrayObservable = (tg)=>{
 }
 
 //
-export const iterated = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
+export const iterated = <T = any>(tg: subValid<T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
     if (Array.isArray(tg)) { return affected([tg, Symbol.iterator], cb, ctx); }
-    if (tg instanceof Set) { return affected([observableBySet(tg) as any, Symbol.iterator], cb, ctx); }
+    if (tg instanceof Set) { return affected([observableBySet(tg) as T, Symbol.iterator], cb, ctx); }
     if (tg instanceof Map) { return affected(tg, cb, ctx); }
     return affected(tg, cb, ctx);
 }
 
 //
-export const unaffected = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
+export const unaffected = <T = any>(tg: T, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
     return withPromise(tg, (target: any) => {
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
         const prop = isPair ? target?.[1] : null; target = (isPair && prop != null) ? (target?.[0] ?? target) : target;
@@ -144,12 +144,12 @@ export const unaffected = <Under = any, T=refValid<Under>>(tg: subValid<Under,T>
 }
 
 //
-export const bindBy = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, watch?) => {
+export const bindBy = <Under = any>(target, reactive: subValid<Under>, watch?) => {
     affected(reactive, null, (v, p) => { objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); } }, { deep: true });
     return target;
 };
 
 //
-export const derivate = <Under = any, T = refValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
-export const bindByKey = <Under = any, T = refValid<Under>>(target, reactive: subValid<Under, T>, key = () => "") => affected(reactive, null, (value, p) => { if (p == key()) { objectAssign(target, value, null, true); } });
+export const derivate = <Under = any, T = observeValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
+export const bindByKey = <Under = any>(target, reactive: subValid<Under>, key = () => "") => affected(reactive, null, (value, p) => { if (p == key()) { objectAssign(target, value, null, true); } });

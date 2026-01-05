@@ -1,11 +1,11 @@
 import { affected } from "./Mainline";
-import { addToCallChain, refValid, subValid, type keyType } from "../wrap/Utils";
-import { observe, isReactive, triggerWithDelay, recoverReactive } from "./Primitives";
-import { $promise, $triggerLock, $value, $behavior, $trigger, $isNotEqual } from "../wrap/Symbol";
+import { addToCallChain, observeValid, subValid, type keyType } from "../wrap/Utils";
+import { observe, isObservable, triggerWithDelay, recoverReactive } from "./Primitives";
+import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
 //
-export const conditionalIndex = <Under = any>(condList: any[] = []): refValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
+export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
 
 //
 /*
@@ -16,7 +16,7 @@ export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any
 }*/
 
 //
-export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
+export const conditionalRef = <T = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): observeValid<T> => {
     if (isPrimitive(cond)) return cond ? ifTrue : ifFalse;
 
     //
@@ -42,7 +42,7 @@ export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any
 
     //
     const usb = affected([cond, "value"], (val)=>{ r?.[$trigger]?.(); });
-    addToCallChain(r, Symbol.dispose, usb); return r;
+    addToCallChain(r, Symbol.dispose, usb); return r as unknown as observeValid<T>;
 }
 
 // alias
@@ -51,8 +51,8 @@ export const conditional = conditionalRef;
 //
 // used for redirection properties
 // !one-directional
-export const remap = <Under = any>(sub: subValid<Under>, cb?: Function | null, dest?: any | null) => {
-    if (!dest) dest = observe<Under>({});
+export const remap = <T = any>(sub: subValid<T>, cb?: Function | null, dest?: any | null) => {
+    if (!dest) dest = observe({}) as any;
     const usb = affected(sub, (value, prop, old) => {
         const got = cb?.(value, prop, old);
         if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
@@ -71,8 +71,8 @@ export const unified = <Under = any>(...subs: subValid<Under>[]) => {
 }
 
 //
-export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, Set<Under>> => { // @ts-ignore
-    const obs: Under[] = observe<Under[]>([]) as refValid<Under>; // @ts-ignore
+export const observableBySet = <T = any>(set: Set<T>): observeValid<T[]> => { // @ts-ignore
+    const obs: T[] = observe<T[]>([]) as observeValid<T[]>; // @ts-ignore
     // Initialize with existing set entries
     obs.push(...Array.from(set?.values?.() || [])); // @ts-ignore
     addToCallChain(obs, Symbol.dispose, affected(set, (value, _, old) => { // @ts-ignore
@@ -93,11 +93,11 @@ export const observableBySet = <Under = any>(set: Set<Under>): refValid<Under, S
 }
 
 //
-export const observableByMap = <Under = any>(map: Map<any, Under>): refValid<Under, [any, Under][]> => { // @ts-ignore
-    const obs: [any, Under][] = observe<[any, Under][]>([]) as refValid<Under>; // @ts-ignore
+export const observableByMap = <T = any>(map: Map<any, T>): observeValid<[any, T][]> => { // @ts-ignore
+    const obs: [any, T][] = observe<[any, T][]>([]) as observeValid<[any, T][]>; // @ts-ignore
 
     // Initialize with existing map entries
-    const initialEntries: [any, Under][] = Array.from(map.entries());
+    const initialEntries: [any, T][] = Array.from(map.entries());
     obs.push(...initialEntries);
 
     //
@@ -149,10 +149,10 @@ export interface PropStore {
 
 //
 export const assignMap = new WeakMap<any, Map<any, PropStore>>();
-export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType | null = "value") => {
+export const assign = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | null = "value") => {
     const isACompute = typeof a?.[1] == "function" && (a as [any, keyType])?.length == 2, isBCompute = typeof b?.[1] == "function" && (b as [any, keyType])?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
-    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : (Array.isArray(a) ? null : prop); if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
-    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : (Array.isArray(b) ? null : prop); if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : (Array.isArray(a) ? null : prop); if (!isAProp && !isACompute) { a = [a, a_prop] as subValid<T>; }; if (isACompute) { a[1] = a_prop; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : (Array.isArray(b) ? null : prop); if (!isBProp && !isBCompute) { b = [b, b_prop] as subValid<T>; }; if (isBCompute) { b[1] = b_prop; };
 
     //
     if (a_prop == null || b_prop == null || isArrayInvalidKey(a_prop, a?.[0]) || isArrayInvalidKey(b_prop, b?.[0])) { return; };
@@ -235,7 +235,7 @@ export const assign = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop
 }
 
 //
-export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: keyType | null = "value") => {
+export const link = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | null = "value") => {
     /*const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
     const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
@@ -245,12 +245,12 @@ export const link = <Under = any>(a: subValid<Under>, b: subValid<Under>, prop: 
 }
 
 //
-export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>, cb?: Function | null, behavior?: any, prop: keyType | null = "value"): refValid<OutputUnder> => {
+export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null, behavior?: any, prop: keyType | null = "value"): observeValid<OT> => {
     const isACompute = typeof src?.[1] == "function" && (src as [any, keyType])?.length == 2;
     const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2;
     let a_prop = (isAProp && !isACompute) ? src?.[1] : (Array.isArray(src) ? null : prop);
-    if (!isAProp && !isACompute) { src = [(isAProp ? src?.[0] : src), a_prop]; }; if (isACompute) { src[1] = a_prop; };
-    if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return; }
+    if (!isAProp && !isACompute) { src = [(isAProp ? src?.[0] : src), a_prop] as subValid<T>; }; if (isACompute) { src[1] = a_prop; };
+    if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return undefined as any; }
 
     //
     const cmp = (v?: any)=>{
@@ -264,8 +264,8 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 
     //
     const isPromise = false; const initial = cmp();
-    const rf: refValid<Under> = observe({
-        [$promise]: isPromise ? initial : null,
+    const rf: any = observe({
+        [$promise]: isPromise ? initial : undefined,
         [$value]: initial,
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(cmp() ?? this[$value] ?? "") || ""; },
@@ -281,8 +281,8 @@ export const computed = <Under = any, OutputUnder = Under>(src: subValid<Under>,
 }
 
 //
-export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | null = "value", initial?: any, behavior?: any): refValid<Under> => {
-    if (isPrimitive(src)) return src;
+export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null = "value", initial?: any, behavior?: any): any => {
+    if (isPrimitive(src) || !src) return src;
 
     //
     if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
@@ -291,26 +291,26 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
     if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
 
     // isn't needed to proxy reactive value, it's already reactive
-    if (srcProp && hasValue(src?.[srcProp]) && isReactive(src?.[srcProp])) {
+    if (srcProp && hasValue(src?.[srcProp]) && isObservable(src?.[srcProp])) {
         return recoverReactive(src?.[srcProp]);
     }
 
     // legally use in LUR.E/GLit properties
-    if (srcProp && typeof src?.getProperty == "function" && isReactive(src?.getProperty?.(srcProp))) {
+    if (srcProp && typeof src?.getProperty == "function" && isObservable(src?.getProperty?.(srcProp))) {
         return src?.getProperty?.(srcProp);
     }
 
     // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
-    //if (srcProp && !isReactive(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
+    //if (srcProp && !isObservable(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
     //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
 
     // truly reflective for object property key/index
-    const r = observe({
-        [$value]: (src[srcProp] ??= initial ?? src[srcProp]),
+    const r: any = observe({
+        [$value]: ((src as any)[srcProp] ??= initial ?? (src as any)[srcProp]),
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
-        set value(v) { r[$triggerLock] = true; src[srcProp] = (this[$value] = v || defaultByType(src[srcProp])); r[$triggerLock] = false; },
+        set value(v) { r[$triggerLock] = true; (src as any)[srcProp] = (this[$value] = v || defaultByType((src as any)[srcProp])); r[$triggerLock] = false; },
         get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
     });
 
@@ -321,7 +321,7 @@ export const propRef = <Under = any>(src: refValid<Under>, srcProp: keyType | nu
 }
 
 //
-export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): refValid<Under> => {
+export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): observeValid<Under> => {
     let tm: any; //= triggerWithDelay(ref, cb, delay);
     return affected([ref, "value"], (v) => {
         if (!v && tm) { clearTimeout(tm); tm = null; } else

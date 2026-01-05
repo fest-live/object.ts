@@ -1,7 +1,7 @@
 import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual } from "../wrap/Symbol";
-import { deref, type keyType, refValid } from "../wrap/Utils";
+import { deref, type keyType, type MapLike, observeValid, type SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
 //
@@ -604,7 +604,7 @@ export class ReactiveSet {
 }
 
 //
-export const observeArray  = <Under = any>(arr: Under[]): refValid<Under> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
-export const observeObject = <Under = any>(obj: Under): refValid<Under> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
-export const observeMap    = <Under = any, K = any>(map: Map<K, Under>): refValid<Under> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
-export const observeSet    = <Under = any, K = any>(set: Set<Under>): refValid<Under> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };
+export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
+export const observeObject = <T = any>(obj: T): observeValid<T> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
+export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
+export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };

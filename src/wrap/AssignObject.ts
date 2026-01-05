@@ -1,6 +1,6 @@
 import { objectAssign } from "fest/core";
 import { $originalKey$ } from "./Symbol";
-import { $originalObjects$, type keyType, refValid } from "./Utils";
+import { $originalObjects$, type keyType, type observeValid } from "./Utils";
 
 //
 export class AssignObjectHandler {
@@ -17,7 +17,7 @@ export class AssignObjectHandler {
 }
 
 //
-export const makeObjectAssignable = <Under = any>(obj: Under): refValid<Under> => {
+export const makeObjectAssignable = <Under = any>(obj: Under): observeValid<Under> => {
     // @ts-ignore
     if (obj?.[$originalKey$] || $originalObjects$.has(obj)) { return obj; }
 
