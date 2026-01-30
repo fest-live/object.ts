@@ -132,7 +132,8 @@ export const $ref = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any
 
 //
 export const ref = <T = any>(typed: T|null|undefined|Promise<T>, prop: keyType | null = "value", behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
-    return prop != null ? propRef($ref(typed, behavior), prop, behavior) : $ref(typed, behavior);
+    const $r = isObservable(typed) ? typed as observeValid<T> : $ref(typed, behavior) as observeValid<T>;
+    return prop != null ? propRef($r as unknown as T extends symbol | object | Function ? observeValid<T> | refType<T> : refType<T>, prop, behavior) : $r as unknown as T extends symbol | object | Function ? observeValid<T> | refType<T> : refType<T>;
 }
 
 
