@@ -35,9 +35,9 @@ export const fallThrough = (obj: any, key: any) => {
     } else
         // temp-fix: functions isn't supported correctly
         if (key == "value" && value != null && !isPrimitive(value) && (typeof value != "function")) {
-            return fallThrough(value, key) ?? value;
+            return fallThrough(value, key) ?? value ?? obj;
         }
-    return value;
+    return value ?? obj;
 }
 
 // Safe getter with global re-entrancy guard to avoid recursive accessor loops
@@ -385,14 +385,24 @@ export class ObserveObjectHandler<T=any> {
         };
 
         //
-        const registry = (subscriptRegistry).get(target);
+        const registry = (subscriptRegistry).get(target) ?? subscriptRegistry.get(safeGet(target, "value") ?? target);
         const sys = systemGet(target, name, registry); if (sys != null) return sys;
-        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         // drop into value if has
-        if (safeGet(target, name) == null && name != "value" && hasValue(target) && (typeof safeGet(target, "value") == "object" || typeof safeGet(target, "value") == "function") && safeGet(target, "value") != null && safeGet(safeGet(target, "value"), name) != null) {
-            target = safeGet(target, "value");
+        if (safeGet(target, name) == null &&
+            name != "value" && hasValue(target) &&
+            safeGet(target, "value") != null &&
+            (
+                typeof safeGet(target, "value") == "object" ||
+                typeof safeGet(target, "value") == "function"
+            ) &&
+            safeGet(safeGet(target, "value"), name) != null
+        ) {
+            target = safeGet(target, "value") ?? target;
         }
+
+        //
+        const obs = observableAPIMethods(target, name, registry); if (obs != null) return obs;
 
         //
         // redirect to value key
@@ -487,15 +497,26 @@ export class ObserveObjectHandler<T=any> {
 
             // drop into value if has
             const $original = target;
-            if (safeGet(target, name) == null && name != "value" && hasValue(target) && (typeof safeGet(target, "value") == "object" || typeof safeGet(target, "value") == "function") && safeGet(target, "value") != null && safeGet(safeGet(target, "value"), name) != null) {
-                target = safeGet(target, "value");
+
+            // drop into value if has
+            if (safeGet(target, name) == null &&
+                name != "value" && hasValue(target) &&
+                safeGet(target, "value") != null &&
+                (
+                    typeof safeGet(target, "value") == "object" ||
+                    typeof safeGet(target, "value") == "function"
+                ) &&
+                safeGet(safeGet(target, "value"), name) != null
+            ) {
+                target = safeGet(target, "value") ?? target;
             }
 
             //
             if (typeof name == "symbol" && !(safeGet(target, name) != null && name in target)) return;
             const oldValue = name == "value" ? (safeGet(target, $value) ?? safeGet(target, name)) : safeGet(target, name); target[name] = v; const newValue = safeGet(target, name) ?? v;
             if (!this[$triggerLock] && typeof name != "symbol" && (safeGet(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) {
-                (subscriptRegistry)?.get?.($original)?.trigger?.(name, v, oldValue);
+                const subscript = subscriptRegistry.get(target) ?? subscriptRegistry.get($original);
+                subscript?.trigger?.(name, v, oldValue);
             };
             return true;
         })
@@ -504,6 +525,19 @@ export class ObserveObjectHandler<T=any> {
     //
     deleteProperty(target, name: keyType) {
         if (name == $triggerLock) { delete this[$triggerLock]; return true; }
+
+        // drop into value if has
+        if (safeGet(target, name) == null &&
+            name != "value" && hasValue(target) &&
+            safeGet(target, "value") != null &&
+            (
+                typeof safeGet(target, "value") == "object" ||
+                typeof safeGet(target, "value") == "function"
+            ) &&
+            safeGet(safeGet(target, "value"), name) != null
+        ) {
+            target = safeGet(target, "value") ?? target;
+        }
 
         //
         const oldValue = safeGet(target, name);

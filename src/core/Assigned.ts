@@ -281,46 +281,6 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
 }
 
 //
-export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null = "value", initial?: any, behavior?: any): any => {
-    if (isPrimitive(src) || !src) return src;
-
-    //
-    if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
-
-    //
-    if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
-
-    // isn't needed to proxy reactive value, it's already reactive
-    if (srcProp && hasValue(src?.[srcProp]) && isObservable(src?.[srcProp])) {
-        return recoverReactive(src?.[srcProp]);
-    }
-
-    // legally use in LUR.E/GLit properties
-    if (srcProp && typeof src?.getProperty == "function" && isObservable(src?.getProperty?.(srcProp))) {
-        return src?.getProperty?.(srcProp);
-    }
-
-    // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
-    //if (srcProp && !isObservable(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
-    //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
-
-    // truly reflective for object property key/index
-    const r: any = observe({
-        [$value]: ((src as any)[srcProp] ??= initial ?? (src as any)[srcProp]),
-        [$behavior]: behavior,
-        [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
-        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
-        set value(v) { r[$triggerLock] = true; (src as any)[srcProp] = (this[$value] = v || defaultByType((src as any)[srcProp])); r[$triggerLock] = false; },
-        get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
-    });
-
-    // a reason, why regular objects isn't reactive directly, and may be single directional
-    const usb = affected([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
-    addToCallChain(r, Symbol.dispose, usb);
-    return r;
-}
-
-//
 export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): observeValid<Under> => {
     let tm: any; //= triggerWithDelay(ref, cb, delay);
     return affected([ref, "value"], (v) => {

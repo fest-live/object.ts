@@ -1,9 +1,11 @@
-import { tryParseByHint } from "fest/core";
-import { $value, $behavior, $promise, $extractKey$, $affected } from "../wrap/Symbol";
-import { deref, type observeValid, type WeakKey } from "../wrap/Utils";
+import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "fest/core";
+import { $value, $behavior, $promise, $extractKey$, $affected, $trigger } from "../wrap/Symbol";
+import { addToCallChain, deref, type observeValid, type WeakKey } from "../wrap/Utils";
 import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
 import { MethodsOf } from "../wrap/Utils";
+import { affected } from "./Mainline";
+import { hasValue } from "fest/core";
 
 //
 export interface refWrap<T = any> {
@@ -65,7 +67,7 @@ export const booleanRef = (initial?: boolean|null|undefined|Promise<boolean>, be
 }
 
 //
-export const ref = <T = any>(initial?: T|null|undefined|Promise<T>, behavior?: any): observeValid<refType<T>> => {
+export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior?: any): observeValid<refType<T>> => {
     const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<T>)?.then == "function";
     const obj: refWrap<T> = {
         [$promise]: isPromise ? (initial as unknown as Promise<T>) : null as unknown as Promise<T>,
@@ -78,15 +80,61 @@ export const ref = <T = any>(initial?: T|null|undefined|Promise<T>, behavior?: a
 }
 
 //
-export const autoRef = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
+export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null = "value", initial?: any, behavior?: any): any => {
+    if (isPrimitive(src) || !src) return src;
+
+    //
+    if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) { src = src?.[0]; };
+
+    //
+    if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) { return; }
+
+    // isn't needed to proxy reactive value, it's already reactive
+    if (srcProp && hasValue(src?.[srcProp]) && isObservable(src?.[srcProp])) {
+        return recoverReactive(src?.[srcProp]);
+    }
+
+    // legally use in LUR.E/GLit properties
+    if (srcProp && typeof src?.getProperty == "function" && isObservable(src?.getProperty?.(srcProp))) {
+        return src?.getProperty?.(srcProp);
+    }
+
+    // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
+    //if (srcProp && !isObservable(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
+    //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
+
+    // truly reflective for object property key/index
+    const r: any = observe({
+        [$value]: ((src as any)[srcProp] ??= initial ?? (src as any)[srcProp]),
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
+        set value(v) { r[$triggerLock] = true; (src as any)[srcProp] = (this[$value] = v || defaultByType((src as any)[srcProp])); r[$triggerLock] = false; },
+        get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
+    });
+
+    // a reason, why regular objects isn't reactive directly, and may be single directional
+    const usb = affected([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
+    addToCallChain(r, Symbol.dispose, usb);
+    return r;
+}
+
+//
+export const $ref = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
     switch (typeof typed) {
         case "boolean": return booleanRef(typed, behavior) as refType<boolean>;
         case "number" : return numberRef(typed, behavior) as refType<number>;
         case "string" : return stringRef(typed, behavior) as refType<string>;
-        case "object" : if (typed != null) { return observe(typed) as any; }
-        default: return ref(typed, behavior) as any;
+        case "object" : if (typed != null) { return wrapRef(observe(typed), behavior) as any; }
+        default: return wrapRef(typed, behavior) as any;
     }
 }
+
+//
+export const ref = <T = any>(typed: T|null|undefined|Promise<T>, prop: keyType | null = "value", behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
+    return prop != null ? propRef($ref(typed, behavior), prop, behavior) : $ref(typed, behavior);
+}
+
 
 //
 export const promised = (promise: any, behavior?: any) => {
