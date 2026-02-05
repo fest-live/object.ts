@@ -19,7 +19,7 @@ export interface refWrap<T = any> {
 }
 
 //
-export type refType<T = any> = (refWrap<T> | (T extends object ? T : any)) & MethodsOf<T>;
+export type refType<T = any> = (refWrap<T> | (T extends object ? T : any)) & MethodsOf<T> & (T extends symbol | object | Function ? T : any);
 
 //
 export const numberRef = (initial?: number|null|undefined|Promise<number>, behavior?: any): refType<number> => {
