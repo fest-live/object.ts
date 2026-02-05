@@ -131,11 +131,33 @@ export const $ref = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any
 }
 
 //
-export const ref = <T = any>(typed: T|null|undefined|Promise<T>, prop: keyType | null = "value", behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
-    const $r = isObservable(typed) ? typed as observeValid<T> : $ref(typed, behavior) as observeValid<T>;
-    return prop != null ? propRef($r as unknown as T extends symbol | object | Function ? observeValid<T> | refType<T> : refType<T>, prop, behavior) : $r as unknown as T extends symbol | object | Function ? observeValid<T> | refType<T> : refType<T>;
-}
-
+export const ref = <T = any>(
+    typed: T | null | undefined | Promise<T>,
+    prop: keyType | null = "value",
+    behavior?: any
+): (
+    T extends object | Function | symbol ? observeValid<T> | refType<T> : refType<T>
+) & (
+    T extends symbol | object | Function ? T : any
+) => {
+    // 1. Ensure we have an observable or ref for the input
+    const $r = isObservable(typed)
+        ? (typed as observeValid<T>)
+        : ($ref(typed, behavior) as observeValid<T>);
+    
+    // 2. If a prop is given, get a ref to that prop, otherwise use the value as is
+    if (prop != null) {
+        // propRef always returns a refType<X> or observeValid<X>
+        // We cannot guarantee T extends prop type. So just return as best match
+        return propRef(
+            $r as unknown as refType<T>,
+            prop,
+            behavior
+        ) as any;
+    } else {
+        return $r as any;
+    }
+};
 
 //
 export const promised = (promise: any, behavior?: any) => {
