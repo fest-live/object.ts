@@ -118,7 +118,7 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
 
     // a reason, why regular objects isn't reactive directly, and may be single directional
     // from 09.02.2026, do more aggresively reactive the source object
-    const usb = affected(src, (v) => { r.value = src?.[srcProp] ?? r?.[$value]; });
+    const usb = affected(src, (v) => { r?.[$trigger]?.(); /*r.value = src?.[srcProp] ?? r?.[$value];*/ });
     addToCallChain(r, Symbol.dispose, usb);
     return r;
 }
