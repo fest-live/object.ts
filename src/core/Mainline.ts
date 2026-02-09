@@ -226,13 +226,16 @@ export const iterated = <T = any>(tg: subValid<T>, cb: (value: any, prop: keyTyp
     const $sub = (value: any, name: keyType, old?: any) => {
         if (name == "value") {
             //TODO: needs notify, that elements of arrayold is removed
-            const entries = old?.entries?.();
+            const entries = (old?.value ?? old)?.entries?.();
+            const basis = (tg as any)?.value ?? value?.value ?? value;
+
+            //
             if (entries) {
                 for (const [idx, item] of entries) {
-                    const ofOld = item ?? (old?.[idx] ?? null);
-                    const ofNew = value?.[idx];
+                    const ofOld = item ?? ((old?.value ?? old)?.[idx] ?? null);
+                    const ofNew = basis?.[idx];
                     if (ofOld == null && ofNew != null) {
-                        cb(null, idx, ofNew, "@add");
+                        cb(ofNew, idx, null, "@add");
                     } else if (ofOld != null && ofNew == null) {
                         cb(null, idx, ofOld, "@delete");
                     } else if (isNotEqual(ofOld, ofNew)) {
