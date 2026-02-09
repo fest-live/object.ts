@@ -1,5 +1,5 @@
-import { callByAllProp, callByProp, isKeyType, isPrimitive, objectAssign } from "fest/core";
-import { $extractKey$, $registryKey$, $affected } from "../wrap/Symbol";
+import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign } from "fest/core";
+import { $extractKey$, $registryKey$, $affected, $trigger } from "../wrap/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, subValid, observeValid, isThenable } from "../wrap/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
@@ -125,11 +125,138 @@ export const makeArrayObservable = (tg)=>{
 }
 
 //
+export class DoubleWeakMap {
+    #top = new WeakMap(); // key1 -> WeakMap(key2 -> value)
+  
+    #ensureInner(key1) {
+        let inner = this.#top.get(key1);
+        if (!inner) {
+            inner = new WeakMap();
+            this.#top.set(key1, inner);
+        }
+        return inner;
+    }
+  
+    #splitPair(pair) {
+        if (!Array.isArray(pair) || pair.length !== 2) {
+            //throw new TypeError("Key must be a pair: [keyL1, keyL2]");
+            return [null, null];
+        }
+        return pair;
+    }
+
+    hasL1(key1) {
+        return this.#top.has(key1);
+    }
+  
+    set(pair, value) {
+        const [key1, key2] = this.#splitPair(pair);
+        this.#ensureInner(key1).set(key2, value);
+        return this;
+    }
+  
+    get(pair) {
+        const [key1, key2] = this.#splitPair(pair);
+        return this.#top.get(key1)?.get(key2);
+    }
+  
+    has(pair) {
+        const [key1, key2] = this.#splitPair(pair);
+        return this.#top.get(key1)?.has(key2) ?? false;
+    }
+  
+    delete(pair) {
+        const [key1, key2] = this.#splitPair(pair);
+        const inner = this.#top.get(key1);
+        return inner ? inner.delete(key2) : false;
+    }
+  
+    deleteTop(key1) {
+        return this.#top.delete(key1);
+    }
+  
+    // Уже было: универсальный get-or-create (синонимно логике "computed")
+    getOrCreate(pair, factory) {
+        const [key1, key2] = this.#splitPair(pair);
+        const inner = this.#ensureInner(key1);
+    
+        if (inner.has(key2)) return inner.get(key2);
+    
+        const value = factory();
+        inner.set(key2, value);
+        return value;
+    }
+  
+    // getOrInsert: если нет — вставить *переданное* значение (без вычисления)
+    getOrInsert(pair, value) {
+        const [key1, key2] = this.#splitPair(pair);
+        const inner = this.#ensureInner(key1);
+    
+        if (inner.has(key2)) return inner.get(key2);
+    
+        inner.set(key2, value);
+        return value;
+    }
+  
+    // getOrInsertComputed: если нет — вычислить через fn(pair) и вставить
+    // (удобно, когда надо использовать ключи в вычислении)
+    getOrInsertComputed(pair, compute) {
+        const [key1, key2] = this.#splitPair(pair);
+        const inner = this.#ensureInner(key1);
+    
+        if (inner.has(key2)) return inner.get(key2);
+    
+        const value = compute([key1, key2]);
+        inner.set(key2, value);
+        return value;
+    }
+}
+
+//
+const registeredIterated = new DoubleWeakMap();
+
+//
 export const iterated = <T = any>(tg: subValid<T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
-    if (Array.isArray(tg)) { return affected([tg, Symbol.iterator], cb, ctx); }
-    if (tg instanceof Set) { return affected([observableBySet(tg) as T, Symbol.iterator], cb, ctx); }
-    if (tg instanceof Map) { return affected(tg, cb, ctx); }
-    return affected(tg, cb, ctx);
+    if (!tg) return;
+
+    //
+    if (registeredIterated.has([tg, cb])) { return registeredIterated.get([tg, cb]); }
+
+    //
+    const $sub = (value: any, name: keyType, old?: any) => {
+        if (name == "value") {
+            //TODO: needs notify, that elements of arrayold is removed
+            const entries = old?.entries?.();
+            if (entries) {
+                for (const [idx, item] of entries) {
+                    const ofOld = item ?? (old?.[idx] ?? null);
+                    const ofNew = value?.[idx];
+                    if (ofOld == null && ofNew != null) {
+                        cb(null, idx, ofNew, "@add");
+                    } else if (ofOld != null && ofNew == null) {
+                        cb(null, idx, ofOld, "@delete");
+                    } else if (isNotEqual(ofOld, ofNew)) {
+                        cb(ofNew, idx, ofOld, "@set");
+                    }
+                }
+            }
+            
+            //
+            return iterated(value ?? (tg as any)?.value, (value, prop, old, operation) => {
+                cb(value, prop, old, operation);
+            });
+        }
+        return tg[name];
+    }
+
+    // @ts-ignore
+    return registeredIterated.getOrInsertComputed([tg, cb], () => {
+        if (tg instanceof Set) { return affected([observableBySet(tg) as T, Symbol.iterator], cb, ctx); }
+        if (tg instanceof Map) { return affected(tg, cb, ctx); }
+        if (hasValue(tg)) { return affected(tg, $sub, ctx); }
+        if (Array.isArray(tg) && !(tg?.length == 2 && isKeyType(tg?.[1]) && isObservable(tg?.[0]))) { return affected([tg, Symbol.iterator], cb, ctx); }
+        return affected(tg, cb, ctx);
+    });
 }
 
 //

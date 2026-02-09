@@ -76,7 +76,10 @@ export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(this.value, hint); },
         value: isPromise ? null : deref(initial)
     };
-    const $r = observe(obj) as observeValid<refType<T>>; (initial as unknown as Promise<T>)?.then?.((v)=>$r.value = v); return $r;
+    const $r = observe(obj) as observeValid<refType<T>>;
+    (initial as unknown as Promise<T>)?.then?.((v) => $r.value = v);
+    affected(initial, (v) => { /*wr?.deref?.()*/$r?.[$trigger]?.(); });
+    return $r;
 }
 
 //
@@ -109,12 +112,13 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(src?.[srcProp] ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(src?.[srcProp], hint); },
-        set value(v) { r[$triggerLock] = true; (src as any)[srcProp] = (this[$value] = v || defaultByType((src as any)[srcProp])); r[$triggerLock] = false; },
+        set value(v) { r[$triggerLock] = true; (src as any)[srcProp] = (this[$value] = v ?? defaultByType((src as any)[srcProp])); r[$triggerLock] = false; },
         get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
     });
 
     // a reason, why regular objects isn't reactive directly, and may be single directional
-    const usb = affected([src, srcProp], (v)=>{ /*wr?.deref?.()*/r?.[$trigger]?.(); });
+    // from 09.02.2026, do more aggresively reactive the source object
+    const usb = affected(src, (v) => { r.value = src?.[srcProp] ?? r?.[$value]; });
     addToCallChain(r, Symbol.dispose, usb);
     return r;
 }

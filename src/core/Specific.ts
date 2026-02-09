@@ -5,6 +5,34 @@ import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
 //
+const __systemSkip = new Set<any>([
+    Symbol.toStringTag,
+    Symbol.iterator,
+    Symbol.asyncIterator,
+    Symbol.toPrimitive,
+
+    "toString",
+    "valueOf",
+    "inspect",          // node
+    "constructor",
+    "__proto__",
+    "prototype",
+    "then",
+    "catch",
+    "finally",
+    "next"
+]);
+
+//
+const systemSkipGet = (target: any, name: any) => {
+    if (!__systemSkip.has(name)) return null;
+  
+    // важно: не undefined, а честный доступ
+    const got = safeGet(target, name);
+    return (typeof got === "function") ? bindCtx(target, got) : got;
+};
+
+//
 const __safeGetGuard = new WeakMap<any, Set<any>>();
 function isGetter(obj, propName) {
     let got = true;
@@ -136,7 +164,13 @@ export class ObserveArrayMethod {
     }
 
     //
-    get(target, name, rec) { return Reflect.get(target, name, rec); }
+    get(target, name, rec) {
+        const skip = systemSkipGet(target, name);
+        if (skip !== null) { return skip; }
+        return Reflect.get(target, name, rec);
+    }
+
+    //
     apply(target, ctx, args) {
         let added: [number, any, any][] = [], removed: [number, any, any][] = [];
         let setPairs: [number, any, any][] = [];
@@ -199,26 +233,26 @@ export class ObserveArrayMethod {
         // triggers on adding
         const reg = subscriptRegistry.get(this.#self);
         if (added?.length == 1) {
-            reg?.trigger?.(idx, added[0], null, "@add");
+            reg?.trigger?.(idx, added[0], null, added[0] == null ? "@add" : "@set");
         } else if (added?.length > 1) {
             reg?.trigger?.(idx, added, null, "@addAll");
-            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, "@add"));
+            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, item == null ? "@add" : "@set"));
         }
 
         // triggers on changing
         if (setPairs?.length == 1) {
-            reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], "@set");
+            reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], setPairs[0]?.[2] == null ? "@add" : "@set");
         } else if (setPairs?.length > 1) {
             reg?.trigger?.(idx, setPairs, oldState, "@setAll");
-            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], "@set"));
+            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], pair?.[2] == null ? "@add" : "@set"));
         }
 
         // triggers on removing
         if (removed?.length == 1) {
-            reg?.trigger?.(idx, null, removed[0], "@remove");
+            reg?.trigger?.(idx, null, removed[0], removed[0] == null ? "@add" : "@delete");
         } else if (removed?.length > 1) {
-            reg?.trigger?.(idx, null, removed, "@removeAll");
-            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@remove"));
+            reg?.trigger?.(idx, null, removed, "@clear");
+            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, item == null ? "@add" : "@delete"));
         }
 
         //
@@ -238,10 +272,10 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
         // emit removals if shrunk
         if (removedItems.length === 1) {
-            registry?.trigger?.(newLen, null, removedItems[0], "@remove");
+            registry?.trigger?.(newLen, null, removedItems[0], "@delete");
         } else if (removedItems.length > 1) {
-            registry?.trigger?.(newLen, null, removedItems, "@removeAll");
-            removedItems.forEach((item, I) => registry?.trigger?.(newLen + I, null, item, "@remove"));
+            registry?.trigger?.(newLen, null, removedItems, "@clear");
+            removedItems.forEach((item, I) => registry?.trigger?.(newLen + I, null, item, "@delete"));
         }
 
         // emit additions if grown (holes are considered added undefined entries)
@@ -271,6 +305,10 @@ export class ObserveArrayHandler {
     // TODO: some target with target[n] may has also reactive target[n]?.value, which (sometimes) needs to observe too...
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
+        const skip = systemSkipGet(target, name);
+        if (skip !== null) { return skip; }
+
+        //
         if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
             return typeof safeGet(target, name) == "function" ? safeGet(target, name)?.bind?.(target) : safeGet(target, name);
         };
@@ -282,7 +320,14 @@ export class ObserveArrayHandler {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key = 0)=>{ return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), safeGet(target, key), "@set"); }; }
+        if (name == $trigger) {
+            return (key: any = 0) => {
+                const v = safeGet(target, key);
+                return subscriptRegistry.get(target)?.trigger?.(key, v, undefined, "@invalidate");
+            };
+        }
+
+        //
         if (name == "@target" || name == $extractKey$) return target;
 
         //
@@ -380,7 +425,7 @@ export class ObserveObjectHandler<T=any> {
 
     // supports nested "value" objects and values
     get(target, name: keyType, ctx) {
-        if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
+        if ([$extractKey$, $originalKey$, "@target", "deref", "then", "catch", "finally"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
             return typeof safeGet(target, name) == "function" ? bindCtx(target, safeGet(target, name)) : safeGet(target, name);
         };
 
@@ -408,9 +453,10 @@ export class ObserveObjectHandler<T=any> {
         // redirect to value key
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == $trigger) {
-            return (key = "value") => {
-                const potentiallyOld = safeGet(target, key == "value" ? $value : key);
-                return (subscriptRegistry).get(target)?.trigger?.(key, safeGet(target, key), potentiallyOld ?? safeGet(target, key));
+            return (key: any = "value") => {
+                const v = safeGet(target, key);
+                const old = (key == "value") ? safeGet(target, $value) : undefined;
+                return subscriptRegistry.get(target)?.trigger?.(key, v, old, "@invalidate");
             };
         }
 
@@ -491,7 +537,15 @@ export class ObserveObjectHandler<T=any> {
     // supports nested "value" objects
     has(target, prop: keyType) { return (prop in target); }
     set(target, name: keyType, value) {
-        return potentiallyAsync(value, (v)=>{
+        const skip = systemSkipGet(target, name);
+        if (skip !== null) return skip;
+
+        //
+        return potentiallyAsync(value, (v) => {
+            const skip = systemSkipGet(v, name);
+            if (skip !== null) return skip;
+    
+            //
             if (name == $triggerLock && value) { this[$triggerLock] = !!value; return true; }
             if (name == $triggerLock && !value) { delete this[$triggerLock]; return true; }
 
@@ -551,7 +605,6 @@ export class ObserveObjectHandler<T=any> {
 
 
 
-
 //
 export class ObserveMapHandler<K=any, V=any> {
     [$triggerLock]?: boolean;
@@ -576,14 +629,20 @@ export class ObserveMapHandler<K=any, V=any> {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key)=>{ if (key != null) { return (subscriptRegistry).get(target)?.trigger?.(key, target?.get?.(key), target?.get?.(key), "@set"); } }; }
-
+        if (name == $trigger) {
+            return (key: any) => {
+                if (key == null) { return; }
+                const v = target.get(key); if (v == null) { return; }
+                return subscriptRegistry.get(target)?.trigger?.(key, v, undefined, "@set");
+            };
+        }
+        
         //
         if (name == "clear") {
             return () => {
                 const oldValues: any = Array.from(target?.entries?.() || []), result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue); }
+                    if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "@delete"); }
                 });
                 return result;
             };
@@ -593,7 +652,7 @@ export class ObserveMapHandler<K=any, V=any> {
         if (name == "delete") {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop), result = valueOrFx(prop);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue); }
+                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "@delete"); }
                 return result;
             };
         }
@@ -602,7 +661,7 @@ export class ObserveMapHandler<K=any, V=any> {
         if (name == "set") {
             return (prop, value) => potentiallyAsyncMap(value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue); } };
+                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue, oldValue == null ? "@add" : "@set"); } };
                 return result;
             });
         }
@@ -671,13 +730,19 @@ export class ObserveSetHandler<T=any> {
 
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
-        if (name == $trigger) { return (key)=>{ if (key != null) { return (subscriptRegistry).get(target)?.trigger?.(key, target?.has?.(key), target?.has?.(key)); } }; }
-
+        if (name == $trigger) {
+            return (key: any) => {
+                if (key == null) return;
+                const v = target.has(key);
+                return subscriptRegistry.get(target)?.trigger?.(key, v, undefined, "@invalidate");
+            };
+        }
+        
         //
         if (name == "clear") {
             return () => {
                 const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
-                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue); } });
+                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue, "@delete"); } });
                 return result;
             };
         }
@@ -686,7 +751,7 @@ export class ObserveSetHandler<T=any> {
         if (name == "delete") {
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue); }
+                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue, "@delete"); }
                 return result;
             };
         }
@@ -696,7 +761,7 @@ export class ObserveSetHandler<T=any> {
             // TODO: add potentially async set
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock] && !oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue); } };
+                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock] && !oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue, "@add"); } };
                 return result;
             };
         }

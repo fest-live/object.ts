@@ -161,10 +161,10 @@ export class ObserveArrayMethod {
 
         // triggers on removing
         if (removed?.length == 1) {
-            reg?.trigger?.(idx, null, removed[0], "@remove");
+            reg?.trigger?.(idx, null, removed[0], "@delete");
         } else if (removed?.length > 1) {
-            reg?.trigger?.(idx, null, removed, "@removeAll");
-            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@remove"));
+            reg?.trigger?.(idx, null, removed, "@clear");
+            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "@delete"));
         }
 
         //
@@ -184,10 +184,10 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
         // emit removals if shrunk
         if (removedItems.length === 1) {
-            $reg?.trigger?.(newLen, null, removedItems[0], "@remove");
+            $reg?.trigger?.(newLen, null, removedItems[0], "@delete");
         } else if (removedItems.length > 1) {
-            $reg?.trigger?.(newLen, null, removedItems, "@removeAll");
-            removedItems.forEach((item, I) => $reg?.trigger?.(newLen + I, null, item, "@remove"));
+            $reg?.trigger?.(newLen, null, removedItems, "@clear");
+            removedItems.forEach((item, I) => $reg?.trigger?.(newLen + I, null, item, "@delete"));
         }
 
         // emit additions if grown (holes are considered added undefined entries)
