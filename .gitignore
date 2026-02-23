@@ -133,3 +133,11 @@ dist
 package-lock.json
 ./package-lock.json
 */package-lock.json
+
+# ── Compiled TS artifacts in source trees (must never be committed) ──────────
+src/**/*.js
+src/**/*.jsx
+src/**/*.js.map
+**/src/**/*.js
+**/src/**/*.jsx
+**/src/**/*.js.map
