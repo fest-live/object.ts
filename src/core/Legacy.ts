@@ -3,6 +3,13 @@ import { observeObject, ReactiveMap, ReactiveSet } from "./Specific";
 import { wrapWith } from "./Subscript";
 import { UUIDv4 } from "fest/core";
 
+const runWhenIdle = (cb: IdleRequestCallback, timeout = 100) => {
+    if (typeof globalThis.requestIdleCallback === "function") {
+        return globalThis.requestIdleCallback(cb, { timeout });
+    }
+    return setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 } as IdleDeadline), 0);
+};
+
 //
 export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => wrapWith(new Map(map), new ReactiveMap());
 export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) => wrapWith(new Set(set), new ReactiveSet());
@@ -31,7 +38,7 @@ export default class AxTime {
     // protect from looping (for example)
     static looping = new Map<string, Function>([]);
     static registry = new FinalizationRegistry(tmp => AxTime.looping.delete(tmp as string));
-    static get raf() { return new Promise(r => requestIdleCallback(r)); }
+    static get raf() { return new Promise(r => runWhenIdle(r, 100)); }
     static protect(fn, interval = 100) { const timer = new AxTime(); return timer.protect(fn, interval); }
     static cached(fn, interval = 100) { const timer = new AxTime(); return timer.cached(fn, interval); }
     static symbol(name: string = "") { const sym = Symbol(name || "switch"); document[sym] = true; return sym; }
@@ -66,9 +73,9 @@ export {AxTime as Time};
 export const defaultTimer = new AxTime();
 
 //
-requestIdleCallback(async () => {
+runWhenIdle(async () => {
     while (true) {
         await Promise.allSettled(Array.from(AxTime.looping.values()).map(fn => fn?.(performance.now())));
         await new Promise(r => requestAnimationFrame(r));
     }
-}, {timeout: 100});
+}, 100);
