@@ -82,7 +82,8 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
 }
 
 //
-export const affected = (obj: any, prop: keyType | callable | null, cb: callable = ()=>{}, ctx?: any) => {
+/** `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init. */
+export function affected(obj: any, prop: keyType | callable | null, cb: callable = ()=>{}, ctx?: any) {
     if (typeof prop == "function") { cb = prop; prop = null; }
 
     //
@@ -115,7 +116,7 @@ export const affected = (obj: any, prop: keyType | callable | null, cb: callable
             });
         }
     }
-};
+}
 
 //
 export const makeArrayObservable = (tg)=>{
@@ -216,7 +217,7 @@ export class DoubleWeakMap {
 const registeredIterated = new DoubleWeakMap();
 
 //
-export const iterated = <T = any>(tg: subValid<T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null)=>{
+export function iterated<T = any>(tg: subValid<T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) {
     if (!tg) return;
 
     //
@@ -263,7 +264,7 @@ export const iterated = <T = any>(tg: subValid<T>, cb: (value: any, prop: keyTyp
 }
 
 //
-export const unaffected = <T = any>(tg: T, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) => {
+export function unaffected<T = any>(tg: T, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) {
     return withPromise(tg, (target: any) => {
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
         const prop = isPair ? target?.[1] : null; target = (isPair && prop != null) ? (target?.[0] ?? target) : target;

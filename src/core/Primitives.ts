@@ -184,7 +184,8 @@ export const delayedOrInstantBehavior = (delay = 100) => {
 
 
 //
-export const observe = <T = any>(target: T, stateName?: string): observeValid<T> => {
+/** `function` (not `const`) so circular Mainline ↔ Primitives/Assigned init cannot TDZ in bundled output. */
+export function observe<T = any>(target: T, stateName?: string): observeValid<T> {
     if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || $isObservable(target)) {
         return target as observeValid<T>;
     }
