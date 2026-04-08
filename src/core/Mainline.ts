@@ -1,6 +1,6 @@
 import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign } from "fest/core";
 import { $extractKey$, $registryKey$, $affected, $trigger } from "../wrap/Symbol";
-import { addToCallChain, safe, withPromise, type keyType, subValid, observeValid, isThenable } from "../wrap/Utils";
+import { addToCallChain, safe, withPromise, type keyType, type observeValid, type subValid, isThenable } from "../wrap/Utils";
 import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
 import { isObservable } from "./Primitives";

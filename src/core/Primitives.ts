@@ -1,9 +1,8 @@
 import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "fest/core";
 import { $value, $behavior, $promise, $extractKey$, $affected, $trigger } from "../wrap/Symbol";
-import { addToCallChain, deref, type observeValid, type WeakKey } from "../wrap/Utils";
+import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
 import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
-import { MethodsOf } from "../wrap/Utils";
 import { affected } from "./Mainline";
 import { hasValue } from "fest/core";
 

@@ -1,5 +1,5 @@
 import { affected } from "./Mainline";
-import { addToCallChain, observeValid, subValid, type keyType } from "../wrap/Utils";
+import { addToCallChain, type observeValid, type subValid, type keyType } from "../wrap/Utils";
 import { observe, isObservable, triggerWithDelay, recoverReactive } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";

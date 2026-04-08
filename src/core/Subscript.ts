@@ -1,6 +1,10 @@
 import { $extractKey$ } from "../wrap/Symbol";
 import { deref, type keyType } from "../wrap/Utils";
-import { WR } from "fest/core";
+
+/** Same shape as `WR` in `fest/core` (`WRef.ts`). Inlined so SW/dev bundles never need a `WR` runtime export from core. */
+type WR<T> = {
+    [K in keyof T]: T[K] extends (...args: infer A) => infer R ? (...args: A) => WR<R> | null : T[K] | null;
+};
 
 //
 const withUnsub = new WeakMap();
