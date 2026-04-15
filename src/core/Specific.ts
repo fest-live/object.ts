@@ -1,3 +1,10 @@
+/**
+ * Concrete proxy handlers for arrays, objects, maps, and sets.
+ *
+ * This is the low-level implementation layer that intercepts reads/writes,
+ * translates native collection operations into normalized trigger events, and
+ * exposes the observable protocol used by `observe()`.
+ */
 import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual, $affected } from "../wrap/Symbol";
@@ -49,7 +56,7 @@ function isGetter(obj, propName) {
     return got;
 }
 
-//
+/** Follow `.value` chains when a wrapper stores the actual object one level deeper. */
 export const fallThrough = (obj: any, key: any) => {
     if (isPrimitive(obj)) return obj;
 
@@ -68,7 +75,7 @@ export const fallThrough = (obj: any, key: any) => {
     return value ?? obj;
 }
 
-// Safe getter with global re-entrancy guard to avoid recursive accessor loops
+/** Safe getter with re-entrancy protection to avoid recursive accessor loops. */
 export const safeGet = (obj: any, key: any, rec?: any) => {
     //const result = Reflect.get(obj, key, rec != null ? rec : obj);
     //return typeof result == "function" ? bindCtx(obj, result) : result;
@@ -154,7 +161,7 @@ const observableAPIMethods = (target, name, registry)=>{
     }
 }
 
-//
+/** Wrap mutating array methods so they emit normalized add/set/delete events. */
 export class ObserveArrayMethod {
     #name: string; #self: any; #handle: any;
     constructor(name, self, handle) {
@@ -293,7 +300,7 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
 
 
-//
+/** Proxy handler for observable arrays, including index writes and mutation methods. */
 export class ObserveArrayHandler {
     [$triggerLock]?: boolean;
     constructor() {
@@ -418,7 +425,7 @@ export class ObserveArrayHandler {
     }
 }
 
-//
+/** Proxy handler for observable objects and ref-like `{ value }` containers. */
 export class ObserveObjectHandler<T=any> {
     [$triggerLock]?: boolean;
     constructor() {}
@@ -605,7 +612,7 @@ export class ObserveObjectHandler<T=any> {
 
 
 
-//
+/** Proxy handler for observable maps, mapping native map operations to trigger events. */
 export class ObserveMapHandler<K=any, V=any> {
     [$triggerLock]?: boolean;
     constructor() { }
@@ -707,7 +714,7 @@ export class ObserveMapHandler<K=any, V=any> {
     }
 }
 
-//
+/** Proxy handler for observable sets, emitting membership changes as reactive events. */
 export class ObserveSetHandler<T=any> {
     [$triggerLock]?: boolean = false;
     constructor() {}
@@ -807,13 +814,16 @@ export class ObserveSetHandler<T=any> {
     }
 }
 
-//
+/** Lightweight internal check used before wrapping a target again. */
 export const $isObservable = (target: any) => {
     return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected]));
 }
 
-//
+/** Wrap an array with the array-specific observable proxy. */
 export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => { return ($isObservable(arr) ? arr : wrapWith(arr, new ObserveArrayHandler())); };
+/** Wrap an object with the object-specific observable proxy. */
 export const observeObject = <T = any>(obj: T): observeValid<T> => { return ($isObservable(obj) ? (obj as observeValid<T>) : wrapWith(obj, new ObserveObjectHandler())); };
+/** Wrap a map with the map-specific observable proxy. */
 export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => { return ($isObservable(map) ? map : wrapWith(map, new ObserveMapHandler())); };
+/** Wrap a set with the set-specific observable proxy. */
 export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => { return ($isObservable(set) ? set : wrapWith(set, new ObserveSetHandler())); };

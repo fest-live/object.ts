@@ -1,11 +1,16 @@
+/**
+ * Older reactive handler implementation kept for compatibility/reference.
+ *
+ * AI-READ: newer code paths use `Specific.ts`; this file preserves the previous
+ * proxy handlers and factories so legacy imports can still resolve.
+ */
 import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual } from "../wrap/Symbol";
 import { deref, type keyType, type MapLike, type observeValid, type SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
-//
-// Safe getter with global re-entrancy guard to avoid recursive accessor loops
+/** Safe getter with re-entrancy protection to avoid recursive accessor loops. */
 const __safeGetGuard = new WeakMap<any, Set<any>>();
 export const safeGet = (obj: any, key: any) => {
     if (obj == null) { return undefined; }
@@ -72,7 +77,7 @@ const observableAPIMethods = (target, name, registry)=>{
     }
 }
 
-//
+/** Wrap mutating array methods so they emit normalized add/set/delete events. */
 export class ObserveArrayMethod {
     #name: string; #self: any; #handle: any;
     constructor(name, self, handle) {
@@ -205,7 +210,7 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
 
 
-//
+/** Legacy array proxy handler retained for old call sites. */
 export class ReactiveArray {
     [$triggerLock]?: boolean;
     constructor() {
@@ -302,7 +307,7 @@ export class ReactiveArray {
     }
 }
 
-//
+/** Legacy object proxy handler retained for old call sites. */
 export class ReactiveObject {
     [$triggerLock]?: boolean;
     constructor() {}
@@ -406,7 +411,7 @@ export class ReactiveObject {
 
 
 
-//
+/** Legacy map proxy handler retained for old call sites. */
 export class ReactiveMap {
     constructor() { }
 
@@ -505,7 +510,7 @@ export class ReactiveMap {
     }
 }
 
-//
+/** Legacy set proxy handler retained for old call sites. */
 export class ReactiveSet {
     [$triggerLock]?: boolean = false;
     constructor() {}
@@ -603,8 +608,11 @@ export class ReactiveSet {
     }
 }
 
-//
+/** Legacy array factory. Prefer `Specific.observeArray()` in newer code. */
 export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => { return (arr?.[$extractKey$] ? arr : wrapWith(arr, new ReactiveArray())); };
+/** Legacy object factory. Prefer `Specific.observeObject()` in newer code. */
 export const observeObject = <T = any>(obj: T): observeValid<T> => { return (obj?.[$extractKey$] ? obj : wrapWith(obj, new ReactiveObject())); };
+/** Legacy map factory. Prefer `Specific.observeMap()` in newer code. */
 export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => { return (map?.[$extractKey$] ? map : wrapWith(map, new ReactiveMap())); };
+/** Legacy set factory. Prefer `Specific.observeSet()` in newer code. */
 export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => { return (set?.[$extractKey$] ? set : wrapWith(set, new ReactiveSet())); };

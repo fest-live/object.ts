@@ -1,3 +1,10 @@
+/**
+ * Shared type and utility layer for `object.ts`.
+ *
+ * This file defines the loose observable/subscription type contracts plus
+ * helper functions for unwrapping, dereferencing, safe serialization, dispose
+ * chaining, promise-aware flows, and the Set-as-array adapter.
+ */
 import { hasValue, isPrimitive } from "fest/core";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
@@ -87,7 +94,7 @@ export type subValid<T = any> =
 //
 export const $originalObjects$ = new WeakMap();
 
-//
+/** Clone an observable-like structure into plain serializable data. */
 export const safe = (target)=>{
     const unwrap: any = (typeof target == "object" || typeof target == "function") ? (target?.[$extractKey$] ?? target) : target, mapped = (e)=>safe(e);
     if (Array.isArray(unwrap)) { return unwrap?.map?.(mapped) || Array.from(unwrap || [])?.map?.(mapped) || []; } else // @ts-ignore
@@ -97,8 +104,9 @@ export const safe = (target)=>{
     return unwrap;
 }
 
-//
+/** Return the raw target behind a proxy/wrapper when one exists. */
 export const unwrap = (arr)=>{ return arr?.[$extractKey$] ?? arr?.["@target"] ?? arr; }
+/** Dereference WeakRef-like wrappers and recursively unwrap observable containers. */
 export const deref  = (target?: any, discountValue: boolean|null = false)=>{
     const original = target;
     if (isPrimitive(target) || typeof target == "symbol") return target;
@@ -114,8 +122,9 @@ export const deref  = (target?: any, discountValue: boolean|null = false)=>{
     return target;
 }
 
-//
+/** Promise-like guard used by subscription helpers that accept thenables. */
 export const isThenable = (val: any): val is PromiseLike<any> => val != null && typeof val.then === "function";
+/** Run a callback once the target or its embedded promise has resolved. */
 export const withPromise = (target, cb) => {
     if (isPrimitive(target) || typeof target == "function") { return cb?.(target); };
     if (isThenable(target)) return target.then(cb);
@@ -127,7 +136,12 @@ export const withPromise = (target, cb) => {
 const disposeMap = new WeakMap();
 const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.forEach?.((cb: any)=>cb?.()); });
 
-//
+/**
+ * Append a callback to an object's disposal/call chain.
+ *
+ * AI-READ: `Symbol.dispose` is treated specially and kept in a side registry so
+ * multiple callbacks can be composed without overwriting each other.
+ */
 export function addToCallChain(obj, methodKey, callback?: any|null) {
     if (!callback || typeof callback != "function" || (typeof obj != "object" && typeof obj != "function")) return;
     if (methodKey == Symbol.dispose) {
@@ -186,6 +200,12 @@ const isArrayIndex = (prop: PropertyKey): prop is `${number}` => {
     return Number.isInteger(num) && num >= 0 && String(num) === prop;
 };
 
+/**
+ * Expose a `Set` through an array-like mutation API while preserving uniqueness.
+ *
+ * WHY: some UI/state code expects `push`/`splice` semantics, but the underlying
+ * source of truth should still reject duplicates like a `Set`.
+ */
 export function wrapSetAsArray<T>(
     source: Iterable<T> = [],
     options: SetArrayOptions<T> = {}

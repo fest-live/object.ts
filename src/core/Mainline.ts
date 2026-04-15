@@ -1,3 +1,10 @@
+/**
+ * Subscription and derivation pipeline for `object.ts`.
+ *
+ * This module resolves how callbacks subscribe to observable values, tuples,
+ * promises, DOM inputs, and iteration sources, then builds higher-level
+ * combinators like `assign`, `link`, `computed`, and `derivate`.
+ */
 import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign } from "fest/core";
 import { $extractKey$, $registryKey$, $affected, $trigger } from "../wrap/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, type observeValid, type subValid, isThenable } from "../wrap/Utils";
@@ -5,7 +12,7 @@ import { subscriptRegistry } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
 import { isObservable } from "./Primitives";
 
-//
+/** Attach the Observable-compatible hook used by some external reactive ecosystems. */
 export const useObservable = <Under = any>(unwrap: any): observeValid<Under> => { // @ts-ignore
     if (unwrap == null || (typeof unwrap != "object" && typeof unwrap != "function") || unwrap?.[Symbol.observable] != null) { return unwrap; } // @ts-ignore
     try { unwrap[Symbol.observable] = self?.compatible; } catch (e) { console.warn("Unable to assign <[Symbol.observable]>, object will not observable by other frameworks"); };
@@ -28,7 +35,7 @@ const checkValidObj = (obj: any) => {
     return obj;
 }
 
-//
+/** Default subscription strategy for already-observable targets. */
 export const subscribeDirectly: subscript = (target: any, prop: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => { if (!target) return;
     if (!checkValidObj(target)) return;
     const tProp = (prop != Symbol.iterator) ? prop : null;
@@ -56,7 +63,7 @@ export const subscribeDirectly: subscript = (target: any, prop: keyType | null, 
     return unSub;
 }
 
-//
+/** Subscription adapter for DOM inputs, mapping `change` events onto reactive callbacks. */
 export const subscribeInput: subscript = (tg: HTMLInputElement, _: keyType | null, cb: (value: any, _: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
     // inputs now can be regally subscribed directly
     const $opt: any = { }; let oldValue = tg?.value;
@@ -70,13 +77,13 @@ const checkIsPaired = (tg: any) => {
     return (Array.isArray(tg) && tg?.length == 2 && checkValidObj(tg?.[0])) && (isKeyType(tg?.[1]) || tg?.[1] == Symbol.iterator);
 }
 
-// split from prop pairs
+/** Subscription adapter for `[target, prop]` tuples. */
 export const subscribePaired: subscript = <Under = any>(tg: subValid<Under>, _: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
     const prop = isKeyType(tg?.[1]) ? tg?.[1] : null;
     return affected(tg?.[0], prop, cb, ctx);
 }
 
-//
+/** Defer subscription until a thenable source resolves. */
 export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) => {
     return obj?.then?.((obj: any) => affected?.(obj, prop, cb, ctx))?.catch?.((e: any) => { console.warn(e); return null; });
 }
@@ -118,14 +125,14 @@ export function affected(obj: any, prop: keyType | callable | null, cb: callable
     }
 }
 
-//
+/** Normalize collection inputs into observable array-like views when iteration matters. */
 export const makeArrayObservable = (tg)=>{
     if (tg instanceof Set) return observableBySet(tg);
     if (tg instanceof Map) return observableByMap(tg);
     return tg;
 }
 
-//
+/** Two-level WeakMap used to memoize subscriptions keyed by `[target, callback]` pairs. */
 export class DoubleWeakMap {
     #top = new WeakMap(); // key1 -> WeakMap(key2 -> value)
   
@@ -216,7 +223,10 @@ export class DoubleWeakMap {
 //
 const registeredIterated = new DoubleWeakMap();
 
-//
+/**
+ * Subscribe to iteration-level changes for arrays, sets, maps, and ref-like
+ * containers whose `value` should itself be treated as a collection.
+ */
 export function iterated<T = any>(tg: subValid<T>, cb: (value: any, prop: keyType, old?: any, operation?: string|null) => void, ctx: any | null = null) {
     if (!tg) return;
 
@@ -263,7 +273,7 @@ export function iterated<T = any>(tg: subValid<T>, cb: (value: any, prop: keyTyp
     });
 }
 
-//
+/** Remove a previously registered subscription. */
 export function unaffected<T = any>(tg: T, cb?: (value: any, prop: keyType, old?: any) => void, ctx: any | null = null) {
     return withPromise(tg, (target: any) => {
         const isPair = Array.isArray(target) && target?.length == 2 && ["object", "function"].indexOf(typeof target?.[0]) >= 0 && isKeyType(target?.[1]);
@@ -274,13 +284,13 @@ export function unaffected<T = any>(tg: T, cb?: (value: any, prop: keyType, old?
     });
 }
 
-//
+/** Mirror changes from a reactive source into a plain target, with optional reverse watching hook. */
 export const bindBy = <Under = any>(target, reactive: subValid<Under>, watch?) => {
     affected(reactive, null, (v, p) => { objectAssign(target, v, p, true); });
     watch?.(() => target, (N) => { for (const k in N) { objectAssign(reactive, N[k], k, true); } }, { deep: true });
     return target;
 };
 
-//
+/** Derive a plain target object from a source by combining `safe()` cloning with `bindBy()`. */
 export const derivate = <Under = any, T = observeValid<Under>>(from, reactFn: (value: any) => any, watch?) => bindBy(reactFn(safe(from)), from, watch);
 export const bindByKey = <Under = any>(target, reactive: subValid<Under>, key = () => "") => affected(reactive, null, (value, p) => { if (p == key()) { objectAssign(target, value, null, true); } });

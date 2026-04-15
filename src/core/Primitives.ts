@@ -1,3 +1,10 @@
+/**
+ * Reactive primitive/ref helpers plus the main `observe()` entrypoint.
+ *
+ * This module creates typed refs (`numberRef`, `stringRef`, `booleanRef`),
+ * property refs, delayed trigger behaviors, and the canonical dispatcher that
+ * chooses the correct observable wrapper for arrays, objects, maps, and sets.
+ */
 import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "fest/core";
 import { $value, $behavior, $promise, $extractKey$, $affected, $trigger } from "../wrap/Symbol";
 import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
@@ -6,7 +13,6 @@ import { subscriptRegistry } from "./Subscript";
 import { affected } from "./Mainline";
 import { hasValue } from "fest/core";
 
-//
 export interface refWrap<T = any> {
     [$promise]?: Promise<T>|null|undefined;
     [$behavior]?: any;
@@ -20,7 +26,7 @@ export interface refWrap<T = any> {
 //
 export type refType<T = any> = (refWrap<T> | (T extends object ? T : any)) & MethodsOf<T> & (T extends symbol | object | Function ? T : any);
 
-//
+/** Numeric ref with coercion, primitive conversion hooks, and optional promise initialization. */
 export const numberRef = (initial?: number|null|undefined|Promise<number>, behavior?: any): refType<number> => {
     const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<number>)?.then == "function";
     const obj: refWrap<number> = {
@@ -35,7 +41,7 @@ export const numberRef = (initial?: number|null|undefined|Promise<number>, behav
     const $r = observe(obj) as observeValid<refType<number>>; (initial as unknown as Promise<number>)?.then?.((v)=>$r.value = v); return $r;
 }
 
-//
+/** String ref with coercion, primitive conversion hooks, and optional promise initialization. */
 export const stringRef = (initial?: string|null|undefined|Promise<string>, behavior?: any): refType<string> => {
     const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<string>)?.then == "function";
     const obj: refWrap<string> = {
@@ -50,7 +56,7 @@ export const stringRef = (initial?: string|null|undefined|Promise<string>, behav
     const $r = observe(obj) as observeValid<refType<string>>; (initial as unknown as Promise<string>)?.then?.((v)=>$r.value = v); return $r;
 }
 
-//
+/** Boolean ref with truthy/falsy coercion and optional promise initialization. */
 export const booleanRef = (initial?: boolean|null|undefined|Promise<boolean>, behavior?: any): refType<boolean> => {
     const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<boolean>)?.then == "function";
     const obj: refWrap<boolean> = {
@@ -65,7 +71,7 @@ export const booleanRef = (initial?: boolean|null|undefined|Promise<boolean>, be
     const $r = observe(obj) as observeValid<refType<boolean>>; (initial as unknown as Promise<boolean>)?.then?.((v)=>$r.value = v); return $r;
 }
 
-//
+/** Generic ref wrapper for values that do not need one of the specialized primitive ref shapes. */
 export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior?: any): observeValid<refType<T>> => {
     const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<T>)?.then == "function";
     const obj: refWrap<T> = {
@@ -81,7 +87,12 @@ export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior
     return $r;
 }
 
-//
+/**
+ * Create a reactive reference to one property of an observable source.
+ *
+ * WHY: this keeps duplex synchronization between `src[srcProp]` and the
+ * returned ref-like object while still behaving like a regular `value` ref.
+ */
 export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null = "value", initial?: any, behavior?: any): any => {
     if (isPrimitive(src) || !src) return src;
 
@@ -122,7 +133,7 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     return r;
 }
 
-//
+/** Pick the most suitable ref implementation for the provided value type. */
 export const $ref = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
     switch (typeof typed) {
         case "boolean": return booleanRef(typed, behavior) as refType<boolean>;
@@ -133,7 +144,7 @@ export const $ref = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any
     }
 }
 
-//
+/** Public ref helper that can either wrap a value or target one specific property. */
 export const ref = <T = any>(
     typed: T | null | undefined | Promise<T>,
     prop: keyType | null = "value",
@@ -162,27 +173,26 @@ export const ref = <T = any>(
     }
 };
 
-//
+/** Backward-compatible alias for `ref()` when the source is a promise-like value. */
 export const promised = (promise: any, behavior?: any) => {
     return ref(promise, behavior);
 }
 
-//
+/** Schedule a callback only if the ref/value is currently truthy. */
 export const triggerWithDelay = (ref: any, cb: Function, delay = 100): ReturnType<typeof setTimeout> | undefined => { if (ref?.value ?? ref) { return setTimeout(()=>{ if (ref.value) cb?.(); }, delay); } }
 
-//
+/** Create a deferred trigger behavior that aborts cleanly when the subscription is disposed. */
 export const delayedBehavior  = (delay = 100) => {
     return (cb: Function, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); };
 }
 
-//
+/** Same as `delayedBehavior`, but invoke immediately when the delay gate is not needed. */
 export const delayedOrInstantBehavior = (delay = 100) => {
     return (cb: Function, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
 }
 
 
 
-//
 /** `function` (not `const`) so circular Mainline ↔ Primitives/Assigned init cannot TDZ in bundled output. */
 export function observe<T = any>(target: T, stateName?: string): observeValid<T> {
     if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || $isObservable(target)) {
@@ -210,13 +220,13 @@ export function observe<T = any>(target: T, stateName?: string): observeValid<T>
     return reactive;
 }
 
-//
+/** Detect whether a value is already wrapped in the `object.ts` observable protocol. */
 export const isObservable = (target: any) => {
     if (typeof HTMLInputElement != "undefined" && target instanceof HTMLInputElement) { return true; }
     return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected] || subscriptRegistry?.has?.(target)));
 }
 
-//
+/** Re-enter the observable pipeline only when the target already carries observable metadata. */
 export const recoverReactive = (target: any): any => {
     return isObservable(target) ? observe(target) : null;
 }

@@ -1,8 +1,15 @@
+/**
+ * Legacy compatibility exports kept for older call sites.
+ *
+ * Newer code should usually prefer `observe()` and the modern helpers from
+ * `Primitives`/`Specific`, but these adapters preserve the historical API.
+ */
 import { $extractKey$ } from "../wrap/Symbol";
 import { observeObject, ReactiveMap, ReactiveSet } from "./Specific";
 import { wrapWith } from "./Subscript";
 import { UUIDv4 } from "fest/core";
 
+/** Idle-callback shim used by the lightweight timing helpers below. */
 const runWhenIdle = (cb: IdleRequestCallback, timeout = 100) => {
     if (typeof globalThis.requestIdleCallback === "function") {
         return globalThis.requestIdleCallback(cb, { timeout });
@@ -10,9 +17,11 @@ const runWhenIdle = (cb: IdleRequestCallback, timeout = 100) => {
     return setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 } as IdleDeadline), 0);
 };
 
-//
+/** Legacy factory for a reactive `Map`. */
 export const createReactiveMap: <K, V>(map?: [K, V][]) => Map<K, V> = <K, V>(map: [K, V][] = []) => wrapWith(new Map(map), new ReactiveMap());
+/** Legacy factory for a reactive `Set`. */
 export const createReactiveSet: <V>(set?: V[]) => Set<V> = <V>(set: V[] = []) => wrapWith(new Set(set), new ReactiveSet());
+/** Legacy catch-all factory that upgrades plain objects to their observable form. */
 export const createReactive: any = (target: any, stateName = ""): any => {
     if (target?.[$extractKey$]) { return target; }
 
@@ -31,7 +40,7 @@ export const createReactive: any = (target: any, stateName = ""): any => {
     return reactive;
 }
 
-//
+/** Small timing utility used as a throttling/caching helper in older call sites. */
 export default class AxTime {
     #lastTime = 0; constructor() { this.#lastTime = 0; }
 
@@ -68,8 +77,9 @@ export default class AxTime {
     }
 }
 
-//
+/** Backward-compatible alias. */
 export {AxTime as Time};
+/** Shared timer instance for lightweight consumers that do not need their own timer state. */
 export const defaultTimer = new AxTime();
 
 //

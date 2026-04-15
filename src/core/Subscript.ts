@@ -1,3 +1,10 @@
+/**
+ * Listener registry and proxy wrapper backbone for `object.ts`.
+ *
+ * The `Subscript` class stores callbacks, batches dispatches, exposes a
+ * minimal Observable-compatible surface, and helps observable wrappers share
+ * one registry per underlying target.
+ */
 import { $extractKey$ } from "../wrap/Symbol";
 import { deref, type keyType } from "../wrap/Utils";
 
@@ -6,7 +13,7 @@ type WR<T> = {
     [K in keyof T]: T[K] extends (...args: infer A) => infer R ? (...args: A) => WR<R> | null : T[K] | null;
 };
 
-//
+/** Track disposer rewrites for Observable-style subscribers so completion also unsubscribes. */
 const withUnsub = new WeakMap();
 const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Subscript) => {
     // @ts-ignore
@@ -23,20 +30,20 @@ const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Su
     });
 }
 
-//
+/** Global registry that maps raw targets to their `Subscript` instance. */
 export const subscriptRegistry = new WeakMap<any, Subscript>();
 
 // @ts-ignore
 const wrapped = new WeakMap();
 
-//
+/** Ensure a target has a registry before reusing or returning a reactive handle. */
 export const register = (what: any, handle: any): any => {
     const unwrap = what?.[$extractKey$] ?? what;  // @ts-ignore
     subscriptRegistry.getOrInsert(unwrap, new Subscript());
     return handle;
 }
 
-//
+/** Wrap a raw target in a proxy backed by the provided handler, memoized per original object. */
 export const wrapWith = (what: any, handle: any): any => {
     what = deref(what?.[$extractKey$] ?? what);
     if (typeof what == "symbol" || !(typeof what == "object" || typeof what == "function") || what == null) return what; // @ts-ignore
@@ -46,7 +53,7 @@ export const wrapWith = (what: any, handle: any): any => {
 //
 const forAll = Symbol.for("@allProps");
 
-//
+/** Central subscription registry with batched dispatch and Observable interoperability helpers. */
 export class Subscript {
     compatible: any;
     #listeners: Map<(value: any, prop: keyType, oldValue?: any, operation?: string | null) => void, any>;
@@ -92,6 +99,7 @@ export class Subscript {
         this.compatible = () => this.#native;
     }
 
+    /** Run one listener with simple re-entrancy and duplicate-same-tick guards. */
     $safeExec(cb, ...args) {
         if (!cb || this.#flags.has(cb)) return;
         this.#flags.add(cb);
@@ -152,6 +160,12 @@ export class Subscript {
      * - один dispatch на name за микро-тик
      * - повторные trigger(name) до flush не вызывают повторно dispatch, а лишь обновляют аргументы
      * - другие name не блокируются
+     */
+    /**
+     * Queue and coalesce trigger events by property and operation per microtask.
+     *
+     * WHY: hot mutation paths can emit many intermediate writes; batching keeps
+     * subscribers deterministic and avoids recursive cascades on one property.
      */
     trigger(name: keyType | null, value?: any | null, oldValue?: any, operation: string | null = null, ...etc: any[]) {
         if (typeof name === "symbol") return;

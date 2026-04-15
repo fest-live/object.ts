@@ -1,10 +1,16 @@
+/**
+ * Higher-level composition helpers built on top of the primitive observer layer.
+ *
+ * This file provides conditional refs, collection-to-array adapters, duplex
+ * assignment/linking, and computed values that mirror changes back into refs.
+ */
 import { affected } from "./Mainline";
 import { addToCallChain, type observeValid, type subValid, type keyType } from "../wrap/Utils";
 import { observe, isObservable, triggerWithDelay, recoverReactive } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Symbol";
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
-//
+/** Derive a computed ref whose value is the first truthy predicate index. */
 export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
 
 //
@@ -15,7 +21,7 @@ export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any
     addToCallChain(cur, Symbol.dispose, usb); return cur;
 }*/
 
-//
+/** Switch reactively between two values based on a condition ref or value. */
 export const conditionalRef = <T = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): observeValid<T> => {
     if (isPrimitive(cond)) return cond ? ifTrue : ifFalse;
 
@@ -45,12 +51,10 @@ export const conditionalRef = <T = any>(cond: any, ifTrue: any, ifFalse: any, be
     addToCallChain(r, Symbol.dispose, usb); return r as unknown as observeValid<T>;
 }
 
-// alias
+/** Alias kept for the shorter public API name. */
 export const conditional = conditionalRef;
 
-//
-// used for redirection properties
-// !one-directional
+/** One-way projection from a source subscription into another observable object. */
 export const remap = <T = any>(sub: subValid<T>, cb?: Function | null, dest?: any | null) => {
     if (!dest) dest = observe({}) as any;
     const usb = affected(sub, (value, prop, old) => {
@@ -61,8 +65,7 @@ export const remap = <T = any>(sub: subValid<T>, cb?: Function | null, dest?: an
     if (dest) { addToCallChain(dest, Symbol.dispose, usb); }; return dest; // return reactive value
 }
 
-//
-// !one-directional
+/** Merge multiple subscriptions into one observable object, last write wins per property. */
 export const unified = <Under = any>(...subs: subValid<Under>[]) => {
     const dest = observe({});
     subs?.forEach?.((sub) => affected(sub, (value, prop, _) => {
@@ -70,7 +73,7 @@ export const unified = <Under = any>(...subs: subValid<Under>[]) => {
     })); return dest;
 }
 
-//
+/** View a `Set` as a reactive array that stays synchronized with set membership. */
 export const observableBySet = <T = any>(set: Set<T>): observeValid<T[]> => { // @ts-ignore
     const obs: T[] = observe<T[]>([]) as observeValid<T[]>; // @ts-ignore
     // Initialize with existing set entries
@@ -92,7 +95,7 @@ export const observableBySet = <T = any>(set: Set<T>): observeValid<T[]> => { //
     return obs;
 }
 
-//
+/** View a `Map` as a reactive `[key, value][]` list for iteration-friendly consumers. */
 export const observableByMap = <T = any>(map: Map<any, T>): observeValid<[any, T][]> => { // @ts-ignore
     const obs: [any, T][] = observe<[any, T][]>([]) as observeValid<[any, T][]>; // @ts-ignore
 
@@ -138,7 +141,7 @@ export const observableByMap = <T = any>(map: Map<any, T>): observeValid<[any, T
     return obs;
 }
 
-//
+/** Bookkeeping for one active assignment bridge between two reactive endpoints. */
 export interface PropStore {
     unsub?: any;
     bound?: any;
@@ -147,8 +150,14 @@ export interface PropStore {
     dispose?: any;
 }
 
-//
+/** Registry of active property assignments keyed by target object and property name. */
 export const assignMap = new WeakMap<any, Map<any, PropStore>>();
+/**
+ * Bind one reactive endpoint to another, optionally with a compute function.
+ *
+ * AI-READ: `a` and `b` can be plain observables or tuple forms like
+ * `[target, prop]`; this function normalizes both forms before wiring.
+ */
 export const assign = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | null = "value") => {
     const isACompute = typeof a?.[1] == "function" && (a as [any, keyType])?.length == 2, isBCompute = typeof b?.[1] == "function" && (b as [any, keyType])?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : (Array.isArray(a) ? null : prop); if (!isAProp && !isACompute) { a = [a, a_prop] as subValid<T>; }; if (isACompute) { a[1] = a_prop; };
@@ -234,7 +243,7 @@ export const assign = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | 
     return store?.dispose;
 }
 
-//
+/** Create a duplex link by composing `assign(a, b)` and `assign(b, a)`. */
 export const link = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | null = "value") => {
     /*const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
     const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
@@ -244,7 +253,7 @@ export const link = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | nu
     return () => usub?.map?.((c) => c?.());
 }
 
-//
+/** Build a computed ref whose getter and optional setter are driven by a source subscription. */
 export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null, behavior?: any, prop: keyType | null = "value"): observeValid<OT> => {
     const isACompute = typeof src?.[1] == "function" && (src as [any, keyType])?.length == 2;
     const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2;
@@ -280,7 +289,7 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     addToCallChain(rf, Symbol.dispose, usb); return rf;
 }
 
-//
+/** Subscribe to a truthy ref/value and trigger the callback only after a delay window. */
 export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): observeValid<Under> => {
     let tm: any; //= triggerWithDelay(ref, cb, delay);
     return affected([ref, "value"], (v) => {
