@@ -34,7 +34,7 @@ const __systemSkip = new Set<any>([
 const systemSkipGet = (target: any, name: any) => {
     if (!__systemSkip.has(name)) return null;
   
-    // важно: не undefined, а честный доступ
+    // important: not undefined, but a genuine access
     const got = safeGet(target, name);
     return (typeof got === "function") ? bindCtx(target, got) : got;
 };
@@ -75,8 +75,19 @@ export const fallThrough = (obj: any, key: any) => {
     return value ?? obj;
 }
 
+/** Safe setter with re-entrancy protection to avoid recursive accessor loops. */
+export const safeSet = <T = any>(obj: any, key: any, value: T): boolean => {
+    if (obj == null) { return false; }
+
+    // @ts-ignore
+    let active = __safeSetGuard.getOrInsert(obj, new Set());
+    if (active?.has?.(key)) { return false; }
+    active?.add?.(key);
+    return Reflect.set(obj, key, value);
+}
+
 /** Safe getter with re-entrancy protection to avoid recursive accessor loops. */
-export const safeGet = (obj: any, key: any, rec?: any) => {
+export const safeGet = <T = any>(obj: any, key: any, rec?: any): T | undefined | null => {
     //const result = Reflect.get(obj, key, rec != null ? rec : obj);
     //return typeof result == "function" ? bindCtx(obj, result) : result;
 
@@ -173,7 +184,7 @@ export class ObserveArrayMethod {
     //
     get(target, name, rec) {
         const skip = systemSkipGet(target, name);
-        if (skip !== null) { return skip; }
+        if (skip != null) { return skip; }
         return Reflect.get(target, name, rec);
     }
 
@@ -313,7 +324,7 @@ export class ObserveArrayHandler {
     // TODO: also, subscribe can't be too simply used more than once...
     get(target, name, rec) {
         const skip = systemSkipGet(target, name);
-        if (skip !== null) { return skip; }
+        if (skip != null) { return skip; }
 
         //
         if ([$extractKey$, $originalKey$, "@target", "deref"].indexOf(name as any) >= 0 && safeGet(target, name) != null && safeGet(target, name) != target) {
@@ -545,12 +556,12 @@ export class ObserveObjectHandler<T=any> {
     has(target, prop: keyType) { return (prop in target); }
     set(target, name: keyType, value) {
         const skip = systemSkipGet(target, name);
-        if (skip !== null) return skip;
+        if (skip != null) return skip;
 
         //
         return potentiallyAsync(value, (v) => {
             const skip = systemSkipGet(v, name);
-            if (skip !== null) return skip;
+            if (skip != null) return skip;
     
             //
             if (name == $triggerLock && value) { this[$triggerLock] = !!value; return true; }
@@ -581,6 +592,49 @@ export class ObserveObjectHandler<T=any> {
             };
             return true;
         })
+    }
+
+    //
+    defineProperty(target, name: keyType, descriptor: PropertyDescriptor) {
+        const skip = systemSkipGet(target, name);
+        if (skip != null) return skip;
+
+        //
+        if (name == $triggerLock && descriptor.value) { this[$triggerLock] = !!descriptor.value; return true; }
+        if (name == $triggerLock && !descriptor.value) { delete this[$triggerLock]; return true; }
+
+        // drop into value if has
+        if (safeGet(target, name) == null &&
+            name != "value" && hasValue(target) &&
+            safeGet(target, "value") != null &&
+            (
+                typeof safeGet(target, "value") == "object" ||
+                typeof safeGet(target, "value") == "function"
+            ) &&
+            safeGet(safeGet(target, "value"), name) != null
+        ) {
+            target = safeGet(target, "value") ?? target;
+        }
+        
+        //
+        if (descriptor.get == undefined && descriptor.set == undefined) {
+            return Reflect.defineProperty(target, name, descriptor);
+        }
+
+        // port old value to newer
+        const oldValue = safeGet(target, name) as T;
+
+        // re-define property
+        const $result = Reflect.defineProperty(target, name, {
+            get: descriptor.get,
+            set: descriptor.set,
+            enumerable: descriptor.enumerable ?? true,
+            configurable: descriptor.configurable ?? true,
+        });
+
+        //
+        safeSet(target, name, oldValue as T);
+        return $result;
     }
 
     //
