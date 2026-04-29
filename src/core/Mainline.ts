@@ -88,6 +88,10 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
     return obj?.then?.((obj: any) => affected?.(obj, prop, cb, ctx))?.catch?.((e: any) => { console.warn(e); return null; });
 }
 
+// TODO! in future versions will different types of triggers, along side classic (`all`), will be `setter`, `manual`, `custom` and so on...
+// will be special triggering filter system, and categories of triggers, like `setter`, `manual`, `custom` and so on...
+// also, will be have flag for immediately to trigger callback or no to trigger at all...
+
 //
 /** `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init. */
 export function affected(obj: any, prop: keyType | callable | null, cb: callable = ()=>{}, ctx?: any) {
