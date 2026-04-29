@@ -1,0 +1,3 @@
+# Planned for V2
+
+Alongside with `set` triggering (custom `$trigger$` property), we allow in future any custom or multiple `trigger` for `ref` or `observe` types...
