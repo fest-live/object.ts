@@ -8,6 +8,24 @@
 import { $extractKey$ } from "../wrap/Symbol";
 import { deref, type keyType } from "../wrap/Utils";
 
+export type TriggerName = string | null;
+export type TriggerFilterList = Iterable<string> | string | null | undefined;
+export type AffectedOptions = {
+    affectTypes?: TriggerFilterList;
+    triggers?: TriggerFilterList;
+    triggerImmediately?: boolean;
+};
+export type AffectedConfig = TriggerFilterList | AffectedOptions;
+export type AffectedCallback = (value: any, name: keyType | null, oldValue?: any, op?: string | null, trigger?: TriggerName, ...etc: any[]) => void;
+export type TriggerControl = {
+    enable(types?: TriggerFilterList, cb?: () => any): any;
+    disable(types?: TriggerFilterList, cb?: () => any): any;
+    set(types: TriggerFilterList, enabled: boolean): void;
+    with(types: TriggerFilterList, cb: () => any): any;
+    without(types: TriggerFilterList, cb: () => any): any;
+    isEnabled(trigger: TriggerName): boolean;
+};
+
 /** Same shape as `WR` in `fest/core` (`WRef.ts`). Inlined so SW/dev bundles never need a `WR` runtime export from core. */
 type WR<T> = {
     [K in keyof T]: T[K] extends (...args: infer A) => infer R ? (...args: A) => WR<R> | null : T[K] | null;
@@ -52,19 +70,73 @@ export const wrapWith = (what: any, handle: any): any => {
 
 //
 const forAll = Symbol.for("@allProps");
+const wildcardTriggers = new Set(["*", "all"]);
+const triggerAliases = new Map<string, string[]>([
+    ["setter", ["set"]],
+    ["set", ["setter"]],
+]);
+const isAffectedOptions = (options: AffectedConfig): options is AffectedOptions => {
+    return !!options && typeof options == "object" && !Array.isArray(options) && (
+        "affectTypes" in options ||
+        "triggers" in options ||
+        "triggerImmediately" in options
+    );
+}
+
+const triggerNamesOf = (trigger: TriggerName) => {
+    const name = trigger == null ? "all" : String(trigger);
+    return [name, ...(triggerAliases.get(name) ?? [])];
+}
+
+const expandTriggerFilter = (types: TriggerFilterList = ["*"]) => {
+    return new Set([...normalizeTriggerFilter(types)].flatMap((name) => [name, ...(triggerAliases.get(name) ?? [])]));
+}
+
+export const normalizeTriggerFilter = (triggers: TriggerFilterList = ["*"]) => {
+    const list = typeof triggers == "string" ? [triggers] : Array.from(triggers ?? ["*"]);
+    const normalized = new Set(list.map((item) => String(item || "*")));
+    return normalized.size ? normalized : new Set(["*"]);
+}
+
+export const triggerFilterAllows = (triggers: TriggerFilterList | Set<string>, trigger: TriggerName) => {
+    const filter = triggers instanceof Set ? triggers : normalizeTriggerFilter(triggers);
+    return [...wildcardTriggers].some((name) => filter.has(name)) || triggerNamesOf(trigger).some((name) => filter.has(name));
+}
+
+export const normalizeAffectedOptions = (options: AffectedConfig = ["*"]) => {
+    if (isAffectedOptions(options)) {
+        return {
+            affectTypes: normalizeTriggerFilter(options.affectTypes ?? options.triggers ?? ["*"]),
+            triggerImmediately: options.triggerImmediately !== false,
+        };
+    }
+
+    const affectTypes = normalizeTriggerFilter(options);
+    return {
+        affectTypes,
+        triggerImmediately: triggerFilterAllows(affectTypes, "initial"),
+    };
+}
+
+type ListenerRecord = {
+    prop: keyType | null | typeof forAll;
+    triggers: Set<string>;
+};
 
 /** Central subscription registry with batched dispatch and Observable interoperability helpers. */
 export class Subscript {
     compatible: any;
-    #listeners: Map<(value: any, prop: keyType, oldValue?: any, operation?: string | null) => void, any>;
+    #listeners: Map<AffectedCallback, ListenerRecord>;
     #flags = new WeakSet();
     #native: any;
     #iterator: any;
     #inDispatch = new Set<keyType>();
+    #disabledTriggers = new Set<string>();
+    #triggerControl: TriggerControl;
 
     // было: #triggerLock = new Set<keyType>();
     #pending = new Map<keyType | null, [keyType | null, any, any, any[]]>();
-    #pendingByProp = new Map<keyType | null, Map<string, [keyType | null, any, any, (string | null), any[]]>>();
+    #pendingByProp = new Map<keyType | null, Map<string, [keyType | null, any, any, (string | null), TriggerName, any[]]>>();
     #flushScheduled = false;
 
     // last run timestamp per callback
@@ -79,6 +151,14 @@ export class Subscript {
     constructor() {
         this.#listeners = new Map();
         this.#flags = new WeakSet();
+        this.#triggerControl = {
+            enable: (types: TriggerFilterList = ["*"], cb?: () => any) => cb ? this.withTriggers(types, true, cb) : this.setTriggersEnabled(types, true),
+            disable: (types: TriggerFilterList = ["*"], cb?: () => any) => cb ? this.withTriggers(types, false, cb) : this.setTriggersEnabled(types, false),
+            set: (types: TriggerFilterList, enabled: boolean) => this.setTriggersEnabled(types, enabled),
+            with: (types: TriggerFilterList, cb: () => any) => this.withTriggers(types, true, cb),
+            without: (types: TriggerFilterList, cb: () => any) => this.withTriggers(types, false, cb),
+            isEnabled: (trigger: TriggerName) => this.isTriggerEnabled(trigger),
+        };
 
         this.#iterator = {
             next: (args: any) => {
@@ -120,14 +200,17 @@ export class Subscript {
         }
     }
 
-    #dispatch(name, value = null, oldValue?: any, ...etc: any[]) {
+    #dispatch(name, value = null, oldValue?: any, op: string | null = null, trigger: TriggerName = "all", ...etc: any[]) {
         const listeners = this.#listeners;
         if (!listeners?.size) return;
 
         const promises: Promise<any>[] = Array.from(listeners.entries())
-            .map(([cb, prop]) => {
-                if (prop === name || prop === forAll || prop === null) {
-                    return this.$safeExec(cb, value, name, oldValue, ...etc);
+            .map(([cb, record]) => {
+                if (
+                    (record.prop === name || record.prop === forAll || record.prop === null) &&
+                    triggerFilterAllows(record.triggers, trigger)
+                ) {
+                    return this.$safeExec(cb, value, name, oldValue, op, trigger, ...etc);
                 }
                 return undefined;
             })
@@ -138,18 +221,59 @@ export class Subscript {
 
     wrap(nw: any[] | unknown) { if (Array.isArray(nw)) return wrapWith(nw, this); return nw; }
 
-    affected(cb: (value: any, prop: keyType) => void, prop?: keyType | null) {
+    get triggerControl() { return this.#triggerControl; }
+
+    isTriggerEnabled(trigger: TriggerName) {
+        return !triggerFilterAllows(this.#disabledTriggers, "all") && !triggerNamesOf(trigger).some((name) => this.#disabledTriggers.has(name));
+    }
+
+    setTriggersEnabled(types: TriggerFilterList = ["*"], enabled = true) {
+        const names = expandTriggerFilter(types);
+        for (const name of names) {
+            if (enabled) this.#disabledTriggers.delete(name);
+            else this.#disabledTriggers.add(name);
+        }
+    }
+
+    withTriggers(types: TriggerFilterList, enabled: boolean, cb: () => any) {
+        const names = [...expandTriggerFilter(types)];
+        const previous = new Map(names.map((name) => [name, this.#disabledTriggers.has(name)]));
+        const restore = () => {
+            previous.forEach((wasDisabled, name) => {
+                if (wasDisabled) this.#disabledTriggers.add(name);
+                else this.#disabledTriggers.delete(name);
+            });
+        };
+
+        this.setTriggersEnabled(names, enabled);
+        try {
+            const result = cb?.();
+            if (result && typeof (result as any).finally == "function") return (result as Promise<any>).finally(restore);
+            restore();
+            return result;
+        } catch (e) {
+            restore();
+            throw e;
+        }
+    }
+
+    affected(cb: AffectedCallback, prop?: keyType | null, options: AffectedConfig = ["*"]) {
         if (cb == null || typeof cb != "function") return;
-        this.#listeners.set(cb, prop || forAll);
+        const normalized = normalizeAffectedOptions(options);
+        this.#listeners.set(cb, {
+            prop: prop || forAll,
+            triggers: normalized.affectTypes,
+        });
         return () => this.unaffected(cb, prop || forAll);
     }
 
-    unaffected(cb?: (value: any, prop: keyType) => void, prop?: keyType | null) {
+    unaffected(cb?: AffectedCallback, prop?: keyType | null) {
         if (cb != null && typeof cb == "function") {
             const listeners = this.#listeners;
-            if (listeners?.has(cb) && (listeners.get(cb) == prop || prop == null || prop == forAll)) {
+            const record = listeners?.get(cb);
+            if (record && (record.prop == prop || prop == null || prop == forAll)) {
                 listeners.delete(cb);
-                return () => this.affected(cb, prop || forAll);
+                return () => this.affected(cb, prop || forAll, record.triggers);
             }
         }
         return this.#listeners.clear();
@@ -162,20 +286,22 @@ export class Subscript {
      * - другие name не блокируются
      */
     /**
-     * Queue and coalesce trigger events by property and operation per microtask.
+     * Queue and coalesce trigger events by property, operation, and trigger source per microtask.
      *
      * WHY: hot mutation paths can emit many intermediate writes; batching keeps
      * subscribers deterministic and avoids recursive cascades on one property.
      */
-    trigger(name: keyType | null, value?: any | null, oldValue?: any, operation: string | null = null, ...etc: any[]) {
+    trigger(name: keyType | null, value?: any | null, oldValue?: any, operation: string | null = null, trigger: TriggerName = "setter", ...etc: any[]) {
         if (typeof name === "symbol") return;
 
         // operation может быть undefined из старых вызовов
         if (operation === undefined) operation = null;
+        if (trigger === undefined) trigger = "setter";
+        if (!this.isTriggerEnabled(trigger)) return;
 
         // ключ дедупа по operation
         // null/undefined -> "__"
-        const opKey = operation ?? "__";
+        const opKey = `${trigger ?? "all"}:${operation ?? "__"}`;
 
         // если сейчас по этому name идет dispatch (реэнтранси) — складируем
         // если не идет — тоже складируем, но flush будет один на микро-тик
@@ -186,7 +312,7 @@ export class Subscript {
         }
 
         // A: схлопываем только одинаковые (name + operation) в рамках микро-тика
-        byOp.set(opKey, [name, value, oldValue, operation, etc]);
+        byOp.set(opKey, [name, value, oldValue, operation, trigger, etc]);
 
         // уже запланирован flush — выходим
         if (this.#flushScheduled) return;
@@ -207,10 +333,10 @@ export class Subscript {
                 if (prop != null) this.#inDispatch.add(prop);
                 try {
                     for (const [, args] of opMap) {
-                        const [nm, v, ov, op, rest] = args;
+                        const [nm, v, ov, op, tg, rest] = args;
                         try {
                             // #dispatch ожидает (name, value, oldValue, ...etc)
-                            this.#dispatch(nm, v, ov, op, ...(rest ?? []));
+                            this.#dispatch(nm, v, ov, op, tg, ...(rest ?? []));
                         } catch (e) {
                             console.warn(e);
                         }

@@ -7,7 +7,7 @@
  */
 import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $value, $trigger, $isNotEqual, $affected } from "../wrap/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected } from "../wrap/Symbol";
 import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
@@ -120,6 +120,48 @@ export const safeGet = <T = any>(obj: any, key: any, rec?: any): T | undefined |
     return typeof result == "function" ? bindCtx(obj, result) : result;
 }
 
+type TriggerEmitOptions = {
+    key?: keyType | null;
+    name?: keyType | null;
+    value?: any;
+    oldValue?: any;
+    old?: any;
+    op?: string | null;
+    trigger?: string | null;
+};
+const hasOwn = (obj: any, key: keyType) => Object.prototype.hasOwnProperty.call(obj, key);
+const isTriggerEmitOptions = (value: any, allowValueOnly = false): value is TriggerEmitOptions => {
+    return !!value && typeof value == "object" && !Array.isArray(value) && (
+        hasOwn(value, "key") ||
+        hasOwn(value, "name") ||
+        hasOwn(value, "oldValue") ||
+        hasOwn(value, "old") ||
+        hasOwn(value, "op") ||
+        hasOwn(value, "trigger") ||
+        (allowValueOnly && hasOwn(value, "value"))
+    );
+}
+const triggerOptionValue = (options: TriggerEmitOptions, key: "value" | "oldValue", fallback: () => any) => {
+    if (hasOwn(options, key)) return options[key];
+    if (key == "oldValue" && hasOwn(options, "old")) return options.old;
+    return fallback();
+}
+const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => any) => {
+    const api: any = (key?: any, opOrOptions?: string | null | TriggerEmitOptions, trigger?: string | null) => {
+        const options: TriggerEmitOptions = isTriggerEmitOptions(key)
+            ? key
+            : isTriggerEmitOptions(opOrOptions, true)
+                ? { ...opOrOptions, key }
+                : { key, op: opOrOptions as string | null, trigger };
+        return emit(options);
+    };
+
+    const control = registry?.triggerControl;
+    if (control) Object.assign(api, control);
+    api.custom = (trigger: string, key?: keyType | null, op: string | null = "@custom", value?: any, oldValue?: any) => api({ key, op, trigger, value, oldValue });
+    return api;
+}
+
 // get reactive primitives (if native iterator is available, use it)
 const systemGet = (target: any, name: any, registry: any)=>{
     if (target == null || isPrimitive(target)) { return target; }
@@ -135,8 +177,9 @@ const systemGet = (target: any, name: any, registry: any)=>{
     if ($extK.indexOf(name as any) >= 0) { return safeGet(target, name as any) ?? target; }
     if (name == $value)               { return safeGet(target, name) ?? safeGet(target, "value"); }
     if (name == $registryKey$)        { return registry; } // @ts-ignore
-    if (name == Symbol.observable)    { return registry?.compatible; } // @ts-ignore
-    if (name == Symbol.subscribe)     { return (cb, prop?)=>affected(prop != null ? [target, prop] : target, cb); }
+    if (name == $triggerControl)      { return registry?.triggerControl; }
+    if (name == (Symbol as any).observable) { return registry?.compatible; }
+    if (name == (Symbol as any).subscribe)  { return (cb, prop?, options?)=>affected(prop != null ? [target, prop] : target, cb, options); }
     if (name == Symbol.iterator)      { return safeGet(target, name as any); }
     if (name == Symbol.asyncIterator) { return safeGet(target, name as any); }
     if (name == Symbol.dispose)       { return (prop?)=>{ safeGet(target, Symbol.dispose)?.(prop); unaffected(prop != null ? [target, prop] : target)}; }
@@ -339,10 +382,12 @@ export class ObserveArrayHandler {
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == $trigger) {
-            return (key: any = 0) => {
-                const v = safeGet(target, key);
-                return subscriptRegistry.get(target)?.trigger?.(key, v, undefined, "@invalidate");
-            };
+            return createTriggerAPI(registry, (options) => {
+                const key = options.key ?? options.name ?? 0;
+                const value = triggerOptionValue(options, "value", () => safeGet(target, key));
+                const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
+                return registry?.trigger?.(key, value, oldValue, options.op ?? "@invalidate", options.trigger ?? "manual");
+            });
         }
 
         //
@@ -471,11 +516,12 @@ export class ObserveObjectHandler<T=any> {
         // redirect to value key
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == $trigger) {
-            return (key: any = "value") => {
-                const v = safeGet(target, key);
-                const old = (key == "value") ? safeGet(target, $value) : undefined;
-                return subscriptRegistry.get(target)?.trigger?.(key, v, old, "@invalidate");
-            };
+            return createTriggerAPI(registry, (options) => {
+                const key = options.key ?? options.name ?? "value";
+                const value = triggerOptionValue(options, "value", () => safeGet(target, key));
+                const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" ? safeGet(target, $value) : undefined);
+                return registry?.trigger?.(key, value, oldValue, options.op ?? "@invalidate", options.trigger ?? "manual");
+            });
         }
 
         //
@@ -691,11 +737,14 @@ export class ObserveMapHandler<K=any, V=any> {
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == $trigger) {
-            return (key: any) => {
+            return createTriggerAPI(registry, (options) => {
+                const key = options.key ?? options.name;
                 if (key == null) { return; }
-                const v = target.get(key); if (v == null) { return; }
-                return subscriptRegistry.get(target)?.trigger?.(key, v, undefined, "@set");
-            };
+                const value = triggerOptionValue(options, "value", () => target.get(key));
+                if (value == null && !hasOwn(options, "value")) { return; }
+                const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
+                return registry?.trigger?.(key, value, oldValue, options.op ?? "@set", options.trigger ?? "manual");
+            });
         }
         
         //
@@ -792,11 +841,13 @@ export class ObserveSetHandler<T=any> {
         //
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == $trigger) {
-            return (key: any) => {
+            return createTriggerAPI(registry, (options) => {
+                const key = options.key ?? options.name;
                 if (key == null) return;
-                const v = target.has(key);
-                return subscriptRegistry.get(target)?.trigger?.(key, v, undefined, "@invalidate");
-            };
+                const value = triggerOptionValue(options, "value", () => target.has(key));
+                const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
+                return registry?.trigger?.(key, value, oldValue, options.op ?? "@invalidate", options.trigger ?? "manual");
+            });
         }
         
         //

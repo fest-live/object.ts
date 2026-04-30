@@ -9,8 +9,9 @@ export * from "./wrap/AssignObject";
 export * from "./core/Assigned";
 export * from "./core/Mainline";
 export * from "./core/Primitives";
+export type { AffectedCallback, AffectedConfig, AffectedOptions, TriggerControl, TriggerFilterList, TriggerName } from "./core/Subscript";
 
 /** Internal symbols and low-level helpers that other packages sometimes need directly. */
-export { $triggerLess, $trigger, $affected } from "./wrap/Symbol";
+export { $triggerLess, $triggerLock, $triggerControl, $trigger, $affected } from "./wrap/Symbol";
 export { safe, unwrap, deref, addToCallChain, wrapSetAsArray } from "./wrap/Utils";
-export { type refValid, type subValid } from "./wrap/Utils";
+export { type observeValid, type subValid } from "./wrap/Utils";

@@ -1,3 +1,5 @@
+.tmp-tests/
+chrome-headless-shell/
 # Logs
 logs
 *.log

@@ -1,6 +1,9 @@
 # Planned for V2 (or V3)
 
-- Alongside with `set` triggering (custom `$trigger$` property), we allow in future any custom or multiple `trigger` for `ref` or `observe` types...
-- `affected` will have types of triggers, filtering, more options, allow or no to trigger immediately when bound.
-- Custom `subscribe` i.e. `$affected` or `@subscribe` will also re-clined in system of another types of trigger system.
+- `affected` now uses the V2 callback shape: `(value, name, oldValue, op, trigger)`.
+- `affected(..., triggersOrOptions?)` accepts either trigger lists or `{ affectTypes, triggerImmediately }`.
+- Omitted trigger filters are `["*"]`, and `["*"]` / `["all"]` match every trigger.
+- `triggerImmediately` controls the first snapshot callback, which is emitted as trigger `"initial"`.
+- Current trigger names include `initial`, `setter`, and `manual`; custom trigger names can be added by passing the fifth argument to registry `trigger()`.
+- Reactive values expose `$triggerControl` for enabling/disabling trigger types; `$trigger` can also emit custom trigger names.
 - In general `subscribe` system will be re-written for more targetted and exact (typed) triggering.

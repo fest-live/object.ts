@@ -43,7 +43,12 @@
         "@fest-lib/core": "^0.1.0"
     },
     "scripts": {
-        "test": "vite --host 0.0.0.0",
+        "test": "npm run test:node && npm run test:deno && npm run test:browser",
+        "test:node": "node ./scripts/run-node-tests.mjs",
+        "test:deno": "deno test --unstable-sloppy-imports --allow-read --import-map=./test/deno.import_map.json ./test/Subscribe.deno.test.ts",
+        "test:browser:install": "npx @puppeteer/browsers install chrome-headless-shell@stable --path ./chrome-headless-shell",
+        "test:browser": "node ./scripts/run-browser-tests.mjs",
+        "test:dev": "vite --host 0.0.0.0",
         "dev": "vite --host 0.0.0.0",
         "watch": "vite build --watch",
         "build": "vite build --config vite.config.js && npm run docs && npm run docs:md",
@@ -56,7 +61,9 @@
         "docs:md:clean": "rm -rf ./docs-md && typedoc --options ./typedoc.md.json"
     },
     "devDependencies": {
+        "@puppeteer/browsers": "^2.13.0",
         "@types/node": ">=22.8.1",
+        "puppeteer": "^24.42.0",
         "typescript": ">=6.0.0-beta",
         "vite": "^8.0.7",
         "vite-plugin-dynamic-import": ">=1.6.0",

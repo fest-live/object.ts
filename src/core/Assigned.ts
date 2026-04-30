@@ -58,6 +58,7 @@ export const conditional = conditionalRef;
 export const remap = <T = any>(sub: subValid<T>, cb?: Function | null, dest?: any | null) => {
     if (!dest) dest = observe({}) as any;
     const usb = affected(sub, (value, prop, old) => {
+        if (prop == null) return;
         const got = cb?.(value, prop, old);
         if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
             if (isNotEqual(dest[prop], got)) dest[prop] = got;
@@ -69,6 +70,7 @@ export const remap = <T = any>(sub: subValid<T>, cb?: Function | null, dest?: an
 export const unified = <Under = any>(...subs: subValid<Under>[]) => {
     const dest = observe({});
     subs?.forEach?.((sub) => affected(sub, (value, prop, _) => {
+        if (prop == null) return;
         if (isNotEqual(dest[prop], value)) { dest[prop] = value; };
     })); return dest;
 }
