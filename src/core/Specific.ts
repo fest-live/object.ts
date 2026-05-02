@@ -6,7 +6,7 @@
  * exposes the observable protocol used by `observe()`.
  */
 import { affected, unaffected } from "./Mainline";
-import { subscriptRegistry, wrapWith } from "./Subscript";
+import { normalizeTriggerName, subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected, $realProp } from "../wrap/Symbol";
 import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
@@ -146,6 +146,7 @@ const triggerOptionValue = (options: TriggerEmitOptions, key: "value" | "oldValu
     if (key == "oldValue" && hasOwn(options, "old")) return options.old;
     return fallback();
 }
+const triggerOptionTrigger = (options: TriggerEmitOptions, fallback = "manual") => normalizeTriggerName(options.trigger ?? options.op ?? fallback);
 const isRuntimeKey = (key: any): key is keyType => typeof key == "string" || typeof key == "number" || typeof key == "symbol";
 const realPropOf = (target: any): keyType | null => {
     const prop = safeGet(target, $realProp) ?? safeGet(target, "realProp");
@@ -163,13 +164,13 @@ const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => 
             ? key
             : isTriggerEmitOptions(opOrOptions, true)
                 ? { ...opOrOptions, key }
-                : { key, op: opOrOptions as string | null, trigger };
+                : { key, trigger: trigger ?? (opOrOptions as string | null) };
         return emit(options);
     };
 
     const control = registry?.triggerControl;
     if (control) Object.assign(api, control);
-    api.custom = (trigger: string, key?: keyType | null, op: string | null = "@custom", value?: any, oldValue?: any) => api({ key, op, trigger, value, oldValue });
+    api.custom = (trigger: string, key?: keyType | null, value?: any, oldValue?: any) => api({ key, trigger, value, oldValue });
     return api;
 }
 
@@ -305,26 +306,26 @@ export class ObserveArrayMethod {
         // triggers on adding
         const reg = subscriptRegistry.get(this.#self);
         if (added?.length == 1) {
-            reg?.trigger?.(idx, added[0], null, added[0] == null ? "@add" : "@set");
+            reg?.trigger?.(idx, added[0], null, added[0] == null ? "add" : "set");
         } else if (added?.length > 1) {
-            reg?.trigger?.(idx, added, null, "@addAll");
-            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, item == null ? "@add" : "@set"));
+            reg?.trigger?.(idx, added, null, "addAll");
+            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, item == null ? "add" : "set"));
         }
 
         // triggers on changing
         if (setPairs?.length == 1) {
-            reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], setPairs[0]?.[2] == null ? "@add" : "@set");
+            reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], setPairs[0]?.[2] == null ? "add" : "set");
         } else if (setPairs?.length > 1) {
-            reg?.trigger?.(idx, setPairs, oldState, "@setAll");
-            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], pair?.[2] == null ? "@add" : "@set"));
+            reg?.trigger?.(idx, setPairs, oldState, "setAll");
+            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], pair?.[2] == null ? "add" : "set"));
         }
 
         // triggers on removing
         if (removed?.length == 1) {
-            reg?.trigger?.(idx, null, removed[0], removed[0] == null ? "@add" : "@delete");
+            reg?.trigger?.(idx, null, removed[0], removed[0] == null ? "add" : "delete");
         } else if (removed?.length > 1) {
-            reg?.trigger?.(idx, null, removed, "@clear");
-            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, item == null ? "@add" : "@delete"));
+            reg?.trigger?.(idx, null, removed, "deleteAll");
+            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, item == null ? "add" : "delete"));
         }
 
         //
@@ -344,21 +345,21 @@ const triggerWhenLengthChange = (self, target, oldLen, newLen)=>{
 
         // emit removals if shrunk
         if (removedItems.length === 1) {
-            registry?.trigger?.(newLen, null, removedItems[0], "@delete");
+            registry?.trigger?.(newLen, null, removedItems[0], "delete");
         } else if (removedItems.length > 1) {
-            registry?.trigger?.(newLen, null, removedItems, "@clear");
-            removedItems.forEach((item, I) => registry?.trigger?.(newLen + I, null, item, "@delete"));
+            registry?.trigger?.(newLen, null, removedItems, "deleteAll");
+            removedItems.forEach((item, I) => registry?.trigger?.(newLen + I, null, item, "delete"));
         }
 
         // emit additions if grown (holes are considered added undefined entries)
         const addedCount = (Number.isInteger(oldLen) && Number.isInteger(newLen) && newLen > oldLen)
             ? (newLen - oldLen) : 0;
         if (addedCount === 1) {
-            registry?.trigger?.(oldLen, undefined, null, "@add");
+            registry?.trigger?.(oldLen, undefined, null, "add");
         } else if (addedCount > 1) {
             const added = Array(addedCount).fill(undefined);
-            registry?.trigger?.(oldLen, added, null, "@addAll");
-            added.forEach((_, I) => registry?.trigger?.(oldLen + I, undefined, null, "@add"));
+            registry?.trigger?.(oldLen, added, null, "addAll");
+            added.forEach((_, I) => registry?.trigger?.(oldLen + I, undefined, null, "add"));
         }
     }
 }
@@ -397,7 +398,7 @@ export class ObserveArrayHandler {
                 const key = options.key ?? options.name ?? 0;
                 const value = triggerOptionValue(options, "value", () => safeGet(target, key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
-                return registry?.trigger?.(key, value, oldValue, options.op === undefined ? "@invalidate" : options.op, options.trigger ?? "manual");
+                return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
             });
         }
 
@@ -459,7 +460,7 @@ export class ObserveArrayHandler {
 
         //
         if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(old, value)) {
-            (subscriptRegistry)?.get?.(target)?.trigger?.(name, value, old, typeof name == "number" ? "@set" : null);
+            (subscriptRegistry)?.get?.(target)?.trigger?.(name, value, old, "set");
         }
 
         //
@@ -483,7 +484,7 @@ export class ObserveArrayHandler {
         //
         if (!this[$triggerLock] && (name != "length" && name != $triggerLock && typeof name != "symbol")) {
             if (old != null) {
-                (subscriptRegistry).get(target)?.trigger?.(name, name, old, typeof name == "number" ? "@delete" : null);
+                (subscriptRegistry).get(target)?.trigger?.(name, name, old, "delete");
             }
         }
 
@@ -531,7 +532,7 @@ export class ObserveObjectHandler<T=any> {
                 const key = triggerKeyOf(target, options.key ?? options.name ?? realPropOf(target) ?? "value");
                 const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" || key == realPropOf(target) ? safeGet(target, $value) : undefined);
-                return registry?.trigger?.(key, value, oldValue, options.op === undefined ? "@invalidate" : options.op, options.trigger ?? "manual");
+                return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
             });
         }
 
@@ -717,7 +718,7 @@ export class ObserveObjectHandler<T=any> {
         const result = Reflect.deleteProperty(target, name);
 
         //
-        if (!this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) { (subscriptRegistry).get(target)?.trigger?.(name, null, oldValue); }
+        if (!this[$triggerLock] && (name != $triggerLock && typeof name != "symbol")) { (subscriptRegistry).get(target)?.trigger?.(name, null, oldValue, "delete"); }
         return result;
     }
 }
@@ -755,7 +756,7 @@ export class ObserveMapHandler<K=any, V=any> {
                 const value = triggerOptionValue(options, "value", () => target.get(key));
                 if (value == null && !hasOwn(options, "value")) { return; }
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
-                return registry?.trigger?.(key, value, oldValue, options.op ?? "@set", options.trigger ?? "manual");
+                return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
             });
         }
         
@@ -764,7 +765,7 @@ export class ObserveMapHandler<K=any, V=any> {
             return () => {
                 const oldValues: any = Array.from(target?.entries?.() || []), result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "@delete"); }
+                    if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "delete"); }
                 });
                 return result;
             };
@@ -774,7 +775,7 @@ export class ObserveMapHandler<K=any, V=any> {
         if (name == "delete") {
             return (prop, _ = null) => {
                 const oldValue = target.get(prop), result = valueOrFx(prop);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "@delete"); }
+                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "delete"); }
                 return result;
             };
         }
@@ -783,7 +784,7 @@ export class ObserveMapHandler<K=any, V=any> {
         if (name == "set") {
             return (prop, value) => potentiallyAsyncMap(value, (v)=>{
                 const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue, oldValue == null ? "@add" : "@set"); } };
+                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue, oldValue == null ? "add" : "set"); } };
                 return result;
             });
         }
@@ -858,7 +859,7 @@ export class ObserveSetHandler<T=any> {
                 if (key == null) return;
                 const value = triggerOptionValue(options, "value", () => target.has(key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
-                return registry?.trigger?.(key, value, oldValue, options.op ?? "@invalidate", options.trigger ?? "manual");
+                return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
             });
         }
         
@@ -866,7 +867,7 @@ export class ObserveSetHandler<T=any> {
         if (name == "clear") {
             return () => {
                 const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
-                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue, "@delete"); } });
+                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue, "delete"); } });
                 return result;
             };
         }
@@ -875,7 +876,7 @@ export class ObserveSetHandler<T=any> {
         if (name == "delete") {
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue, "@delete"); }
+                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue, "delete"); }
                 return result;
             };
         }
@@ -885,7 +886,7 @@ export class ObserveSetHandler<T=any> {
             // TODO: add potentially async set
             return (value) => {
                 const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock] && !oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue, "@add"); } };
+                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock] && !oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue, "add"); } };
                 return result;
             };
         }

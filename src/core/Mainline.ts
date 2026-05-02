@@ -52,7 +52,7 @@ const propValueOf = (target: any, prop: keyType | null) => {
 const callByPropRefAware = (target: any, prop: keyType | null, cb: callable, ctx: any) => {
     if (prop != null && prop == realPropOf(target)) {
         const value = propValueOf(target, prop);
-        if (value != null) return cb?.(value, prop, null, "@set");
+        if (value != null) return cb?.(value, prop, null, "set");
     }
     return callByProp(target, prop as any, cb, ctx);
 }
@@ -62,7 +62,7 @@ const withTrigger = (cb: callable, options: AffectedConfig, trigger: TriggerName
         if (!normalized.triggerImmediately) return;
     } else if (!triggerFilterAllows(normalized.affectTypes, trigger)) return;
 
-    return (value: any, name: keyType | null, oldValue?: any, op: string | null = null, ...etc: any[]) => cb?.(value, name, oldValue, op, trigger, ...etc);
+    return (value: any, name: keyType | null, oldValue?: any, ...etc: any[]) => cb?.(value, name, oldValue, trigger, ...etc);
 }
 
 /** Default subscription strategy for already-observable targets. */
@@ -102,7 +102,7 @@ export const subscribeInput: subscript = (tg: HTMLInputElement, _: keyType | nul
     const $opt: any = { }; let oldValue = tg?.value;
     const $cb = (ev: any) => {
         const value = ev?.target?.value;
-        if (triggerFilterAllows(affectTypes, "setter")) cb?.(value, "value", oldValue, "@set", "setter", ev);
+        if (triggerFilterAllows(affectTypes, "set")) cb?.(value, "value", oldValue, "set", ev);
         oldValue = value;
     };
     (tg as any)?.addEventListener?.("change", $cb, $opt);
@@ -136,14 +136,13 @@ const effectTargetContext = (source: any) => {
     return { source, target: source, prop: null };
 }
 
-const toEffectEvent = (source: any, target: any, value: any, prop: keyType | null, oldValue: any, op: string | null | undefined, trigger: TriggerName, args: any[]): EffectEvent => ({
+const toEffectEvent = (source: any, target: any, value: any, prop: keyType | null, oldValue: any, trigger: TriggerName, args: any[]): EffectEvent => ({
     source,
     target,
     value,
     prop,
     name: prop,
     oldValue,
-    op,
     trigger,
     args,
 });
@@ -159,9 +158,8 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
     return obj?.then?.((obj: any) => affected?.(obj, prop, cb, options))?.catch?.((e: any) => { console.warn(e); return null; });
 }
 
-// TODO! in future versions will different types of triggers, along side classic (`all`), will be `setter`, `manual`, `custom` and so on...
-// will be special triggering filter system, and categories of triggers, like `setter`, `manual`, `custom` and so on...
-// also, will be have flag for immediately to trigger callback or no to trigger at all...
+// Trigger filters use compact operation names (`set`, `add`, `delete`, `manual`, `custom`, ...).
+// Legacy aliases such as `setter` and `@set` are normalized in Subscript.
 
 //
 /** `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init. */
@@ -230,8 +228,8 @@ export function effect(cb: EffectCallback, targets?: any | EffectConfig, options
     };
     const disposers = normalizeEffectTargets(targets).map((source) => {
         const ctx = effectTargetContext(source);
-        return affected(ctx.target, ctx.prop, (value, prop, oldValue, op, trigger, ...args) => {
-            return cb(toEffectEvent(ctx.source, ctx.target, value, prop, oldValue, op, trigger ?? null, args));
+        return affected(ctx.target, ctx.prop, (value, prop, oldValue, trigger, ...args) => {
+            return cb(toEffectEvent(ctx.source, ctx.target, value, prop, oldValue, trigger ?? null, args));
         }, affectedOptions);
     }).filter((dispose) => typeof dispose == "function");
 
@@ -352,7 +350,7 @@ export function iterated<T = any>(tg: subValid<T>, cb: callable, options: Affect
     if (registeredIterated.has([tg, cb])) { return registeredIterated.get([tg, cb]); }
 
     //
-    const $sub: callable = (value: any, name: keyType | null, old?: any, _op?: string | null, trigger?: TriggerName) => {
+    const $sub: callable = (value: any, name: keyType | null, old?: any, trigger?: TriggerName) => {
         if (name == "value") {
             //TODO: needs notify, that elements of arrayold is removed
             const entries = (old?.value ?? old)?.entries?.();
@@ -364,11 +362,11 @@ export function iterated<T = any>(tg: subValid<T>, cb: callable, options: Affect
                     const ofOld = item ?? ((old?.value ?? old)?.[idx] ?? null);
                     const ofNew = basis?.[idx];
                     if (ofOld == null && ofNew != null) {
-                        cb(ofNew, idx, null, "@add", trigger);
+                        cb(ofNew, idx, null, "add");
                     } else if (ofOld != null && ofNew == null) {
-                        cb(null, idx, ofOld, "@delete", trigger);
+                        cb(null, idx, ofOld, "delete");
                     } else if (isNotEqual(ofOld, ofNew)) {
-                        cb(ofNew, idx, ofOld, "@set", trigger);
+                        cb(ofNew, idx, ofOld, "set");
                     }
                 }
             }

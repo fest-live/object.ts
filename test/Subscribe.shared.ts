@@ -12,7 +12,6 @@ type RecordedEvent = {
     value: any;
     name: any;
     oldValue: any;
-    op: string | null | undefined;
     trigger: string | null | undefined;
 };
 
@@ -21,8 +20,8 @@ const tick = async () => {
     await Promise.resolve();
 };
 
-const record = (events: RecordedEvent[]) => (value: any, name: any, oldValue: any, op: string | null | undefined, trigger: string | null | undefined) => {
-    events.push({ value, name, oldValue, op, trigger });
+const record = (events: RecordedEvent[]) => (value: any, name: any, oldValue: any, trigger: string | null | undefined) => {
+    events.push({ value, name, oldValue, trigger });
 };
 
 export const subscribeTestCases = [
@@ -39,8 +38,8 @@ export const subscribeTestCases = [
             unsubscribe?.();
 
             assert.equal(events.length, 2);
-            assert.deepEqual(events[0], { value: 1, name: "value", oldValue: null, op: "@set", trigger: "initial" });
-            assert.deepEqual(events[1], { value: 2, name: "value", oldValue: 1, op: null, trigger: "setter" });
+            assert.deepEqual(events[0], { value: 1, name: "value", oldValue: null, trigger: "initial" });
+            assert.deepEqual(events[1], { value: 2, name: "value", oldValue: 1, trigger: "set" });
         },
     },
     {
@@ -56,7 +55,7 @@ export const subscribeTestCases = [
             unsubscribe?.();
 
             assert.equal(events.length, 1);
-            assert.deepEqual(events[0], { value: 2, name: "value", oldValue: 1, op: null, trigger: "setter" });
+            assert.deepEqual(events[0], { value: 2, name: "value", oldValue: 1, trigger: "set" });
         },
     },
     {
@@ -67,12 +66,12 @@ export const subscribeTestCases = [
 
             const unsubscribe = affected(source, record(events), { affectTypes: ["custom"], triggerImmediately: false });
             source.value = 2;
-            source[$trigger]({ key: "value", value: 42, oldValue: 2, op: "@custom", trigger: "custom" });
+            source[$trigger]({ key: "value", value: 42, oldValue: 2, trigger: "custom" });
             await tick();
             unsubscribe?.();
 
             assert.equal(events.length, 1);
-            assert.deepEqual(events[0], { value: 42, name: "value", oldValue: 2, op: "@custom", trigger: "custom" });
+            assert.deepEqual(events[0], { value: 42, name: "value", oldValue: 2, trigger: "custom" });
         },
     },
     {
@@ -92,7 +91,7 @@ export const subscribeTestCases = [
             unsubscribe?.();
 
             assert.equal(events.length, 1);
-            assert.deepEqual(events[0], { value: 3, name: "value", oldValue: 2, op: null, trigger: "setter" });
+            assert.deepEqual(events[0], { value: 3, name: "value", oldValue: 2, trigger: "set" });
         },
     },
     {
@@ -112,7 +111,7 @@ export const subscribeTestCases = [
             unsubscribe?.();
 
             assert.equal(events.length, 1);
-            assert.deepEqual(events[0], { value: 3, name: "value", oldValue: 2, op: null, trigger: "setter" });
+            assert.deepEqual(events[0], { value: 3, name: "value", oldValue: 2, trigger: "set" });
         },
     },
     {
@@ -135,10 +134,10 @@ export const subscribeTestCases = [
             unsubscribeByValue?.();
 
             assert.equal(events.length, 2);
-            assert.deepEqual(events[0], { value: "one", name: "title", oldValue: null, op: "@set", trigger: "initial" });
-            assert.deepEqual(events[1], { value: "two", name: "title", oldValue: "one", op: null, trigger: "setter" });
+            assert.deepEqual(events[0], { value: "one", name: "title", oldValue: null, trigger: "initial" });
+            assert.deepEqual(events[1], { value: "two", name: "title", oldValue: "one", trigger: "set" });
             assert.equal(pairedValueEvents.length, 1);
-            assert.deepEqual(pairedValueEvents[0], { value: "two", name: "title", oldValue: "one", op: null, trigger: "setter" });
+            assert.deepEqual(pairedValueEvents[0], { value: "two", name: "title", oldValue: "one", trigger: "set" });
         },
     },
     {
@@ -159,8 +158,8 @@ export const subscribeTestCases = [
             assert.equal(events[0].value, 2);
             assert.equal(events[0].prop, "value");
             assert.equal(events[0].oldValue, 1);
-            assert.equal(events[0].op, null);
-            assert.equal(events[0].trigger, "setter");
+            assert.equal("op" in events[0], false);
+            assert.equal(events[0].trigger, "set");
         },
     },
     {
@@ -191,14 +190,14 @@ export const subscribeTestCases = [
 
             const unsubscribe = effected(source, (event) => events.push(event), { affectTypes: ["manual"] });
             source.value = 2;
-            source[$trigger]({ key: "value", value: 3, oldValue: 2, op: "@manual", trigger: "manual" });
+            source[$trigger]({ key: "value", value: 3, oldValue: 2, trigger: "manual" });
             await tick();
             unsubscribe?.();
 
             assert.equal(events.length, 1);
             assert.equal(events[0].value, 3);
             assert.equal(events[0].prop, "value");
-            assert.equal(events[0].op, "@manual");
+            assert.equal("op" in events[0], false);
             assert.equal(events[0].trigger, "manual");
         },
     },
@@ -218,7 +217,7 @@ export const subscribeTestCases = [
             assert.equal(events[0].target, events[0].source);
             assert.equal(events[0].value, 2);
             assert.equal(events[0].prop, "value");
-            assert.equal(events[0].trigger, "setter");
+            assert.equal(events[0].trigger, "set");
         },
     },
 ];

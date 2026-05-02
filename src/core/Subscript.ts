@@ -16,7 +16,7 @@ export type AffectedOptions = {
     triggerImmediately?: boolean;
 };
 export type AffectedConfig = TriggerFilterList | AffectedOptions;
-export type AffectedCallback = (value: any, name: keyType | null, oldValue?: any, op?: string | null, trigger?: TriggerName, ...etc: any[]) => void;
+export type AffectedCallback = (value: any, name: keyType | null, oldValue?: any, trigger?: TriggerName, ...etc: any[]) => void;
 export type EffectEvent = {
     source: any;
     target: any;
@@ -24,7 +24,6 @@ export type EffectEvent = {
     prop: keyType | null;
     name: keyType | null;
     oldValue?: any;
-    op?: string | null;
     trigger?: TriggerName;
     args: any[];
 };
@@ -100,12 +99,28 @@ export const wrapWith = (what: any, handle: any): any => {
 const forAll = Symbol.for("@allProps");
 const wildcardTriggers = new Set(["*", "all"]);
 const triggerAliases = new Map<string, string[]>([
-    ["setter", ["set"]],
-    ["set", ["setter"]],
+    ["set", ["setter", "@set"]],
+    ["add", ["@add"]],
+    ["delete", ["@delete"]],
+    ["invalidate", ["@invalidate"]],
+    ["manual", ["@manual"]],
+    ["custom", ["@custom"]],
+    ["setAll", ["@setAll"]],
+    ["addAll", ["@addAll"]],
+    ["deleteAll", ["@deleteAll", "@clear"]],
 ]);
+const triggerCanonicalNames = new Map(
+    Array.from(triggerAliases.entries()).flatMap(([canonical, aliases]) => aliases.map((alias) => [alias, canonical]))
+);
+
+export const normalizeTriggerName = (trigger: TriggerName = "set"): TriggerName => {
+    if (trigger == null) return trigger;
+    const name = String(trigger || "set");
+    return triggerCanonicalNames.get(name) ?? name;
+}
 
 const triggerNamesOf = (trigger: TriggerName) => {
-    const name = trigger == null ? "all" : String(trigger);
+    const name = trigger == null ? "all" : String(normalizeTriggerName(trigger) ?? "all");
     return [name, ...(triggerAliases.get(name) ?? [])];
 }
 
@@ -115,7 +130,10 @@ const expandTriggerFilter = (types: TriggerFilterList = ["*"]) => {
 
 export const normalizeTriggerFilter = (triggers: TriggerFilterList = ["*"]) => {
     const list = typeof triggers == "string" ? [triggers] : Array.from(triggers ?? ["*"]);
-    const normalized = new Set(list.map((item) => String(item || "*")));
+    const normalized = new Set(list.map((item) => {
+        const name = String(item || "*");
+        return wildcardTriggers.has(name) ? name : String(normalizeTriggerName(name) ?? name);
+    }));
     return normalized.size ? normalized : new Set(["*"]);
 }
 
@@ -180,7 +198,7 @@ export class Subscript {
 
     // было: #triggerLock = new Set<keyType>();
     #pending = new Map<keyType | null, [keyType | null, any, any, any[]]>();
-    #pendingByProp = new Map<keyType | null, Map<string, [keyType | null, any, any, (string | null), TriggerName, any[]]>>();
+    #pendingByProp = new Map<keyType | null, Map<string, [keyType | null, any, any, TriggerName, any[]]>>();
     #flushScheduled = false;
 
     // last run timestamp per callback
@@ -250,7 +268,8 @@ export class Subscript {
         }
     }
 
-    #dispatch(name, value = null, oldValue?: any, op: string | null = null, trigger: TriggerName = "all", ...etc: any[]) {
+    #dispatch(name, value = null, oldValue?: any, trigger: TriggerName = "all", ...etc: any[]) {
+        trigger = normalizeTriggerName(trigger) ?? trigger;
         const listeners = this.#listeners;
         const promises: Promise<any>[] = listeners?.size ? Array.from(listeners.entries())
             .map(([cb, record]) => {
@@ -258,7 +277,7 @@ export class Subscript {
                     (record.prop === name || record.prop === forAll || record.prop === null) &&
                     triggerFilterAllows(record.triggers, trigger)
                 ) {
-                    return this.$safeExec(cb, value, name, oldValue, op, trigger, ...etc);
+                    return this.$safeExec(cb, value, name, oldValue, trigger, ...etc);
                 }
                 return undefined;
             })
@@ -272,7 +291,6 @@ export class Subscript {
                 prop: name,
                 name,
                 oldValue,
-                op,
                 trigger,
                 args: etc,
             };
@@ -354,22 +372,19 @@ export class Subscript {
      * - другие name не блокируются
      */
     /**
-     * Queue and coalesce trigger events by property, operation, and trigger source per microtask.
+     * Queue and coalesce trigger events by property and trigger type per microtask.
      *
      * WHY: hot mutation paths can emit many intermediate writes; batching keeps
      * subscribers deterministic and avoids recursive cascades on one property.
      */
-    trigger(name: keyType | null, value?: any | null, oldValue?: any, operation: string | null = null, trigger: TriggerName = "setter", ...etc: any[]) {
+    trigger(name: keyType | null, value?: any | null, oldValue?: any, trigger: TriggerName = "set", ...etc: any[]) {
         if (typeof name === "symbol") return;
 
-        // operation может быть undefined из старых вызовов
-        if (operation === undefined) operation = null;
-        if (trigger === undefined) trigger = "setter";
+        if (trigger === undefined) trigger = "set";
+        trigger = normalizeTriggerName(trigger) ?? trigger;
         if (!this.isTriggerEnabled(trigger)) return;
 
-        // ключ дедупа по operation
-        // null/undefined -> "__"
-        const opKey = `${trigger ?? "all"}:${operation ?? "__"}`;
+        const opKey = `${trigger ?? "all"}`;
 
         // если сейчас по этому name идет dispatch (реэнтранси) — складируем
         // если не идет — тоже складируем, но flush будет один на микро-тик
@@ -379,8 +394,8 @@ export class Subscript {
             this.#pendingByProp.set(name, byOp);
         }
 
-        // A: схлопываем только одинаковые (name + operation) в рамках микро-тика
-        byOp.set(opKey, [name, value, oldValue, operation, trigger, etc]);
+        // A: схлопываем только одинаковые (name + trigger) в рамках микро-тика
+        byOp.set(opKey, [name, value, oldValue, trigger, etc]);
 
         // уже запланирован flush — выходим
         if (this.#flushScheduled) return;
@@ -401,10 +416,10 @@ export class Subscript {
                 if (prop != null) this.#inDispatch.add(prop);
                 try {
                     for (const [, args] of opMap) {
-                        const [nm, v, ov, op, tg, rest] = args;
+                        const [nm, v, ov, tg, rest] = args;
                         try {
                             // #dispatch ожидает (name, value, oldValue, ...etc)
-                            this.#dispatch(nm, v, ov, op, tg, ...(rest ?? []));
+                            this.#dispatch(nm, v, ov, tg, ...(rest ?? []));
                         } catch (e) {
                             console.warn(e);
                         }
