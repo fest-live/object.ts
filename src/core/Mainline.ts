@@ -6,9 +6,9 @@
  * combinators like `assign`, `link`, `computed`, and `derivate`.
  */
 import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign } from "fest/core";
-import { $extractKey$, $registryKey$, $affected, $trigger } from "../wrap/Symbol";
+import { $extractKey$, $registryKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, type observeValid, type subValid, isThenable } from "../wrap/Utils";
-import { normalizeAffectedOptions, subscriptRegistry, triggerFilterAllows, type AffectedCallback, type AffectedConfig, type TriggerName } from "./Subscript";
+import { effectGlobally, normalizeAffectedOptions, normalizeEffectOptions, subscriptRegistry, triggerFilterAllows, type AffectedCallback, type AffectedConfig, type EffectCallback, type EffectConfig, type EffectEvent, type TriggerName } from "./Subscript";
 import { observableBySet, observableByMap } from "./Assigned";
 import { isObservable } from "./Primitives";
 
@@ -36,6 +36,26 @@ const checkValidObj = (obj: any) => {
 }
 
 const initialTrigger: TriggerName = "initial";
+const realPropOf = (target: any): keyType | null => {
+    const prop = target?.[$realProp] ?? target?.realProp;
+    return isKeyType(prop) ? prop : null;
+}
+const normalizeAffectedProp = (target: any, prop: keyType | null) => {
+    const realProp = realPropOf(target);
+    if (realProp != null && (prop == null || prop == "value")) return realProp;
+    return prop;
+}
+const propValueOf = (target: any, prop: keyType | null) => {
+    if (prop != null && prop == realPropOf(target)) return target?.value;
+    return target?.[prop as any];
+}
+const callByPropRefAware = (target: any, prop: keyType | null, cb: callable, ctx: any) => {
+    if (prop != null && prop == realPropOf(target)) {
+        const value = propValueOf(target, prop);
+        if (value != null) return cb?.(value, prop, null, "@set");
+    }
+    return callByProp(target, prop as any, cb, ctx);
+}
 const withTrigger = (cb: callable, options: AffectedConfig, trigger: TriggerName) => {
     const normalized = normalizeAffectedOptions(options);
     if (trigger == initialTrigger) {
@@ -48,7 +68,7 @@ const withTrigger = (cb: callable, options: AffectedConfig, trigger: TriggerName
 /** Default subscription strategy for already-observable targets. */
 export const subscribeDirectly: subscript = (target: any, prop: keyType | null, cb: callable, options: AffectedConfig = ["*"]) => { if (!target) return;
     if (!checkValidObj(target)) return;
-    const tProp = (prop != Symbol.iterator) ? prop : null;
+    const tProp = (prop != Symbol.iterator) ? normalizeAffectedProp(target, prop) : null;
 
     //
     let registry = target?.[$registryKey$] ?? (subscriptRegistry).get(target);
@@ -60,7 +80,7 @@ export const subscribeDirectly: subscript = (target: any, prop: keyType | null, 
     queueMicrotask(() => {
         const initialCb = withTrigger(cb, options, initialTrigger);
         if (!initialCb) return;
-        if (tProp != null && tProp != Symbol.iterator) { callByProp(target, tProp, initialCb, null); } else { callByAllProp(target, initialCb, null); }
+        if (tProp != null && tProp != Symbol.iterator) { callByPropRefAware(target, tProp, initialCb, null); } else { callByAllProp(target, initialCb, null); }
     });
 
     //
@@ -94,6 +114,40 @@ const checkIsPaired = (tg: any) => {
     return (Array.isArray(tg) && tg?.length == 2 && checkValidObj(tg?.[0])) && (isKeyType(tg?.[1]) || tg?.[1] == Symbol.iterator);
 }
 
+const isEffectOptionsArg = (value: any): value is EffectConfig => {
+    return !!value && typeof value == "object" && !Array.isArray(value) && (
+        "affectTypes" in value ||
+        "triggers" in value ||
+        "triggerImmediately" in value
+    );
+}
+
+const normalizeEffectTargets = (targets: any) => {
+    if (targets == null) return [];
+    if (Array.isArray(targets) && !checkIsPaired(targets) && !isObservable(targets)) return targets;
+    return [targets];
+}
+
+const effectTargetContext = (source: any) => {
+    if (checkIsPaired(source)) {
+        const target = source?.[0];
+        return { source, target, prop: normalizeAffectedProp(target, source?.[1] as keyType) };
+    }
+    return { source, target: source, prop: null };
+}
+
+const toEffectEvent = (source: any, target: any, value: any, prop: keyType | null, oldValue: any, op: string | null | undefined, trigger: TriggerName, args: any[]): EffectEvent => ({
+    source,
+    target,
+    value,
+    prop,
+    name: prop,
+    oldValue,
+    op,
+    trigger,
+    args,
+});
+
 /** Subscription adapter for `[target, prop]` tuples. */
 export const subscribePaired: subscript = <Under = any>(tg: subValid<Under>, _: keyType | null, cb: callable, options: AffectedConfig = ["*"]) => {
     const prop = isKeyType(tg?.[1]) ? tg?.[1] : null;
@@ -113,6 +167,7 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
 /** `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init. */
 export function affected(obj: any, prop: keyType | callable | null, cb: callable | AffectedConfig = ()=>{}, options?: AffectedConfig) {
     if (typeof prop == "function") { options = cb as AffectedConfig; cb = prop; prop = null; }
+    prop = normalizeAffectedProp(obj, prop);
 
     //
     if (isPrimitive(obj) || typeof obj == "symbol") {
@@ -145,12 +200,47 @@ export function affected(obj: any, prop: keyType | callable | null, cb: callable
             return queueMicrotask(() => {
                 const initialCb = withTrigger(cb as callable, options, initialTrigger);
                 if (!initialCb) return;
-                if (checkIsPaired(obj)) { return callByProp?.(obj?.[0], obj?.[1] as any, initialCb, null); }
-                if (prop != null && prop != Symbol.iterator) { return callByProp?.(obj, prop, initialCb, null); }
+                if (checkIsPaired(obj)) { return callByPropRefAware?.(obj?.[0], obj?.[1] as any, initialCb, null); }
+                if (prop != null && prop != Symbol.iterator) { return callByPropRefAware?.(obj, prop, initialCb, null); }
                 return callByAllProp?.(obj, initialCb, null);
             });
         }
     }
+}
+
+/**
+ * Subscribe to one or many reactive triggers and receive a structured event.
+ *
+ * Unlike `affected()`, `effect()` is callback-first and reports the source that
+ * registered or emitted the event. It does not emit initial events by default.
+ */
+export function effect(cb: EffectCallback, targets?: any | EffectConfig, options?: EffectConfig) {
+    if (cb == null || typeof cb != "function") return;
+    if (isEffectOptionsArg(targets) && options === undefined) {
+        return effectGlobally(cb, targets);
+    }
+    if (targets == null) {
+        return effectGlobally(cb, options);
+    }
+
+    const normalized = normalizeEffectOptions(options);
+    const affectedOptions: AffectedConfig = {
+        affectTypes: normalized.affectTypes,
+        triggerImmediately: normalized.triggerImmediately,
+    };
+    const disposers = normalizeEffectTargets(targets).map((source) => {
+        const ctx = effectTargetContext(source);
+        return affected(ctx.target, ctx.prop, (value, prop, oldValue, op, trigger, ...args) => {
+            return cb(toEffectEvent(ctx.source, ctx.target, value, prop, oldValue, op, trigger ?? null, args));
+        }, affectedOptions);
+    }).filter((dispose) => typeof dispose == "function");
+
+    return () => disposers.forEach((dispose) => dispose?.());
+}
+
+/** Target-first alias for `effect()` when that reads better at the callsite. */
+export function effected(targets: any, cb: EffectCallback, options?: EffectConfig) {
+    return effect(cb, targets, options);
 }
 
 /** Normalize collection inputs into observable array-like views when iteration matters. */

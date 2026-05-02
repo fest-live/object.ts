@@ -6,7 +6,7 @@
  * chooses the correct observable wrapper for arrays, objects, maps, and sets.
  */
 import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "fest/core";
-import { $value, $behavior, $promise, $extractKey$, $affected, $trigger } from "../wrap/Symbol";
+import { $value, $behavior, $promise, $extractKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
 import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
@@ -16,6 +16,8 @@ import { hasValue } from "fest/core";
 export interface refWrap<T = any> {
     [$promise]?: Promise<T>|null|undefined;
     [$behavior]?: any;
+    [$realProp]?: keyType | null;
+    realProp?: keyType | null;
     [Symbol.toStringTag]?(): string;
     [Symbol.toPrimitive]?(hint: any): any;
     [$value]?: T;
@@ -87,6 +89,15 @@ export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior
     return $r;
 }
 
+const markRealProp = <T = any>(target: T, realProp: keyType | null): T => {
+    if (target == null || (typeof target != "object" && typeof target != "function")) return target;
+    try { Object.defineProperty(target, $realProp, { value: realProp, writable: true, configurable: true }); }
+    catch { try { (target as any)[$realProp] = realProp; } catch {} }
+    try { Object.defineProperty(target, "realProp", { value: realProp, writable: true, configurable: true }); }
+    catch { try { (target as any).realProp = realProp; } catch {} }
+    return target;
+}
+
 /**
  * Create a reactive reference to one property of an observable source.
  *
@@ -104,12 +115,12 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
 
     // isn't needed to proxy reactive value, it's already reactive
     if (srcProp && hasValue(src?.[srcProp]) && isObservable(src?.[srcProp])) {
-        return recoverReactive(src?.[srcProp]);
+        return markRealProp(recoverReactive(src?.[srcProp]), srcProp);
     }
 
     // legally use in LUR.E/GLit properties
     if (srcProp && typeof src?.getProperty == "function" && isObservable(src?.getProperty?.(srcProp))) {
-        return src?.getProperty?.(srcProp);
+        return markRealProp(src?.getProperty?.(srcProp), srcProp);
     }
 
     // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
@@ -125,10 +136,11 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
         set value(v) { r[$triggerLock] = true; (src as any)[srcProp] = (this[$value] = v ?? defaultByType((src as any)[srcProp])); r[$triggerLock] = false; },
         get value() { return (this[$value] = src?.[srcProp] ?? this[$value]); }
     });
+    markRealProp(r, srcProp);
 
     // a reason, why regular objects isn't reactive directly, and may be single directional
     // from 09.02.2026, do more aggresively reactive the source object
-    const usb = affected(src, (v) => { r?.[$trigger]?.(); /*r.value = src?.[srcProp] ?? r?.[$value];*/ });
+    const usb = affected(src, srcProp, (v, _prop, old, op, trigger) => { r?.[$trigger]?.({ key: srcProp, value: v, oldValue: old, op, trigger }); /*r.value = src?.[srcProp] ?? r?.[$value];*/ });
     addToCallChain(r, Symbol.dispose, usb);
     return r;
 }

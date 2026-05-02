@@ -17,6 +17,20 @@ export type AffectedOptions = {
 };
 export type AffectedConfig = TriggerFilterList | AffectedOptions;
 export type AffectedCallback = (value: any, name: keyType | null, oldValue?: any, op?: string | null, trigger?: TriggerName, ...etc: any[]) => void;
+export type EffectEvent = {
+    source: any;
+    target: any;
+    value: any;
+    prop: keyType | null;
+    name: keyType | null;
+    oldValue?: any;
+    op?: string | null;
+    trigger?: TriggerName;
+    args: any[];
+};
+export type EffectCallback = (event: EffectEvent) => void;
+export type EffectOptions = AffectedOptions;
+export type EffectConfig = TriggerFilterList | EffectOptions;
 export type TriggerControl = {
     enable(types?: TriggerFilterList, cb?: () => any): any;
     disable(types?: TriggerFilterList, cb?: () => any): any;
@@ -50,14 +64,28 @@ const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Su
 
 /** Global registry that maps raw targets to their `Subscript` instance. */
 export const subscriptRegistry = new WeakMap<any, Subscript>();
+const globalEffectListeners = new Map<EffectCallback, Set<string>>();
+
+export const effectGlobally = (cb: EffectCallback, options: EffectConfig = ["*"]) => {
+    if (cb == null || typeof cb != "function") return;
+    const normalized = normalizeEffectOptions(options);
+    globalEffectListeners.set(cb, normalized.affectTypes);
+    return () => globalEffectListeners.delete(cb);
+}
 
 // @ts-ignore
 const wrapped = new WeakMap();
 
 /** Ensure a target has a registry before reusing or returning a reactive handle. */
 export const register = (what: any, handle: any): any => {
-    const unwrap = what?.[$extractKey$] ?? what;  // @ts-ignore
-    subscriptRegistry.getOrInsert(unwrap, new Subscript());
+    const unwrap = what?.[$extractKey$] ?? what;
+    let registry = subscriptRegistry.get(unwrap);
+    if (!registry) {
+        registry = new Subscript(unwrap);
+        subscriptRegistry.set(unwrap, registry);
+    } else {
+        registry.bindSource(unwrap);
+    }
     return handle;
 }
 
@@ -75,13 +103,6 @@ const triggerAliases = new Map<string, string[]>([
     ["setter", ["set"]],
     ["set", ["setter"]],
 ]);
-const isAffectedOptions = (options: AffectedConfig): options is AffectedOptions => {
-    return !!options && typeof options == "object" && !Array.isArray(options) && (
-        "affectTypes" in options ||
-        "triggers" in options ||
-        "triggerImmediately" in options
-    );
-}
 
 const triggerNamesOf = (trigger: TriggerName) => {
     const name = trigger == null ? "all" : String(trigger);
@@ -103,8 +124,16 @@ export const triggerFilterAllows = (triggers: TriggerFilterList | Set<string>, t
     return [...wildcardTriggers].some((name) => filter.has(name)) || triggerNamesOf(trigger).some((name) => filter.has(name));
 }
 
+const isOptionsObject = (options: AffectedConfig | EffectConfig): options is AffectedOptions | EffectOptions => {
+    return !!options && typeof options == "object" && !Array.isArray(options) && (
+        "affectTypes" in options ||
+        "triggers" in options ||
+        "triggerImmediately" in options
+    );
+}
+
 export const normalizeAffectedOptions = (options: AffectedConfig = ["*"]) => {
-    if (isAffectedOptions(options)) {
+    if (isOptionsObject(options)) {
         return {
             affectTypes: normalizeTriggerFilter(options.affectTypes ?? options.triggers ?? ["*"]),
             triggerImmediately: options.triggerImmediately !== false,
@@ -118,6 +147,20 @@ export const normalizeAffectedOptions = (options: AffectedConfig = ["*"]) => {
     };
 }
 
+export const normalizeEffectOptions = (options: EffectConfig = ["*"]) => {
+    if (isOptionsObject(options)) {
+        return {
+            affectTypes: normalizeTriggerFilter(options.affectTypes ?? options.triggers ?? ["*"]),
+            triggerImmediately: options.triggerImmediately === true,
+        };
+    }
+
+    return {
+        affectTypes: normalizeTriggerFilter(options),
+        triggerImmediately: false,
+    };
+}
+
 type ListenerRecord = {
     prop: keyType | null | typeof forAll;
     triggers: Set<string>;
@@ -126,6 +169,7 @@ type ListenerRecord = {
 /** Central subscription registry with batched dispatch and Observable interoperability helpers. */
 export class Subscript {
     compatible: any;
+    #source: any;
     #listeners: Map<AffectedCallback, ListenerRecord>;
     #flags = new WeakSet();
     #native: any;
@@ -148,7 +192,8 @@ export class Subscript {
         return (globalThis.performance?.now?.() ?? Date.now());
     }
 
-    constructor() {
+    constructor(source?: any) {
+        this.#source = source;
         this.#listeners = new Map();
         this.#flags = new WeakSet();
         this.#triggerControl = {
@@ -179,6 +224,11 @@ export class Subscript {
         this.compatible = () => this.#native;
     }
 
+    bindSource(source: any) {
+        this.#source ??= source;
+        return this;
+    }
+
     /** Run one listener with simple re-entrancy and duplicate-same-tick guards. */
     $safeExec(cb, ...args) {
         if (!cb || this.#flags.has(cb)) return;
@@ -202,9 +252,7 @@ export class Subscript {
 
     #dispatch(name, value = null, oldValue?: any, op: string | null = null, trigger: TriggerName = "all", ...etc: any[]) {
         const listeners = this.#listeners;
-        if (!listeners?.size) return;
-
-        const promises: Promise<any>[] = Array.from(listeners.entries())
+        const promises: Promise<any>[] = listeners?.size ? Array.from(listeners.entries())
             .map(([cb, record]) => {
                 if (
                     (record.prop === name || record.prop === forAll || record.prop === null) &&
@@ -214,7 +262,27 @@ export class Subscript {
                 }
                 return undefined;
             })
-            .filter((res: any) => res && typeof res.then === "function");
+            .filter((res: any) => res && typeof res.then === "function") : [];
+
+        if (globalEffectListeners.size) {
+            const event: EffectEvent = {
+                source: this.#source,
+                target: this.#source,
+                value,
+                prop: name,
+                name,
+                oldValue,
+                op,
+                trigger,
+                args: etc,
+            };
+            for (const [cb, triggers] of globalEffectListeners.entries()) {
+                if (triggerFilterAllows(triggers, trigger)) {
+                    const result = this.$safeExec(cb, event);
+                    if (result && typeof result.then === "function") promises.push(result);
+                }
+            }
+        }
 
         return promises.length ? Promise.allSettled(promises) : undefined;
     }

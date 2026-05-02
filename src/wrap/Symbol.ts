@@ -26,3 +26,4 @@ export const $triggerControl = Symbol.for("@trigger-control");
 export const $trigger      = Symbol.for("@trigger");
 export const $affected    = Symbol.for("@subscribe");
 export const $isNotEqual   = Symbol.for("@isNotEqual");
+export const $realProp     = Symbol.for("@realProp");

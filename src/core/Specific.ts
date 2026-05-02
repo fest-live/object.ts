@@ -7,7 +7,7 @@
  */
 import { affected, unaffected } from "./Mainline";
 import { subscriptRegistry, wrapWith } from "./Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected } from "../wrap/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected, $realProp } from "../wrap/Symbol";
 import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
 
@@ -145,6 +145,17 @@ const triggerOptionValue = (options: TriggerEmitOptions, key: "value" | "oldValu
     if (hasOwn(options, key)) return options[key];
     if (key == "oldValue" && hasOwn(options, "old")) return options.old;
     return fallback();
+}
+const isRuntimeKey = (key: any): key is keyType => typeof key == "string" || typeof key == "number" || typeof key == "symbol";
+const realPropOf = (target: any): keyType | null => {
+    const prop = safeGet(target, $realProp) ?? safeGet(target, "realProp");
+    return isRuntimeKey(prop) ? prop : null;
+}
+const triggerKeyOf = (target: any, key: keyType | null): keyType | null => key == "value" ? (realPropOf(target) ?? key) : key;
+const triggerValueOf = (target: any, key: keyType | null) => {
+    const realProp = realPropOf(target);
+    if (realProp != null && key == realProp) return safeGet(target, "value") ?? safeGet(target, $value) ?? safeGet(target, key);
+    return key == null ? undefined : safeGet(target, key);
 }
 const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => any) => {
     const api: any = (key?: any, opOrOptions?: string | null | TriggerEmitOptions, trigger?: string | null) => {
@@ -386,7 +397,7 @@ export class ObserveArrayHandler {
                 const key = options.key ?? options.name ?? 0;
                 const value = triggerOptionValue(options, "value", () => safeGet(target, key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
-                return registry?.trigger?.(key, value, oldValue, options.op ?? "@invalidate", options.trigger ?? "manual");
+                return registry?.trigger?.(key, value, oldValue, options.op === undefined ? "@invalidate" : options.op, options.trigger ?? "manual");
             });
         }
 
@@ -517,10 +528,10 @@ export class ObserveObjectHandler<T=any> {
         if (name == $triggerLess) { return makeTriggerLess.call(this, this); }
         if (name == $trigger) {
             return createTriggerAPI(registry, (options) => {
-                const key = options.key ?? options.name ?? "value";
-                const value = triggerOptionValue(options, "value", () => safeGet(target, key));
-                const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" ? safeGet(target, $value) : undefined);
-                return registry?.trigger?.(key, value, oldValue, options.op ?? "@invalidate", options.trigger ?? "manual");
+                const key = triggerKeyOf(target, options.key ?? options.name ?? realPropOf(target) ?? "value");
+                const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
+                const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" || key == realPropOf(target) ? safeGet(target, $value) : undefined);
+                return registry?.trigger?.(key, value, oldValue, options.op === undefined ? "@invalidate" : options.op, options.trigger ?? "manual");
             });
         }
 
@@ -631,10 +642,11 @@ export class ObserveObjectHandler<T=any> {
 
             //
             if (typeof name == "symbol" && !(safeGet(target, name) != null && name in target)) return;
+            const triggerName = triggerKeyOf(target, name);
             const oldValue = name == "value" ? (safeGet(target, $value) ?? safeGet(target, name)) : safeGet(target, name); target[name] = v; const newValue = safeGet(target, name) ?? v;
             if (!this[$triggerLock] && typeof name != "symbol" && (safeGet(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) {
                 const subscript = subscriptRegistry.get(target) ?? subscriptRegistry.get($original);
-                subscript?.trigger?.(name, v, oldValue);
+                subscript?.trigger?.(triggerName, v, oldValue);
             };
             return true;
         })

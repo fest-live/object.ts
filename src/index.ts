@@ -9,7 +9,7 @@ export * from "./wrap/AssignObject";
 export * from "./core/Assigned";
 export * from "./core/Mainline";
 export * from "./core/Primitives";
-export type { AffectedCallback, AffectedConfig, AffectedOptions, TriggerControl, TriggerFilterList, TriggerName } from "./core/Subscript";
+export type { AffectedCallback, AffectedConfig, AffectedOptions, EffectCallback, EffectConfig, EffectEvent, EffectOptions, TriggerControl, TriggerFilterList, TriggerName } from "./core/Subscript";
 
 /** Internal symbols and low-level helpers that other packages sometimes need directly. */
 export { $triggerLess, $triggerLock, $triggerControl, $trigger, $affected } from "./wrap/Symbol";
