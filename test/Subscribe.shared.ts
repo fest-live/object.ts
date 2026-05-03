@@ -35,7 +35,7 @@ export const subscribeTestCases = [
             await tick();
             source.value = 2;
             await tick();
-            unsubscribe?.();
+            (await unsubscribe)?.();
 
             assert.equal(events.length, 2);
             assert.deepEqual(events[0], { value: 1, name: "value", oldValue: null, trigger: "initial" });
@@ -52,7 +52,7 @@ export const subscribeTestCases = [
             await tick();
             source.value = 2;
             await tick();
-            unsubscribe?.();
+            (await unsubscribe)?.();
 
             assert.equal(events.length, 1);
             assert.deepEqual(events[0], { value: 2, name: "value", oldValue: 1, trigger: "set" });
@@ -88,7 +88,7 @@ export const subscribeTestCases = [
 
             source.value = 3;
             await tick();
-            unsubscribe?.();
+            (await unsubscribe)?.();
 
             assert.equal(events.length, 1);
             assert.deepEqual(events[0], { value: 3, name: "value", oldValue: 2, trigger: "set" });
@@ -108,7 +108,7 @@ export const subscribeTestCases = [
             source[$triggerControl].enable(["setter"]);
             source.value = 3;
             await tick();
-            unsubscribe?.();
+            (await unsubscribe)?.();
 
             assert.equal(events.length, 1);
             assert.deepEqual(events[0], { value: 3, name: "value", oldValue: 2, trigger: "set" });
@@ -130,8 +130,8 @@ export const subscribeTestCases = [
             source.other = "changed";
             source.title = "two";
             await tick();
-            unsubscribe?.();
-            unsubscribeByValue?.();
+            (await unsubscribe)?.();
+            (await unsubscribeByValue)?.();
 
             assert.equal(events.length, 2);
             assert.deepEqual(events[0], { value: "one", name: "title", oldValue: null, trigger: "initial" });

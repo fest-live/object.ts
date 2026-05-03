@@ -5,7 +5,7 @@
  * promises, DOM inputs, and iteration sources, then builds higher-level
  * combinators like `assign`, `link`, `computed`, and `derivate`.
  */
-import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign } from "fest/core";
+import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign, Promised } from "fest/core";
 import { $extractKey$, $registryKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, type observeValid, type subValid, isThenable } from "../wrap/Utils";
 import { effectGlobally, normalizeAffectedOptions, normalizeEffectOptions, subscriptRegistry, triggerFilterAllows, type AffectedCallback, type AffectedConfig, type EffectCallback, type EffectConfig, type EffectEvent, type TriggerName } from "./Subscript";
@@ -161,26 +161,28 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
 // Trigger filters use compact operation names (`set`, `add`, `delete`, `manual`, `custom`, ...).
 // Legacy aliases such as `setter` and `@set` are normalized in Subscript.
 
-//
 /** `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init. */
-export function affected(obj: any, prop: keyType | callable | null, cb: callable | AffectedConfig = ()=>{}, options?: AffectedConfig) {
-    if (typeof prop == "function") { options = cb as AffectedConfig; cb = prop; prop = null; }
-    prop = normalizeAffectedProp(obj, prop);
+export const affected = <Under = any>(obj: any, prop: keyType | callable | null, cb: callable | AffectedConfig = ()=>{}, options?: AffectedConfig): Function | undefined =>{
+    if (typeof prop == "function") 
+        { options = cb as AffectedConfig; cb = prop; prop = null; } else 
+        { prop = normalizeAffectedProp(obj, prop); }
+    if (typeof cb == "object" || Array.isArray(cb)) { options = cb as AffectedConfig; cb = ()=>{}; }
 
     //
     if (isPrimitive(obj) || typeof obj == "symbol") {
-        return queueMicrotask(() => {
-            const normalized = normalizeAffectedOptions(options);
-            if (normalized.triggerImmediately) return (cb as callable)?.(obj, null as any, null, null, initialTrigger);
-        });
+        const normalized = normalizeAffectedOptions(options);
+        if (normalized.triggerImmediately) return Promised(globalThis?.Promise?.try?.(() => {
+            return (cb as callable)?.(obj, null as any, null, null, initialTrigger);
+        }));
     }
+
+    //
     if (typeof obj?.[$affected] == "function") {
         return obj?.[$affected]?.(cb, prop, options);
     } else
     if (checkValidObj(obj)) {
         const wrapped = obj;
-        obj = obj?.[$extractKey$] ?? obj;
-        if (specializedSubscribe?.has?.(obj)) {
+        if (specializedSubscribe?.has?.(obj = obj?.[$extractKey$] ?? obj)) {
             return specializedSubscribe?.get?.(obj)?.(wrapped, prop, cb as callable, options);
         }
 
@@ -195,13 +197,15 @@ export function affected(obj: any, prop: keyType | callable | null, cb: callable
                 { return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, prop, cb, options); } else  //@ts-ignore
                 { return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(wrapped, prop, cb, options); }
         } else {
-            return queueMicrotask(() => {
-                const initialCb = withTrigger(cb as callable, options, initialTrigger);
-                if (!initialCb) return;
-                if (checkIsPaired(obj)) { return callByPropRefAware?.(obj?.[0], obj?.[1] as any, initialCb, null); }
-                if (prop != null && prop != Symbol.iterator) { return callByPropRefAware?.(obj, prop, initialCb, null); }
+            const initialCb = withTrigger(cb as callable, options, initialTrigger);
+            if (!initialCb) return;
+            return Promised(globalThis?.Promise?.try?.(() => {
+                if (checkIsPaired(obj)) 
+                    { return callByPropRefAware?.(obj?.[0], obj?.[1] as any, initialCb, null); } else
+                if (prop != null && prop != Symbol.iterator)
+                    { return callByPropRefAware?.(obj, prop, initialCb, null); } else
                 return callByAllProp?.(obj, initialCb, null);
-            });
+            }));
         }
     }
 }

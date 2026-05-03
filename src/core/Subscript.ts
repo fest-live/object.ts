@@ -201,15 +201,6 @@ export class Subscript {
     #pendingByProp = new Map<keyType | null, Map<string, [keyType | null, any, any, TriggerName, any[]]>>();
     #flushScheduled = false;
 
-    // last run timestamp per callback
-    #lastPerfNow = new WeakMap<Function, number>();
-
-    // получаем "now" максимально дёшево/безопасно
-    #now() {
-        // performance может отсутствовать в некоторых рантаймах
-        return (globalThis.performance?.now?.() ?? Date.now());
-    }
-
     constructor(source?: any) {
         this.#source = source;
         this.#listeners = new Map();
@@ -247,14 +238,10 @@ export class Subscript {
         return this;
     }
 
-    /** Run one listener with simple re-entrancy and duplicate-same-tick guards. */
+    /** Run one listener with re-entrancy guard (recursive $safeExec on same cb skipped). */
     $safeExec(cb, ...args) {
         if (!cb || this.#flags.has(cb)) return;
         this.#flags.add(cb);
-
-        //
-        if (this.#lastPerfNow.get(cb) === this.#now()) return;
-        this.#lastPerfNow.set(cb, this.#now());
 
         //
         try {

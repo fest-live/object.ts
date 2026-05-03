@@ -166,7 +166,7 @@ const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => 
         const options: TriggerEmitOptions = isTriggerEmitOptions(key)
             ? key
             : isTriggerEmitOptions(opOrOptions, true)
-                ? { ...opOrOptions, key }
+                ? { key, trigger, ...opOrOptions }
                 : { key, trigger: trigger ?? (opOrOptions as string | null) };
         return emit(options);
     };

@@ -294,8 +294,8 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
 /** Subscribe to a truthy ref/value and trigger the callback only after a delay window. */
 export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): observeValid<Under> => {
     let tm: any; //= triggerWithDelay(ref, cb, delay);
-    return affected([ref, "value"], (v) => {
-        if (!v && tm) { clearTimeout(tm); tm = null; } else
-            if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
-    });
+    return affected<Under>(ref, "value", (v) => {
+        if (!v && tm) { clearTimeout(tm); tm = null; }
+        else if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
+    }) as unknown as observeValid<Under>;
 }
