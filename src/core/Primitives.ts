@@ -138,9 +138,13 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     });
     markRealProp(r, srcProp);
 
-    // a reason, why regular objects isn't reactive directly, and may be single directional
-    // from 09.02.2026, do more aggresively reactive the source object
-    const usb = affected(src, srcProp, (v, _prop, old, trigger) => { r?.[$trigger]?.({ key: srcProp, value: v, oldValue: old, trigger }); /*r.value = src?.[srcProp] ?? r?.[$value];*/ });
+    // affected now used for `src` object observe, and filtering prop key
+    // for avoid potential infinite loop, when `src` is itself a reactive object
+    const usb = affected(src, (v, _prop, old, trigger) => {
+        if (_prop == srcProp) { // also, reflects same trigger of property
+            r?.[$trigger]?.({ key: srcProp, value: v, oldValue: old, trigger}); /*r.value = src?.[srcProp] ?? r?.[$value];*/
+        }
+    });
     addToCallChain(r, Symbol.dispose, usb);
     return r;
 }
