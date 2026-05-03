@@ -160,6 +160,9 @@ const triggerValueOf = (target: any, key: keyType | null) => {
 }
 const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => any) => {
     const api: any = (key?: any, opOrOptions?: string | null | TriggerEmitOptions, trigger?: string | null) => {
+        if (!isTriggerEmitOptions(opOrOptions as string | null)) {
+            trigger ??= opOrOptions as string | null;
+        }
         const options: TriggerEmitOptions = isTriggerEmitOptions(key)
             ? key
             : isTriggerEmitOptions(opOrOptions, true)
