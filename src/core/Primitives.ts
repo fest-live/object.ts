@@ -141,7 +141,7 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     // affected now used for `src` object observe, and filtering prop key
     // for avoid potential infinite loop, when `src` is itself a reactive object
     const usb = affected(src, (v, _prop, old, trigger) => {
-        if (_prop == srcProp) { // also, reflects same trigger of property
+        if (_prop === srcProp) { // also, reflects same trigger of property
             r?.[$trigger]?.({ key: srcProp, value: v, oldValue: old, trigger}); /*r.value = src?.[srcProp] ?? r?.[$value];*/
         }
     });
