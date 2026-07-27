@@ -1,9 +1,19 @@
+/*
+ * Filename: Subscript.ts
+ * FullPath: modules/projects/object.ts/src/core/Subscript.ts
+ * Change date and time: 14.09.00_27.07.2026
+ * Reason for changes: Drop Promise.allSettled in #dispatch — recursive async
+ * listener returns must not block/hang the reactivity pipeline.
+ */
 /**
  * Listener registry and proxy wrapper backbone for `object.ts`.
  *
  * The `Subscript` class stores callbacks, batches dispatches, exposes a
  * minimal Observable-compatible surface, and helps observable wrappers share
  * one registry per underlying target.
+ *
+ * INVARIANT: dispatch never awaits or aggregates listener Promises.
+ * Async returns are fire-and-forget (rejection → console.warn only).
  */
 import { $extractKey$ } from "../wrap/Symbol";
 import { deref, type keyType } from "../wrap/Utils";
@@ -238,7 +248,13 @@ export class Subscript {
         return this;
     }
 
-    /** Run one listener with re-entrancy guard (recursive $safeExec on same cb skipped). */
+    /**
+     * Run one listener with re-entrancy guard (recursive $safeExec on same cb skipped).
+     *
+     * WHY: never return/await listener Promises — a never-settling or
+     * recursively awaiting Promise would stall callers that used to
+     * Promise.allSettled the dispatch batch.
+     */
     $safeExec(cb, ...args) {
         if (!cb || this.#flags.has(cb)) return;
         this.#flags.add(cb);
@@ -246,7 +262,11 @@ export class Subscript {
         //
         try {
             const res = cb(...args);
-            if (res && typeof (res as any).then === "function") return (res as Promise<any>).catch(console.warn);
+            // Fire-and-forget: swallow rejection, do not propagate Thenable.
+            if (res && typeof (res as any).then === "function") {
+                (res as Promise<any>).catch(console.warn);
+                return;
+            }
             return res;
         } catch (e) {
             console.warn(e);
@@ -255,20 +275,25 @@ export class Subscript {
         }
     }
 
+    /**
+     * Invoke matching listeners synchronously.
+     *
+     * INVARIANT: does not collect, await, or return Promise.all* over listener
+     * results. Async listeners run detached; hangs must not block the pipeline.
+     */
     #dispatch(name, value = null, oldValue?: any, trigger: TriggerName = "all", ...etc: any[]) {
         trigger = normalizeTriggerName(trigger) ?? trigger;
         const listeners = this.#listeners;
-        const promises: Promise<any>[] = listeners?.size ? Array.from(listeners.entries())
-            .map(([cb, record]) => {
+        if (listeners?.size) {
+            for (const [cb, record] of listeners.entries()) {
                 if (
                     (record.prop === name || record.prop === forAll || record.prop === null) &&
                     triggerFilterAllows(record.triggers, trigger)
                 ) {
-                    return this.$safeExec(cb, value, name, oldValue, trigger, ...etc);
+                    this.$safeExec(cb, value, name, oldValue, trigger, ...etc);
                 }
-                return undefined;
-            })
-            .filter((res: any) => res && typeof res.then === "function") : [];
+            }
+        }
 
         if (globalEffectListeners.size) {
             const event: EffectEvent = {
@@ -283,13 +308,10 @@ export class Subscript {
             };
             for (const [cb, triggers] of globalEffectListeners.entries()) {
                 if (triggerFilterAllows(triggers, trigger)) {
-                    const result = this.$safeExec(cb, event);
-                    if (result && typeof result.then === "function") promises.push(result);
+                    this.$safeExec(cb, event);
                 }
             }
         }
-
-        return promises.length ? Promise.allSettled(promises) : undefined;
     }
 
     wrap(nw: any[] | unknown) { if (Array.isArray(nw)) return wrapWith(nw, this); return nw; }
