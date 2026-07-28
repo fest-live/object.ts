@@ -266,26 +266,26 @@ export class ObserveArrayMethod {
             case "unshift": idx = 0; added = args; break;
             case "pop":
                 idx = oldState?.length - 1;
-                if (oldState.length > 0) { removed = [[idx - 1, oldState[idx - 1], null]]; }
+                if (oldState.length > 0) { removed = [oldState[idx]]; }
                 break;
             case "shift":
                 idx = 0;
                 if (oldState.length > 0) removed = [[idx, oldState[idx], null]];
                 break;
             case "splice":
-                const [start, deleteCount, ...items] = args; idx = start;
-                added = deleteCount > 0 ? items.slice(deleteCount) : [];
-
-                // discount of replaced (assigned) elements
-                removed = deleteCount > 0 ? oldState?.slice?.(items?.length + start, start + (deleteCount - (items?.length || 0))) : [];
-
-                // fix index for remaining removed or added elements
-                idx += (deleteCount || 0) - (items?.length || 1);
-
-                // index assignment
-                if (deleteCount > 0 && items?.length > 0) {
-                    for (let i = 0; i < Math.min(deleteCount, items?.length ?? 0); i++) {
-                        setPairs.push([start + i, items[i], oldState?.[start + i] ?? null]);
+                idx = args[0];
+                // WHY: Native splice can insert, remove, and shift values in one
+                // operation. Diff the final array so observers receive enough
+                // normalized events for keyed/reconciled DOM consumers.
+                for (let i = 0; i < Math.max(oldState.length, this.#self.length); i++) {
+                    const oldValue = oldState[i];
+                    const newValue = this.#self[i];
+                    if (newValue === undefined && i >= this.#self.length) {
+                        removed.push(oldValue);
+                    } else if (oldValue === undefined && i >= oldState.length) {
+                        setPairs.push([i, newValue, null]);
+                    } else if (isNotEqual(oldValue, newValue)) {
+                        setPairs.push([i, newValue, oldValue]);
                     }
                 }
                 break;
