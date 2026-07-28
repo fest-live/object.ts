@@ -249,7 +249,7 @@ export class ObserveArrayMethod {
     //
     apply(target, ctx, args) {
         let added: [number, any, any][] = [], removed: [number, any, any][] = [];
-        let setPairs: [number, any, any][] = [];
+        let setPairs: [number, any, any, boolean][] = [];
         let oldState: any[] = [...this.#self];
         let idx: number = -1;
 
@@ -270,7 +270,7 @@ export class ObserveArrayMethod {
                 break;
             case "shift":
                 idx = 0;
-                if (oldState.length > 0) removed = [[idx, oldState[idx], null]];
+                if (oldState.length > 0) removed = [oldState[idx]];
                 break;
             case "splice":
                 idx = args[0];
@@ -283,9 +283,9 @@ export class ObserveArrayMethod {
                     if (newValue === undefined && i >= this.#self.length) {
                         removed.push(oldValue);
                     } else if (oldValue === undefined && i >= oldState.length) {
-                        setPairs.push([i, newValue, null]);
+                        setPairs.push([i, newValue, undefined, false]);
                     } else if (isNotEqual(oldValue, newValue)) {
-                        setPairs.push([i, newValue, oldValue]);
+                        setPairs.push([i, newValue, oldValue, true]);
                     }
                 }
                 break;
@@ -297,38 +297,38 @@ export class ObserveArrayMethod {
                 idx = 0; for (let i = 0; i < oldState.length; i++) {
                     if (isNotEqual(oldState[i], this.#self[i]))
                         {
-                            setPairs.push([idx+i, this.#self[i], oldState[i]]);
+                            setPairs.push([idx+i, this.#self[i], oldState[i], true]);
                         }
                 }
                 break;
             // index assignment, args: [value, index]
             case "set": idx = args[1];
-            setPairs.push([idx, args[0], oldState?.[idx] ?? null]); break;
+            setPairs.push([idx, args[0], oldState?.[idx], idx in oldState]); break;
         }
 
         // triggers on adding
         const reg = subscriptRegistry.get(this.#self);
         if (added?.length == 1) {
-            reg?.trigger?.(idx, added[0], null, added[0] == null ? "add" : "set");
+            reg?.trigger?.(idx, added[0], null, "add");
         } else if (added?.length > 1) {
             reg?.trigger?.(idx, added, null, "addAll");
-            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, item == null ? "add" : "set"));
+            added.forEach((item, I)=>reg?.trigger?.(idx+I, item, null, "add"));
         }
 
         // triggers on changing
         if (setPairs?.length == 1) {
-            reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], setPairs[0]?.[2] == null ? "add" : "set");
+            reg?.trigger?.(setPairs[0]?.[0] ?? idx, setPairs[0]?.[1], setPairs[0]?.[2], setPairs[0]?.[3] === false ? "add" : "set");
         } else if (setPairs?.length > 1) {
             reg?.trigger?.(idx, setPairs, oldState, "setAll");
-            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], pair?.[2] == null ? "add" : "set"));
+            setPairs.forEach((pair, I)=>reg?.trigger?.(pair?.[0] ?? idx+I, pair?.[1], pair?.[2], pair?.[3] === false ? "add" : "set"));
         }
 
         // triggers on removing
         if (removed?.length == 1) {
-            reg?.trigger?.(idx, null, removed[0], removed[0] == null ? "add" : "delete");
+            reg?.trigger?.(idx, null, removed[0], "delete");
         } else if (removed?.length > 1) {
             reg?.trigger?.(idx, null, removed, "deleteAll");
-            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, item == null ? "add" : "delete"));
+            removed.forEach((item, I)=>reg?.trigger?.(idx+I, null, item, "delete"));
         }
 
         //
@@ -533,8 +533,10 @@ export class ObserveObjectHandler<T=any> {
         if (name == $trigger) {
             return createTriggerAPI(registry, (options) => {
                 const key = triggerKeyOf(target, options.key ?? options.name ?? realPropOf(target) ?? "value");
-                const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" || key == realPropOf(target) ? safeGet(target, $value) : undefined);
+                // WHY: computed/ref getters refresh `$value` while reading the
+                // current value, so capture the prior snapshot first.
+                const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
                 return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
             });
         }
@@ -768,7 +770,7 @@ export class ObserveMapHandler<K=any, V=any> {
             return () => {
                 const oldValues: any = Array.from(target?.entries?.() || []), result = valueOrFx();
                 oldValues.forEach(([prop, oldValue])=>{
-                    if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "delete"); }
+                    if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "delete"); }
                 });
                 return result;
             };
@@ -777,8 +779,8 @@ export class ObserveMapHandler<K=any, V=any> {
         //
         if (name == "delete") {
             return (prop, _ = null) => {
-                const oldValue = target.get(prop), result = valueOrFx(prop);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "delete"); }
+                const had = target.has(prop), oldValue = target.get(prop), result = valueOrFx(prop);
+                if (!this[$triggerLock] && had) { (subscriptRegistry).get(target)?.trigger?.(prop, null, oldValue, "delete"); }
                 return result;
             };
         }
@@ -786,8 +788,12 @@ export class ObserveMapHandler<K=any, V=any> {
         //
         if (name == "set") {
             return (prop, value) => potentiallyAsyncMap(value, (v)=>{
-                const oldValue = target.get(prop), result = valueOrFx(prop, value);
-                if (isNotEqual(oldValue, result)) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(prop, result, oldValue, oldValue == null ? "add" : "set"); } };
+                const had = target.has(prop), oldValue = target.get(prop), result = valueOrFx(prop, v);
+                if (!had || isNotEqual(oldValue, v)) {
+                    if (!this[$triggerLock]) {
+                        (subscriptRegistry).get(target)?.trigger?.(prop, v, had ? oldValue : null, had ? "set" : "add");
+                    }
+                };
                 return result;
             });
         }
@@ -870,7 +876,7 @@ export class ObserveSetHandler<T=any> {
         if (name == "clear") {
             return () => {
                 const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
-                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue, "delete"); } });
+                oldValues.forEach((oldValue)=>{ if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(null, null, oldValue, "delete"); } });
                 return result;
             };
         }
@@ -878,8 +884,8 @@ export class ObserveSetHandler<T=any> {
         //
         if (name == "delete") {
             return (value) => {
-                const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (!this[$triggerLock] && oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue, "delete"); }
+                const had = target.has(value), oldValue = had ? value : null, result = valueOrFx(value);
+                if (!this[$triggerLock] && had) { (subscriptRegistry).get(target)?.trigger?.(value, null, oldValue, "delete"); }
                 return result;
             };
         }
@@ -888,8 +894,8 @@ export class ObserveSetHandler<T=any> {
         if (name == "add") {
             // TODO: add potentially async set
             return (value) => {
-                const oldValue = target.has(value) ? value : null, result = valueOrFx(value);
-                if (isNotEqual(oldValue, value)) { if (!this[$triggerLock] && !oldValue) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue, "add"); } };
+                const had = target.has(value), oldValue = had ? value : null, result = valueOrFx(value);
+                if (!had) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue, "add"); } };
                 return result;
             };
         }

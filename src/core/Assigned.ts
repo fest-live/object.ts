@@ -11,7 +11,36 @@ import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Sym
 import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
 
 /** Derive a computed ref whose value is the first truthy predicate index. */
-export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => { return computed(condList, () => condList.findIndex(cb => cb?.()), "value"); } // TODO: check
+export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => {
+    const source = observe({ value: 0 });
+    const readCondition = (condition: any) => {
+        if (typeof condition == "function") return condition();
+        return hasValue(condition) ? condition.value : condition;
+    };
+    const evaluate = () => condList.findIndex((condition) => !!readCondition(condition));
+    const result = computed([source, "value"], evaluate, "value");
+    const invalidate = () => {
+        source.value++;
+    };
+    const disposers: any[] = [];
+
+    if (isObservable(condList)) {
+        disposers.push(affected(condList, invalidate, {
+            affectTypes: ["add", "set", "delete"],
+            triggerImmediately: false,
+        }));
+    }
+    for (const condition of condList) {
+        if (hasValue(condition)) {
+            disposers.push(affected([condition, "value"], invalidate, {
+                affectTypes: ["setter"],
+                triggerImmediately: false,
+            }));
+        }
+    }
+    addToCallChain(result, Symbol.dispose, () => disposers.forEach((dispose) => dispose?.()));
+    return result as observeValid<Under>;
+}
 
 //
 /*
@@ -47,7 +76,12 @@ export const conditionalRef = <T = any>(cond: any, ifTrue: any, ifFalse: any, be
     });
 
     //
-    const usb = affected([cond, "value"], (val)=>{ r?.[$trigger]?.(); });
+    const usb = affected([cond, "value"], ()=>{
+        const oldValue = r?.[$value];
+        const value = valueOf();
+        r[$value] = value;
+        r?.[$trigger]?.({ key: "value", value, oldValue, trigger: "manual" });
+    });
     addToCallChain(r, Symbol.dispose, usb); return r as unknown as observeValid<T>;
 }
 
@@ -286,7 +320,12 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     });
 
     //
-    const usb = affected([src?.[0] ?? src, a_prop ?? "value"], ()=>/*wr?.deref?.()*/rf?.[$trigger]?.())
+    const usb = affected([src?.[0] ?? src, a_prop ?? "value"], ()=>{
+        const oldValue = rf?.[$value];
+        const value = cmp();
+        rf[$value] = value;
+        rf?.[$trigger]?.({ key: "value", value, oldValue, trigger: "manual" });
+    })
     //const usb = assign([rf, "value"], src, a_prop)
     addToCallChain(rf, Symbol.dispose, usb); return rf;
 }

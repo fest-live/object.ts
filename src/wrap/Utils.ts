@@ -145,13 +145,17 @@ const disposeRegistry = new FinalizationRegistry((callstack: any)=>{ callstack?.
 export function addToCallChain(obj, methodKey, callback?: any|null) {
     if (!callback || typeof callback != "function" || (typeof obj != "object" && typeof obj != "function")) return;
     if (methodKey == Symbol.dispose) {
+        // WHY: observable proxies expose a protocol-level dispose getter, so
+        // assigning a chain to the proxy can silently leave it unreachable.
+        // Keep one chain on the raw target; the proxy delegates to that target.
+        const chainTarget = obj?.[$extractKey$] ?? obj;
         // @ts-ignore
-        disposeMap?.getOrInsertComputed?.(obj, ()=>{
+        disposeMap?.getOrInsertComputed?.(chainTarget, ()=>{
             const CallChain = new Set();
-            if (typeof obj == "object" || typeof obj == "function") {
-                disposeRegistry.register(obj, CallChain);
-                disposeMap.set(obj, CallChain);
-                obj[Symbol.dispose] ??= ()=>CallChain.forEach((cb: any)=>{ cb?.(); });
+            if (typeof chainTarget == "object" || typeof chainTarget == "function") {
+                disposeRegistry.register(chainTarget, CallChain);
+                disposeMap.set(chainTarget, CallChain);
+                chainTarget[Symbol.dispose] ??= ()=>CallChain.forEach((cb: any)=>{ cb?.(); });
             }
             return CallChain;
         })?.add?.(callback);
