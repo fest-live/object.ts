@@ -1,4 +1,4 @@
-**@fest-lib/object API Documentation v0.1.1**
+**@fest-lib/object API Documentation v0.1.2**
 
 ***
 
@@ -410,15 +410,15 @@ Legacy function for creating reactive Sets.
 ## Modules
 
 - [core/Assigned](_media/README.md) - Assignment and binding utilities
-- [core/Legacy](_media/README-1.md) - Legacy compatibility functions
-- [core/Mainline](_media/README-2.md) - Core subscription and reactivity system
-- [core/Primitives](_media/README-3.md) - Primitive reactive references
-- [core/Specific](_media/README-4.md) - Specific object type handlers
-- [core/Subscript](_media/README-5.md) - Subscription registry system
-- [index](_media/README-6.md) - Main exports
-- [wrap/AssignObject](_media/README-7.md) - Object assignment proxy
-- [wrap/Symbol](_media/README-8.md) - Internal symbols and triggers
-- [wrap/Utils](_media/README-9.md) - Utility functions and types
+- [core/Legacy](docs/core/Legacy/README.md) - Legacy compatibility functions
+- [core/Mainline](_media/README-1.md) - Core subscription and reactivity system
+- [core/Primitives](_media/README-2.md) - Primitive reactive references
+- [core/Specific](_media/README-3.md) - Specific object type handlers
+- [core/Subscript](_media/README-4.md) - Subscription registry system
+- [index](_media/README-5.md) - Main exports
+- [wrap/AssignObject](_media/README-6.md) - Object assignment proxy
+- [wrap/Symbol](_media/README-7.md) - Internal symbols and triggers
+- [wrap/Utils](_media/README-8.md) - Utility functions and types
 
 ---
 
