@@ -5,13 +5,13 @@
  * property refs, delayed trigger behaviors, and the canonical dispatcher that
  * chooses the correct observable wrapper for arrays, objects, maps, and sets.
  */
-import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "fest/core";
+import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "@fest-lib/core";
 import { $value, $behavior, $promise, $extractKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
 import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
 import { affected } from "./Mainline";
-import { hasValue } from "fest/core";
+import { hasValue } from "@fest-lib/core";
 
 export interface refWrap<T = any> {
     [$promise]?: Promise<T>|null|undefined;

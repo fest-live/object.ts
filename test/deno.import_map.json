@@ -1,6 +1,6 @@
 {
     "imports": {
-        "fest/core": "../../core.ts/src/index.ts",
-        "fest/object": "../src/index.ts"
+        "@fest-lib/core": "../../core.ts/src/index.ts",
+        "@fest-lib/object": "../src/index.ts"
     }
 }

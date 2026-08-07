@@ -8,7 +8,7 @@ import { affected } from "./Mainline";
 import { addToCallChain, type observeValid, type subValid, type keyType } from "../wrap/Utils";
 import { observe, isObservable, triggerWithDelay, recoverReactive } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Symbol";
-import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "fest/core";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "@fest-lib/core";
 
 /** Derive a computed ref whose value is the first truthy predicate index. */
 export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => {

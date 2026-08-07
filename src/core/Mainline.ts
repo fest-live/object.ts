@@ -5,7 +5,7 @@
  * promises, DOM inputs, and iteration sources, then builds higher-level
  * combinators like `assign`, `link`, `computed`, and `derivate`.
  */
-import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign, Promised } from "fest/core";
+import { callByAllProp, callByProp, hasValue, isKeyType, isNotEqual, isPrimitive, objectAssign, Promised } from "@fest-lib/core";
 import { $extractKey$, $registryKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, safe, withPromise, type keyType, type observeValid, type subValid, isThenable } from "../wrap/Utils";
 import { effectGlobally, normalizeAffectedOptions, normalizeEffectOptions, subscriptRegistry, triggerFilterAllows, type AffectedCallback, type AffectedConfig, type EffectCallback, type EffectConfig, type EffectEvent, type TriggerName } from "./Subscript";

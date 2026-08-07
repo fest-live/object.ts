@@ -9,7 +9,7 @@ import { affected, unaffected } from "./Mainline";
 import { normalizeTriggerName, subscriptRegistry, wrapWith } from "./Subscript";
 import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected, $realProp } from "../wrap/Symbol";
 import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
-import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "fest/core";
+import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "@fest-lib/core";
 
 //
 const __systemSkip = new Set<any>([

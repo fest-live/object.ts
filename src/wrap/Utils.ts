@@ -5,7 +5,7 @@
  * helper functions for unwrapping, dereferencing, safe serialization, dispose
  * chaining, promise-aware flows, and the Set-as-array adapter.
  */
-import { hasValue, isPrimitive } from "fest/core";
+import { hasValue, isPrimitive } from "@fest-lib/core";
 import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
 
 /*

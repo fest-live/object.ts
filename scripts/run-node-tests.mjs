@@ -16,8 +16,8 @@ await build({
     logLevel: "warn",
     resolve: {
         alias: [
-            { find: "fest/core", replacement: resolve(root, "../core.ts/src/index.ts") },
-            { find: "fest/object", replacement: resolve(root, "src/index.ts") },
+            { find: "@fest-lib/core", replacement: resolve(root, "../core.ts/src/index.ts") },
+            { find: "@fest-lib/object", replacement: resolve(root, "src/index.ts") },
         ],
     },
     build: {

@@ -4,7 +4,7 @@
  * WHY: some callers want an object that looks ordinary but still normalizes
  * assignment semantics the same way the rest of the reactive stack does.
  */
-import { objectAssign } from "fest/core";
+import { objectAssign } from "@fest-lib/core";
 import { $originalKey$ } from "./Symbol";
 import { $originalObjects$, type keyType, type observeValid } from "./Utils";
 
