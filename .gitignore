@@ -143,3 +143,10 @@ src/**/*.js.map
 **/src/**/*.js
 **/src/**/*.jsx
 **/src/**/*.js.map
+
+#
+!./dist/
+!./dist
+!./dist/**
+!/.dist/*
+!./dist/**/*
