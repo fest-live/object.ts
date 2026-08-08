@@ -1,4 +1,4 @@
-var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || typeof e == "number" || typeof e == "boolean" || typeof e == "bigint" || typeof e > "u" || e == null, E = (e, t) => m(e) ? t == "number" ? Number(e) || 0 : t == "string" ? String(e) || "" : t == "boolean" ? !!e : e : null, ke = (e, t = "value") => (typeof e == "object" || typeof e == "function") && e != null && (t in e || e?.[t] != null), I = (e) => ke(e, "value"), He = (e) => m(e) ? e : I(e) ? e?.value : e, S = (e, t) => e?.[Ze] ?? e ?? t ?? t, yt = (e) => {
+var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || typeof e == "number" || typeof e == "boolean" || typeof e == "bigint" || typeof e > "u" || e == null, E = (e, t) => m(e) ? t == "number" ? Number(e) || 0 : t == "string" ? String(e) || "" : t == "boolean" ? !!e : e : null, ke = (e, t = "value") => (typeof e == "object" || typeof e == "function") && e != null && (t in e || e?.[t] != null), I = (e) => ke(e, "value"), He = (e) => m(e) ? e : I(e) ? e?.value : e, S = (e, t) => e?.[Ze] ?? e ?? t ?? t, at = (e) => {
   if (typeof e == "function" || e == null) return e;
   const t = function() {
   };
@@ -12,7 +12,7 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
     ke(e, r) && delete e[Q];
   }
   return n;
-}, at = (e, t) => e instanceof Promise || typeof e?.then == "function" ? e?.then?.(t) : t?.(e), ht = (e, t) => e instanceof Promise || typeof e?.then == "function" ? e?.then?.(t) : t?.(e), pe = function(e) {
+}, ht = (e, t) => e instanceof Promise || typeof e?.then == "function" ? e?.then?.(t) : t?.(e), dt = (e, t) => e instanceof Promise || typeof e?.then == "function" ? e?.then?.(t) : t?.(e), pe = function(e) {
   return (t) => {
     e[Q] = !0;
     let r;
@@ -23,7 +23,7 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
     }
     return r;
   };
-}, dt = (e) => {
+}, vt = (e) => {
   switch (typeof e) {
     case "number":
       return 0;
@@ -40,11 +40,11 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
     case "bigint":
       return 0n;
   }
-}, j = (e) => typeof e?.[Symbol.iterator] == "function", C = (e) => [
+}, j = (e) => typeof e?.[Symbol.iterator] == "function", z = (e) => [
   "symbol",
   "string",
   "number"
-].indexOf(typeof e) >= 0, vt = (e, t, r = null) => {
+].indexOf(typeof e) >= 0, bt = (e, t, r = null) => {
   const n = r != null && (typeof e == "object" || typeof e == "function") ? e?.[r] ?? e : e;
   let i = [];
   t instanceof Set || t instanceof Map || Array.isArray(t) || j(t) ? i = (n instanceof Set || n instanceof WeakSet ? t?.values?.() : t?.entries?.()) || (Array.isArray(t) || j(t) ? t : []) : (typeof t == "object" || typeof t == "function") && (i = n instanceof Set || n instanceof WeakSet ? Object.values(t) : Object.entries(t));
@@ -60,7 +60,7 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
 }, ie = (e, t, r = null, n = !0, i = "id") => {
   const s = r != null && (typeof e == "object" || typeof e == "function") ? e?.[r] ?? e : e;
   let u = null;
-  if (n && vt(s, t), t instanceof Set || t instanceof Map || Array.isArray(t) || j(t) ? u = (s instanceof Set || s instanceof WeakSet ? t?.values?.() : t?.entries?.()) || (Array.isArray(t) || j(t) ? t : []) : (typeof t == "object" || typeof t == "function") && (u = s instanceof Set || s instanceof WeakSet ? Object.values(t) : Object.entries(t)), s && u && (typeof u == "object" || typeof u == "function")) {
+  if (n && bt(s, t), t instanceof Set || t instanceof Map || Array.isArray(t) || j(t) ? u = (s instanceof Set || s instanceof WeakSet ? t?.values?.() : t?.entries?.()) || (Array.isArray(t) || j(t) ? t : []) : (typeof t == "object" || typeof t == "function") && (u = s instanceof Set || s instanceof WeakSet ? Object.values(t) : Object.entries(t)), s && u && (typeof u == "object" || typeof u == "function")) {
     if (s instanceof Map || s instanceof WeakMap) {
       for (const l of u) s.set(...l);
       return s;
@@ -82,8 +82,8 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
     }
   }
   return r != null ? (Reflect.set(e, r, t), e) : typeof t == "object" || typeof t == "function" ? Object.assign(e, t) : t;
-}, bt = (e, t) => pt.getOrInsert(e, /* @__PURE__ */ new WeakMap()).getOrInsert(t, t?.bind?.(e)), H = (e, t) => (typeof t == "function" ? bt(e, t) : t) ?? t, ae = (e, t, r, n) => {
-  if (t == Symbol.iterator) return Ve(e, r, n);
+}, St = (e, t) => mt.getOrInsert(e, /* @__PURE__ */ new WeakMap()).getOrInsert(t, t?.bind?.(e)), H = (e, t) => (typeof t == "function" ? St(e, t) : t) ?? t, ae = (e, t, r, n) => {
+  if (t == Symbol.iterator) return Ce(e, r, n);
   if (t == null || typeof t == "symbol" || typeof t == "object" || typeof t == "function") return;
   const i = (s, ...u) => {
     if (s != null) return r?.(s, ...u);
@@ -96,21 +96,23 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
     const s = typeof t == "string" ? parseInt(t) : t;
     return i?.(e?.[s], s, null, "@add");
   } else if (typeof e == "function" || typeof e == "object") return i?.(e?.[t], t, null, "@set");
-}, St = (e, t = {}) => (Object.entries(t)?.forEach?.(([r, n]) => {
+}, pt = (e, t = {}) => (Object.entries(t)?.forEach?.(([r, n]) => {
   x(n, e[r]) && (e[r] = n);
-}), e), Ve = (e, t, r) => {
+}), e), Ce = (e, t, r) => {
   if (e == null) return;
   let n = [];
   if (e instanceof Set || e instanceof Map || typeof e?.keys == "function") return [...e?.keys?.() || n].forEach?.((i) => ae(e, i, t, r));
   if (Array.isArray(e) || j(e)) return [...e].forEach?.((i, s) => ae(e, s, t, r));
   if (typeof e == "object" || typeof e == "function") return [...Object.keys(e) || n].forEach?.((i) => ae(e, i, t, r));
-}, x = (e, t) => e == null && t == null ? !1 : e == null || t == null ? !0 : typeof e == "boolean" && typeof t == "boolean" ? e != t : typeof e == "number" && typeof t == "number" ? !(e == t || Math.abs(e - t) < 1e-9) : typeof e == "string" && typeof t == "string" ? e != "" && t != "" && e != t || e !== t : typeof e != typeof t ? e !== t : e && t && e != t || e !== t, pt = /* @__PURE__ */ new WeakMap(), le = (e, t) => {
+}, x = (e, t) => e == null && t == null ? !1 : e == null || t == null ? !0 : typeof e == "boolean" && typeof t == "boolean" ? e != t : typeof e == "number" && typeof t == "number" ? !(e == t || Math.abs(e - t) < 1e-9) : typeof e == "string" && typeof t == "string" ? e != "" && t != "" && e != t || e !== t : typeof e != typeof t ? e !== t : e && t && e != t || e !== t, Le = /* @__PURE__ */ Symbol.for("object.boundCtx");
+globalThis[Le] ??= /* @__PURE__ */ new WeakMap();
+var mt = globalThis[Le], le = (e, t) => {
   const r = e == null || e < 0 || typeof e != "number" || e == Symbol.iterator || (t != null ? e >= (t?.length || 0) : !1);
   return t != null ? Array.isArray(t) && r : !1;
 }, $ = /* @__PURE__ */ new WeakMap(), Ke = /* @__PURE__ */ new WeakMap(), P = (e, t) => e instanceof Promise || typeof e?.then == "function" ? $?.has?.(e) ? t($?.get?.(e)) : Promise.try?.(async () => {
   const r = await e;
   return $?.set?.(e, r), r;
-})?.then?.(t) : t(e), mt = class {
+})?.then?.(t) : t(e), gt = class {
   #t;
   #e;
   constructor(e, t) {
@@ -194,24 +196,24 @@ var Ze = /* @__PURE__ */ Symbol.for("@fix"), m = (e) => typeof e == "string" || 
   }
 };
 function Ee(e, t, r) {
-  return e instanceof Promise || typeof e?.then == "function" ? $?.has?.(e) ? $?.get?.(e) : (Ke?.has?.(e) || e?.then?.((n) => $?.set?.(e, n)), Ke?.getOrInsertComputed?.(e, () => new Proxy(yt(e), new mt(t, r)))) : e;
+  return e instanceof Promise || typeof e?.then == "function" ? $?.has?.(e) ? $?.get?.(e) : (Ke?.has?.(e) || e?.then?.((n) => $?.set?.(e, n)), Ke?.getOrInsertComputed?.(e, () => new Proxy(at(e), new gt(t, r)))) : e;
 }
 Symbol.observable ||= /* @__PURE__ */ Symbol.for("observable");
 Symbol.subscribe ||= /* @__PURE__ */ Symbol.for("subscribe");
 Symbol.unsubscribe ||= /* @__PURE__ */ Symbol.for("unsubscribe");
-var d = /* @__PURE__ */ Symbol.for("@value"), g = /* @__PURE__ */ Symbol.for("@extract"), _ = /* @__PURE__ */ Symbol.for("@origin"), se = /* @__PURE__ */ Symbol.for("@registry"), K = /* @__PURE__ */ Symbol.for("@behavior"), oe = /* @__PURE__ */ Symbol.for("@promise"), me = /* @__PURE__ */ Symbol.for("@trigger-less"), h = /* @__PURE__ */ Symbol.for("@trigger-lock"), gt = /* @__PURE__ */ Symbol.for("@trigger-control"), D = /* @__PURE__ */ Symbol.for("@trigger"), ue = /* @__PURE__ */ Symbol.for("@subscribe"), At = /* @__PURE__ */ Symbol.for("@isNotEqual"), de = /* @__PURE__ */ Symbol.for("@realProp"), qe = /* @__PURE__ */ new WeakMap(), he = (e) => {
+var d = /* @__PURE__ */ Symbol.for("@value"), g = /* @__PURE__ */ Symbol.for("@extract"), _ = /* @__PURE__ */ Symbol.for("@origin"), se = /* @__PURE__ */ Symbol.for("@registry"), K = /* @__PURE__ */ Symbol.for("@behavior"), oe = /* @__PURE__ */ Symbol.for("@promise"), me = /* @__PURE__ */ Symbol.for("@trigger-less"), h = /* @__PURE__ */ Symbol.for("@trigger-lock"), At = /* @__PURE__ */ Symbol.for("@trigger-control"), D = /* @__PURE__ */ Symbol.for("@trigger"), ue = /* @__PURE__ */ Symbol.for("@subscribe"), Ot = /* @__PURE__ */ Symbol.for("@isNotEqual"), de = /* @__PURE__ */ Symbol.for("@realProp"), qe = /* @__PURE__ */ new WeakMap(), he = (e) => {
   const t = typeof e == "object" || typeof e == "function" ? e?.[g] ?? e : e, r = (n) => he(n);
   return Array.isArray(t) ? t?.map?.(r) || Array.from(t || [])?.map?.(r) || [] : t instanceof Map || t instanceof WeakMap ? new Map(Array.from(t?.entries?.() || [])?.map?.(([n, i]) => [n, he(i)])) : t instanceof Set || t instanceof WeakSet ? new Set(Array.from(t?.values?.() || [])?.map?.(r)) : t != null && typeof t == "function" || typeof t == "object" ? Object.fromEntries(Array.from(Object.entries(t || {}) || [])?.filter?.(([n]) => n != g && n != _ && n != se)?.map?.(([n, i]) => [n, he(i)])) : t;
-}, Ot = (e) => e?.[g] ?? e?.["@target"] ?? e, V = (e, t = !1) => {
+}, xt = (e) => e?.[g] ?? e?.["@target"] ?? e, C = (e, t = !1) => {
   const r = e;
   if (m(e) || typeof e == "symbol") return e;
   if (e != null && (e instanceof WeakRef || "deref" in e && typeof e?.deref == "function") && (e = e?.deref?.()), e != null && (typeof e == "object" || typeof e == "function")) {
-    e = Ot(e);
+    e = xt(e);
     const n = t && I(e) && e?.value;
-    if (n != null && (typeof n == "object" || typeof n == "function") && (e = n), r != e) return V(e, t);
+    if (n != null && (typeof n == "object" || typeof n == "function") && (e = n), r != e) return C(e, t);
   }
   return e;
-}, We = (e) => e != null && typeof e.then == "function", xt = (e, t) => m(e) || typeof e == "function" ? t?.(e) : We(e) ? e.then(t) : e?.promise && We(e.promise) ? e.promise.then(t) : t?.(e), Ue = /* @__PURE__ */ new WeakMap(), wt = new FinalizationRegistry((e) => {
+}, We = (e) => e != null && typeof e.then == "function", wt = (e, t) => m(e) || typeof e == "function" ? t?.(e) : We(e) ? e.then(t) : e?.promise && We(e.promise) ? e.promise.then(t) : t?.(e), Ue = /* @__PURE__ */ new WeakMap(), Rt = new FinalizationRegistry((e) => {
   e?.forEach?.((t) => t?.());
 });
 function M(e, t, r) {
@@ -220,7 +222,7 @@ function M(e, t, r) {
       const n = e?.[g] ?? e;
       Ue?.getOrInsertComputed?.(n, () => {
         const i = /* @__PURE__ */ new Set();
-        return (typeof n == "object" || typeof n == "function") && (wt.register(n, i), Ue.set(n, i), n[Symbol.dispose] ??= () => i.forEach((s) => {
+        return (typeof n == "object" || typeof n == "function") && (Rt.register(n, i), Ue.set(n, i), n[Symbol.dispose] ??= () => i.forEach((s) => {
           s?.();
         })), i;
       })?.add?.(r);
@@ -234,7 +236,7 @@ var ee = (e) => {
   const t = Number(e);
   return Number.isInteger(t) && t >= 0 && String(t) === e;
 };
-function Sr(e = [], t = {}) {
+function pr(e = [], t = {}) {
   let r = /* @__PURE__ */ new Set();
   const n = (l, f, o) => {
     t.onDuplicate?.({
@@ -390,7 +392,7 @@ function Sr(e = [], t = {}) {
     }
   });
 }
-var Rt = class {
+var Tt = class {
   constructor() {
   }
   deleteProperty(e, t) {
@@ -411,13 +413,13 @@ var Rt = class {
   get(e, t, r) {
     return typeof t == "symbol" ? e?.[t] ?? e : Reflect.get(e, t, r);
   }
-}, pr = (e) => {
+}, mr = (e) => {
   if (e?.[_] || qe.has(e)) return e;
-  const t = new Proxy(e, new Rt());
+  const t = new Proxy(e, new Tt());
   return qe.set(t, e), t;
-}, Le = /* @__PURE__ */ Symbol.for("object.ts@withUnsub");
-globalThis[Le] ??= /* @__PURE__ */ new WeakMap();
-var Tt = globalThis[Le], Pt = (e, t, r) => Tt.getOrInsert(e, () => {
+}, et = /* @__PURE__ */ Symbol.for("object.ts@withUnsub");
+globalThis[et] ??= /* @__PURE__ */ new WeakMap();
+var Pt = globalThis[et], Mt = (e, t, r) => Pt.getOrInsert(e, () => {
   const n = t?.deref?.();
   n?.affected?.(r);
   const i = e?.complete?.bind?.(e), s = () => {
@@ -429,21 +431,21 @@ var Tt = globalThis[Le], Pt = (e, t, r) => Tt.getOrInsert(e, () => {
     [Symbol.dispose]: s,
     [Symbol.asyncDispose]: s
   };
-}), et = /* @__PURE__ */ Symbol.for("object.ts@subscriptRegistry");
-globalThis[et] ??= /* @__PURE__ */ new WeakMap();
-var p = globalThis[et] ??= /* @__PURE__ */ new WeakMap(), tt = /* @__PURE__ */ Symbol.for("object.ts@globalEffectListeners");
-globalThis[tt] ??= /* @__PURE__ */ new Map();
-var ve = globalThis[tt], je = (e, t = ["*"]) => {
+}), tt = /* @__PURE__ */ Symbol.for("object.ts@subscriptRegistry");
+globalThis[tt] ??= /* @__PURE__ */ new WeakMap();
+var p = globalThis[tt] ??= /* @__PURE__ */ new WeakMap(), rt = /* @__PURE__ */ Symbol.for("object.ts@globalEffectListeners");
+globalThis[rt] ??= /* @__PURE__ */ new Map();
+var ve = globalThis[rt], je = (e, t = ["*"]) => {
   if (e == null || typeof e != "function") return;
-  const r = ut(t);
+  const r = ft(t);
   return ve.set(e, r.affectTypes), () => ve.delete(e);
-}, rt = /* @__PURE__ */ Symbol.for("object.ts@wrapped");
-globalThis[rt] ??= /* @__PURE__ */ new WeakMap();
-var Mt = globalThis[rt], It = (e, t) => {
+}, nt = /* @__PURE__ */ Symbol.for("object.ts@wrapped");
+globalThis[nt] ??= /* @__PURE__ */ new WeakMap();
+var It = globalThis[nt], kt = (e, t) => {
   const r = e?.[g] ?? e;
   let n = p.get(r);
-  return n ? n.bindSource(r) : (n = new Et(r), p.set(r, n)), t;
-}, ce = (e, t) => (e = V(e?.[g] ?? e), typeof e == "symbol" || !(typeof e == "object" || typeof e == "function") || e == null ? e : Mt.getOrInsertComputed(e, () => new Proxy(e, It(e, t)))), te = /* @__PURE__ */ Symbol.for("@allProps"), nt = /* @__PURE__ */ new Set(["*", "all"]), ze = /* @__PURE__ */ new Map([
+  return n ? n.bindSource(r) : (n = new Wt(r), p.set(r, n)), t;
+}, ce = (e, t) => (e = C(e?.[g] ?? e), typeof e == "symbol" || !(typeof e == "object" || typeof e == "function") || e == null ? e : It.getOrInsertComputed(e, () => new Proxy(e, kt(e, t)))), te = /* @__PURE__ */ Symbol.for("@allProps"), it = /* @__PURE__ */ new Set(["*", "all"]), Ve = /* @__PURE__ */ new Map([
   ["set", ["setter", "@set"]],
   ["add", ["@add"]],
   ["delete", ["@delete"]],
@@ -453,26 +455,26 @@ var Mt = globalThis[rt], It = (e, t) => {
   ["setAll", ["@setAll"]],
   ["addAll", ["@addAll"]],
   ["deleteAll", ["@deleteAll", "@clear"]]
-]), it = /* @__PURE__ */ Symbol.for("object.ts@triggerCanonicalNames");
-globalThis[it] ??= new Map(Array.from(ze.entries()).flatMap(([e, t]) => t.map((r) => [r, e])));
-var kt = globalThis[it], fe = (e = "set") => {
+]), lt = /* @__PURE__ */ Symbol.for("object.ts@triggerCanonicalNames");
+globalThis[lt] ??= new Map(Array.from(Ve.entries()).flatMap(([e, t]) => t.map((r) => [r, e])));
+var Et = globalThis[lt], fe = (e = "set") => {
   if (e == null) return e;
   const t = String(e || "set");
-  return kt.get(t) ?? t;
-}, lt = (e) => {
+  return Et.get(t) ?? t;
+}, st = (e) => {
   const t = e == null ? "all" : String(fe(e) ?? "all");
-  return [t, ...ze.get(t) ?? []];
-}, Je = (e = ["*"]) => new Set([...X(e)].flatMap((t) => [t, ...ze.get(t) ?? []])), X = (e = ["*"]) => {
+  return [t, ...Ve.get(t) ?? []];
+}, Je = (e = ["*"]) => new Set([...X(e)].flatMap((t) => [t, ...Ve.get(t) ?? []])), X = (e = ["*"]) => {
   const t = typeof e == "string" ? [e] : Array.from(e ?? ["*"]), r = new Set(t.map((n) => {
     const i = String(n || "*");
-    return nt.has(i) ? i : String(fe(i) ?? i);
+    return it.has(i) ? i : String(fe(i) ?? i);
   }));
   return r.size ? r : /* @__PURE__ */ new Set(["*"]);
 }, J = (e, t) => {
   const r = e instanceof Set ? e : X(e);
-  return [...nt].some((n) => r.has(n)) || lt(t).some((n) => r.has(n));
-}, st = (e) => !!e && typeof e == "object" && !Array.isArray(e) && ("affectTypes" in e || "triggers" in e || "triggerImmediately" in e), ge = (e = ["*"]) => {
-  if (st(e)) return {
+  return [...it].some((n) => r.has(n)) || st(t).some((n) => r.has(n));
+}, ut = (e) => !!e && typeof e == "object" && !Array.isArray(e) && ("affectTypes" in e || "triggers" in e || "triggerImmediately" in e), ge = (e = ["*"]) => {
+  if (ut(e)) return {
     affectTypes: X(e.affectTypes ?? e.triggers ?? ["*"]),
     triggerImmediately: e.triggerImmediately !== !1
   };
@@ -481,14 +483,14 @@ var kt = globalThis[it], fe = (e = "set") => {
     affectTypes: t,
     triggerImmediately: J(t, "initial")
   };
-}, ut = (e = ["*"]) => st(e) ? {
+}, ft = (e = ["*"]) => ut(e) ? {
   affectTypes: X(e.affectTypes ?? e.triggers ?? ["*"]),
   triggerImmediately: e.triggerImmediately === !0
 } : {
   affectTypes: X(e),
   triggerImmediately: !1
-}, ft = /* @__PURE__ */ Symbol.for("object.ts@Subscript");
-globalThis[ft] ??= class {
+}, ot = /* @__PURE__ */ Symbol.for("object.ts@Subscript");
+globalThis[ot] ??= class {
   compatible;
   #t;
   #e;
@@ -514,7 +516,7 @@ globalThis[ft] ??= class {
     } };
     const r = new WeakRef(this), n = function(i) {
       const s = i?.next?.bind?.(i);
-      return Pt(i, r, s);
+      return Mt(i, r, s);
     };
     this.#f = typeof Observable < "u" ? new Observable(n) : null, this.compatible = () => this.#f;
   }
@@ -564,7 +566,7 @@ globalThis[ft] ??= class {
     return this.#c;
   }
   isTriggerEnabled(t) {
-    return !J(this.#n, "all") && !lt(t).some((r) => this.#n.has(r));
+    return !J(this.#n, "all") && !st(t).some((r) => this.#n.has(r));
   }
   setTriggersEnabled(t = ["*"], r = !0) {
     const n = Je(t);
@@ -636,7 +638,7 @@ globalThis[ft] ??= class {
     return this.#o;
   }
 };
-var Et = globalThis[ft], Wt = /* @__PURE__ */ Symbol.for("object.ts@__safeGetGuard"), _t = /* @__PURE__ */ new Set([
+var Wt = globalThis[ot], _t = /* @__PURE__ */ Symbol.for("object.ts@__safeGetGuard"), $t = /* @__PURE__ */ new Set([
   Symbol.toStringTag,
   Symbol.iterator,
   Symbol.asyncIterator,
@@ -652,11 +654,11 @@ var Et = globalThis[ft], Wt = /* @__PURE__ */ Symbol.for("object.ts@__safeGetGua
   "finally",
   "next"
 ]), re = (e, t) => {
-  if (!_t.has(t)) return null;
+  if (!$t.has(t)) return null;
   const r = c(e, t);
   return typeof r == "function" ? H(e, r) : r;
-}, R = globalThis[Wt] ??= /* @__PURE__ */ new WeakMap();
-function $t(e, t) {
+}, R = globalThis[_t] ??= /* @__PURE__ */ new WeakMap();
+function Ct(e, t) {
   let r = !0;
   try {
     R?.getOrInsert?.(e, /* @__PURE__ */ new Set())?.add?.(t), R?.get?.(e)?.has?.(t) && (r = !0), r = typeof Reflect.getOwnPropertyDescriptor(e, t)?.get == "function";
@@ -684,7 +686,7 @@ var G = (e, t) => {
   if (e == null) return e;
   let i = R?.getOrInsert?.(e, /* @__PURE__ */ new Set());
   if (i?.has?.(t)) return null;
-  if (!$t(e, t)) n ??= Reflect.get(e, t, r ?? e);
+  if (!Ct(e, t)) n ??= Reflect.get(e, t, r ?? e);
   else {
     i?.add?.(t);
     try {
@@ -699,7 +701,7 @@ var G = (e, t) => {
 }, W = (e, t) => Object.prototype.hasOwnProperty.call(e, t), Te = (e, t = !1) => !!e && typeof e == "object" && !Array.isArray(e) && (W(e, "key") || W(e, "name") || W(e, "oldValue") || W(e, "old") || W(e, "op") || W(e, "trigger") || t && W(e, "value")), N = (e, t, r) => W(e, t) ? e[t] : t == "oldValue" && W(e, "old") ? e.old : r(), Ae = (e, t = "manual") => fe(e.trigger ?? e.op ?? t), zt = (e) => typeof e == "string" || typeof e == "number" || typeof e == "symbol", be = (e) => {
   const t = c(e, de) ?? c(e, "realProp");
   return zt(t) ? t : null;
-}, Qe = (e, t) => t == "value" ? be(e) ?? t : t, Ct = (e, t) => {
+}, Qe = (e, t) => t == "value" ? be(e) ?? t : t, Nt = (e, t) => {
   const r = be(e);
   return r != null && t == r ? c(e, "value") ?? c(e, d) ?? c(e, t) : t == null ? void 0 : c(e, t);
 }, Oe = (e, t) => {
@@ -730,7 +732,7 @@ var G = (e, t) => {
   if ([g, _].indexOf(t) >= 0) return c(e, t) ?? e;
   if (t == d) return c(e, t) ?? c(e, "value");
   if (t == se) return r;
-  if (t == gt) return r?.triggerControl;
+  if (t == At) return r?.triggerControl;
   if (t == Symbol.observable) return r?.compatible;
   if (t == Symbol.subscribe) return (n, i, s) => b(i != null ? [e, i] : e, n, s);
   if (t == Symbol.iterator || t == Symbol.asyncIterator) return c(e, t);
@@ -750,7 +752,7 @@ var G = (e, t) => {
       return n.complete = (...u) => (i?.(), s?.(...u)), n.complete;
     }
   });
-}, Nt = class {
+}, Dt = class {
   #t;
   #e;
   #r;
@@ -820,7 +822,7 @@ var G = (e, t) => {
     const o = p.get(this.#e);
     return n?.length == 1 ? o?.trigger?.(l, n[0], null, "add") : n?.length > 1 && (o?.trigger?.(l, n, null, "addAll"), n.forEach((y, a) => o?.trigger?.(l + a, y, null, "add"))), s?.length == 1 ? o?.trigger?.(s[0]?.[0] ?? l, s[0]?.[1], s[0]?.[2], s[0]?.[3] === !1 ? "add" : "set") : s?.length > 1 && (o?.trigger?.(l, s, u, "setAll"), s.forEach((y, a) => o?.trigger?.(y?.[0] ?? l + a, y?.[1], y?.[2], y?.[3] === !1 ? "add" : "set"))), i?.length == 1 ? o?.trigger?.(l, null, i[0], "delete") : i?.length > 1 && (o?.trigger?.(l, null, i, "deleteAll"), i.forEach((y, a) => o?.trigger?.(l + a, null, y, "delete"))), f == e ? new Proxy(f, this.#r) : Array.isArray(f) ? _e(f) : f;
   }
-}, Dt = (e, t, r, n) => {
+}, Bt = (e, t, r, n) => {
   const i = Number.isInteger(r) && Number.isInteger(n) && n < r ? t.slice(n, r) : [];
   if (!e[h] && r !== n) {
     const s = p.get(t);
@@ -832,7 +834,7 @@ var G = (e, t) => {
       s?.trigger?.(r, l, null, "addAll"), l.forEach((f, o) => s?.trigger?.(r + o, void 0, null, "add"));
     }
   }
-}, Bt = class {
+}, Ft = class {
   [h];
   constructor() {
   }
@@ -868,7 +870,7 @@ var G = (e, t) => {
     if (t == "b") return () => e?.b ?? e?.[2];
     if (t == "a") return () => e?.a ?? e?.[3];
     const l = c(e, t) ?? (t == "value" ? c(e, d) : null);
-    return typeof l == "function" ? new Proxy(typeof l == "function" ? l?.bind?.(e) : l, new Nt(t, e, this)) : l;
+    return typeof l == "function" ? new Proxy(typeof l == "function" ? l?.bind?.(e) : l, new Dt(t, e, this)) : l;
   }
   set(e, t, r) {
     if (typeof t != "symbol" && Number.isInteger(parseInt(t)) && (t = parseInt(t) ?? t), t == h && r)
@@ -887,7 +889,7 @@ var G = (e, t) => {
       "a"
     ], u = i.indexOf(t), l = s.indexOf(t);
     let f = !1;
-    return u >= 0 ? f = Reflect.set(e, u, r) : l >= 0 ? f = Reflect.set(e, l, r) : f = Reflect.set(e, t, r), t == "length" && x(n, r) && Dt(this, e, n, r), !this[h] && typeof t != "symbol" && x(n, r) && p?.get?.(e)?.trigger?.(t, r, n, "set"), f;
+    return u >= 0 ? f = Reflect.set(e, u, r) : l >= 0 ? f = Reflect.set(e, l, r) : f = Reflect.set(e, t, r), t == "length" && x(n, r) && Bt(this, e, n, r), !this[h] && typeof t != "symbol" && x(n, r) && p?.get?.(e)?.trigger?.(t, r, n, "set"), f;
   }
   deleteProperty(e, t) {
     if (typeof t != "symbol" && Number.isInteger(parseInt(t)) && (t = parseInt(t) ?? t), t == h)
@@ -895,7 +897,7 @@ var G = (e, t) => {
     const r = c(e, t), n = Reflect.deleteProperty(e, t);
     return !this[h] && t != "length" && t != h && typeof t != "symbol" && r != null && p.get(e)?.trigger?.(t, t, r, "delete"), n;
   }
-}, Ft = class {
+}, Gt = class {
   [h];
   constructor() {
   }
@@ -914,7 +916,7 @@ var G = (e, t) => {
     c(e, t) == null && t != "value" && I(e) && c(e, "value") != null && (typeof c(e, "value") == "object" || typeof c(e, "value") == "function") && c(c(e, "value"), t) != null && (e = c(e, "value") ?? e);
     const s = we(e, t, n);
     return s ?? (t == me ? pe.call(this, this) : t == D ? Oe(n, (u) => {
-      const l = Qe(e, u.key ?? u.name ?? be(e) ?? "value"), f = N(u, "oldValue", () => l == "value" || l == be(e) ? c(e, d) : void 0), o = N(u, "value", () => Ct(e, l));
+      const l = Qe(e, u.key ?? u.name ?? be(e) ?? "value"), f = N(u, "oldValue", () => l == "value" || l == be(e) ? c(e, d) : void 0), o = N(u, "value", () => Nt(e, l));
       return n?.trigger?.(l, o, f, Ae(u, "manual"));
     }) : t == Symbol.toPrimitive ? (u) => {
       const l = G(e, t);
@@ -958,7 +960,7 @@ var G = (e, t) => {
   }
   set(e, t, r) {
     const n = re(e, t);
-    return n ?? at(r, (i) => {
+    return n ?? ht(r, (i) => {
       const s = re(i, t);
       if (s != null) return s;
       if (t == h && r)
@@ -970,7 +972,7 @@ var G = (e, t) => {
       const l = Qe(e, t), f = t == "value" ? c(e, d) ?? c(e, t) : c(e, t);
       e[t] = i;
       const o = c(e, t) ?? i;
-      return !this[h] && typeof t != "symbol" && (c(e, At) ?? x)?.(f, o) && (p.get(e) ?? p.get(u))?.trigger?.(l, i, f), !0;
+      return !this[h] && typeof t != "symbol" && (c(e, Ot) ?? x)?.(f, o) && (p.get(e) ?? p.get(u))?.trigger?.(l, i, f), !0;
     });
   }
   defineProperty(e, t, r) {
@@ -996,7 +998,7 @@ var G = (e, t) => {
     const r = c(e, t), n = Reflect.deleteProperty(e, t);
     return !this[h] && t != h && typeof t != "symbol" && p.get(e)?.trigger?.(t, null, r, "delete"), n;
   }
-}, Gt = class {
+}, Ht = class {
   [h];
   constructor() {
   }
@@ -1029,7 +1031,7 @@ var G = (e, t) => {
     } : t == "delete" ? (l, f = null) => {
       const o = e.has(l), y = e.get(l), a = u(l);
       return !this[h] && o && p.get(e)?.trigger?.(l, null, y, "delete"), a;
-    } : t == "set" ? (l, f) => ht(f, (o) => {
+    } : t == "set" ? (l, f) => dt(f, (o) => {
       const y = e.has(l), a = e.get(l), v = u(l, o);
       return (!y || x(a, o)) && (this[h] || p.get(e)?.trigger?.(l, o, y ? a : null, y ? "set" : "add")), v;
     }) : u;
@@ -1066,7 +1068,7 @@ var G = (e, t) => {
   deleteProperty(e, t) {
     return t == h ? (delete this[h], !0) : Reflect.deleteProperty(e, t);
   }
-}, Ht = class {
+}, Kt = class {
   [h] = !1;
   constructor() {
   }
@@ -1134,10 +1136,10 @@ var G = (e, t) => {
   deleteProperty(e, t) {
     return t == h ? (delete this[h], !0) : Reflect.deleteProperty(e, t);
   }
-}, Y = (e) => !!((typeof e == "object" || typeof e == "function") && e != null && (e?.[g] || e?.[ue])), _e = (e) => Y(e) ? e : ce(e, new Bt()), Kt = (e) => Y(e) ? e : ce(e, new Ft()), qt = (e) => Y(e) ? e : ce(e, new Gt()), Ut = (e) => Y(e) ? e : ce(e, new Ht()), jt = (e, t) => {
+}, Y = (e) => !!((typeof e == "object" || typeof e == "function") && e != null && (e?.[g] || e?.[ue])), _e = (e) => Y(e) ? e : ce(e, new Ft()), qt = (e) => Y(e) ? e : ce(e, new Gt()), Ut = (e) => Y(e) ? e : ce(e, new Ht()), jt = (e) => Y(e) ? e : ce(e, new Kt()), Jt = (e, t) => {
   const r = e instanceof Promise || typeof e?.then == "function", n = T({
     [oe]: r ? e : null,
-    [d]: r ? 0 : Number(V(e) || 0) || 0,
+    [d]: r ? 0 : Number(C(e) || 0) || 0,
     [K]: t,
     [Symbol?.toStringTag]() {
       return String(this?.[d] ?? "") || "";
@@ -1153,10 +1155,10 @@ var G = (e, t) => {
     }
   });
   return e?.then?.((i) => n.value = i), n;
-}, Jt = (e, t) => {
+}, Qt = (e, t) => {
   const r = e instanceof Promise || typeof e?.then == "function", n = T({
     [oe]: r ? e : null,
-    [d]: (r ? "" : String(V(typeof e == "number" ? String(e) : e || ""))) ?? "",
+    [d]: (r ? "" : String(C(typeof e == "number" ? String(e) : e || ""))) ?? "",
     [K]: t,
     [Symbol?.toStringTag]() {
       return String(this?.[d] ?? "") ?? "";
@@ -1172,10 +1174,10 @@ var G = (e, t) => {
     }
   });
   return e?.then?.((i) => n.value = i), n;
-}, Qt = (e, t) => {
+}, Xt = (e, t) => {
   const r = e instanceof Promise || typeof e?.then == "function", n = T({
     [oe]: r ? e : null,
-    [d]: (r ? !1 : (V(e) != null ? typeof V(e) == "string" ? !0 : !!V(e) : !1) || !1) || !1,
+    [d]: (r ? !1 : (C(e) != null ? typeof C(e) == "string" ? !0 : !!C(e) : !1) || !1) || !1,
     [K]: t,
     [Symbol?.toStringTag]() {
       return String(this?.[d] ?? "") || "";
@@ -1201,7 +1203,7 @@ var G = (e, t) => {
     [Symbol?.toPrimitive](i) {
       return E(this.value, i);
     },
-    value: r ? null : V(e)
+    value: r ? null : C(e)
   });
   return e?.then?.((i) => n.value = i), b(e, (i) => {
     n?.[D]?.();
@@ -1233,7 +1235,7 @@ var G = (e, t) => {
     }
   }
   return e;
-}, Xt = (e, t = "value", r, n) => {
+}, Yt = (e, t = "value", r, n) => {
   if (m(e) || !e) return e;
   Array.isArray(e) && e.length == 2 && e[0] != null && (e[0] instanceof Map || e[0] instanceof WeakMap || e[0] instanceof Set || e[0] instanceof WeakSet) ? ((t == null || t === "value") && (t = e[1]), e = e[0]) : Array.isArray(e) && !le(e?.[1], e) && (Array.isArray(e?.[0]) || typeof e?.[0] == "object" || typeof e?.[0] == "function") && (e = e?.[0]);
   const i = e instanceof Map || e instanceof WeakMap, s = e instanceof Set || e instanceof WeakSet;
@@ -1243,8 +1245,8 @@ var G = (e, t) => {
   const u = () => i ? e.get(t) : s ? e.has(t) : e?.[t], l = (a) => i ? (e.set(t, a), a) : s ? (a ? e.add(t) : e.delete(t), e.has(t)) : e[t] = a;
   i && r !== void 0 && !e.has(t) ? e.set(t, r) : s && r && !e.has(t) && e.add(t);
   const f = u();
-  if (!s && t != null && I(f) && z(f)) return Pe(Lt(f), t);
-  if (!i && !s && t && typeof e?.getProperty == "function" && z(e?.getProperty?.(t))) return Pe(e?.getProperty?.(t), t);
+  if (!s && t != null && I(f) && V(f)) return Pe(er(f), t);
+  if (!i && !s && t && typeof e?.getProperty == "function" && V(e?.getProperty?.(t))) return Pe(e?.getProperty?.(t), t);
   !i && !s && (e[t] ??= r ?? e[t]);
   const o = T({
     [d]: s ? !!u() : u() ?? r,
@@ -1258,7 +1260,7 @@ var G = (e, t) => {
     set value(a) {
       if (o[Q] = !0, s) this[d] = l(a);
       else {
-        const v = a ?? dt(u());
+        const v = a ?? vt(u());
         this[d] = l(v);
       }
       o[Q] = !1;
@@ -1281,45 +1283,45 @@ var G = (e, t) => {
     }
   });
   return M(o, Symbol.dispose, y), o;
-}, Yt = (e, t) => {
+}, Zt = (e, t) => {
   switch (typeof e) {
     case "boolean":
-      return Qt(e, t);
+      return Xt(e, t);
     case "number":
-      return jt(e, t);
-    case "string":
       return Jt(e, t);
+    case "string":
+      return Qt(e, t);
     case "object":
       if (e != null) return Xe(T(e), t);
     default:
       return Xe(e, t);
   }
-}, Zt = (e, t = "value", r) => {
-  const n = z(e) ? e : Yt(e, r);
-  return t != null ? Xt(n, t, r) : n;
-}, gr = (e, t) => Zt(e, t), Ce = (e, t, r = 100) => {
+}, Lt = (e, t = "value", r) => {
+  const n = V(e) ? e : Zt(e, r);
+  return t != null ? Yt(n, t, r) : n;
+}, Ar = (e, t) => Lt(e, t), ze = (e, t, r = 100) => {
   if (e?.value ?? e) return setTimeout(() => {
     e.value && t?.();
   }, r);
-}, Ar = (e = 100) => (t, [r], [n]) => {
-  let i = Ce(r, t, e);
+}, Or = (e = 100) => (t, [r], [n]) => {
+  let i = ze(r, t, e);
   n?.addEventListener?.("abort", () => {
     i && clearTimeout(i);
   }, { once: !0 });
-}, Or = (e = 100) => (t, [r], [n]) => {
-  let i = Ce(r, t, e);
+}, xr = (e = 100) => (t, [r], [n]) => {
+  let i = ze(r, t, e);
   n?.addEventListener?.("abort", () => {
     i && clearTimeout(i);
   }, { once: !0 }), i || t?.();
 };
 function T(e, t) {
-  if (e == null || typeof e == "symbol" || !(typeof e == "object" || typeof e == "function") || Y(e) || (e = V?.(e)) == null || e instanceof Promise || e instanceof WeakRef || Y(e)) return e;
+  if (e == null || typeof e == "symbol" || !(typeof e == "object" || typeof e == "function") || Y(e) || (e = C?.(e)) == null || e instanceof Promise || e instanceof WeakRef || Y(e)) return e;
   const r = e;
   if (r == null || typeof r == "symbol" || !(typeof r == "object" || typeof r == "function") || r instanceof Promise || r instanceof WeakRef) return r;
   let n = r;
-  return Array.isArray(r) ? (n = _e(r), n) : r instanceof Map ? (n = qt(r), n) : r instanceof Set ? (n = Ut(r), n) : ((typeof r == "function" || typeof r == "object") && (n = Kt(r)), n);
+  return Array.isArray(r) ? (n = _e(r), n) : r instanceof Map ? (n = Ut(r), n) : r instanceof Set ? (n = jt(r), n) : ((typeof r == "function" || typeof r == "object") && (n = qt(r)), n);
 }
-var z = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? !0 : !!((typeof e == "object" || typeof e == "function") && e != null && (e?.[g] || e?.[ue] || p?.has?.(e))), Lt = (e) => z(e) ? T(e) : null, xr = (e) => {
+var V = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? !0 : !!((typeof e == "object" || typeof e == "function") && e != null && (e?.[g] || e?.[ue] || p?.has?.(e))), er = (e) => V(e) ? T(e) : null, wr = (e) => {
   if (e == null || typeof e != "object" && typeof e != "function" || e?.[Symbol.observable] != null) return e;
   try {
     e[Symbol.observable] = self?.compatible;
@@ -1330,38 +1332,38 @@ var z = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? 
     const i = e?.[Symbol?.observable];
     return i?.()?.affected?.(t, r, n), () => i?.()?.unaffected?.(t, r);
   }, e;
-}, er = /* @__PURE__ */ Symbol.for("object.ts@specializedSubscribe"), U = globalThis[er] ??= /* @__PURE__ */ new WeakMap(), Ne = (e) => {
+}, tr = /* @__PURE__ */ Symbol.for("object.ts@specializedSubscribe"), U = globalThis[tr] ??= /* @__PURE__ */ new WeakMap(), Ne = (e) => {
   if (!(typeof e == "symbol" || e == null || !(typeof e == "object" || typeof e == "function")))
     return e;
 }, Se = "initial", De = (e) => {
   const t = e?.[de] ?? e?.realProp;
-  return C(t) ? t : null;
+  return z(t) ? t : null;
 }, Be = (e, t) => {
   const r = De(e);
   return r != null && (t == null || t == "value") ? r : t;
-}, tr = (e, t) => t != null && t == De(e) ? e?.value : e?.[t], $e = (e, t, r, n) => {
+}, rr = (e, t) => t != null && t == De(e) ? e?.value : e?.[t], $e = (e, t, r, n) => {
   if (t != null && t == De(e)) {
-    const i = tr(e, t);
+    const i = rr(e, t);
     if (i != null) return r?.(i, t, null, "set");
   }
   return ae(e, t, r, n);
-}, ot = (e, t, r) => {
+}, ct = (e, t, r) => {
   const n = ge(t);
   if (r == Se) {
     if (!n.triggerImmediately) return;
   } else if (!J(n.affectTypes, r)) return;
   return (i, s, u, ...l) => e?.(i, s, u, r, ...l);
-}, rr = (e, t, r, n = ["*"]) => {
+}, nr = (e, t, r, n = ["*"]) => {
   if (!e || !Ne(e)) return;
   const i = t != Symbol.iterator ? Be(e, t) : null;
   let s = e?.[se] ?? p.get(e);
   e = e?.[g] ?? e, queueMicrotask(() => {
-    const l = ot(r, n, Se);
-    l && (i != null && i != Symbol.iterator ? $e(e, i, l, null) : Ve(e, l, null));
+    const l = ct(r, n, Se);
+    l && (i != null && i != Symbol.iterator ? $e(e, i, l, null) : Ce(e, l, null));
   });
   let u = s?.affected?.(r, i, n);
   return e?.[Symbol.dispose] || (M(u, Symbol.dispose, u), M(u, Symbol.asyncDispose, u), M(e, Symbol.dispose, u), M(e, Symbol.asyncDispose, u)), u;
-}, nr = (e, t, r, n = ["*"]) => {
+}, ir = (e, t, r, n = ["*"]) => {
   const i = ge(n).affectTypes, s = {};
   let u = e?.value;
   const l = (f) => {
@@ -1369,7 +1371,7 @@ var z = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? 
     J(i, "set") && r?.(o, "value", u, "set", f), u = o;
   };
   return e?.addEventListener?.("change", l, s), () => e?.removeEventListener?.("change", l, s);
-}, ne = (e) => Array.isArray(e) && e?.length == 2 && Ne(e?.[0]) && (C(e?.[1]) || e?.[1] == Symbol.iterator), ir = (e) => !!e && typeof e == "object" && !Array.isArray(e) && ("affectTypes" in e || "triggers" in e || "triggerImmediately" in e), lr = (e) => e == null ? [] : Array.isArray(e) && !ne(e) && !z(e) ? e : [e], sr = (e) => {
+}, ne = (e) => Array.isArray(e) && e?.length == 2 && Ne(e?.[0]) && (z(e?.[1]) || e?.[1] == Symbol.iterator), lr = (e) => !!e && typeof e == "object" && !Array.isArray(e) && ("affectTypes" in e || "triggers" in e || "triggerImmediately" in e), sr = (e) => e == null ? [] : Array.isArray(e) && !ne(e) && !V(e) ? e : [e], ur = (e) => {
   if (ne(e)) {
     const t = e?.[0];
     return {
@@ -1383,7 +1385,7 @@ var z = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? 
     target: e,
     prop: null
   };
-}, ur = (e, t, r, n, i, s, u) => ({
+}, fr = (e, t, r, n, i, s, u) => ({
   source: e,
   target: t,
   value: r,
@@ -1392,10 +1394,10 @@ var z = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? 
   oldValue: i,
   trigger: s,
   args: u
-}), fr = (e, t, r, n = ["*"]) => {
-  const i = C(e?.[1]) ? e?.[1] : null;
+}), or = (e, t, r, n = ["*"]) => {
+  const i = z(e?.[1]) ? e?.[1] : null;
   return b(e?.[0], i, r, n);
-}, or = (e, t, r, n = ["*"]) => e?.then?.((i) => b?.(i, t, r, n))?.catch?.((i) => (console.warn(i), null)), b = (e, t, r = () => {
+}, cr = (e, t, r, n = ["*"]) => e?.then?.((i) => b?.(i, t, r, n))?.catch?.((i) => (console.warn(i), null)), b = (e, t, r = () => {
 }, n) => {
   if (typeof t == "function" ? (n = r, r = t, t = null) : t = Be(e, t), (typeof r == "object" || Array.isArray(r)) && (n = r, r = () => {
   }), (m(e) || typeof e == "symbol") && ge(n).triggerImmediately)
@@ -1404,30 +1406,30 @@ var z = (e) => typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? 
   if (Ne(e)) {
     const i = e;
     if (U?.has?.(e = e?.[g] ?? e)) return U?.get?.(e)?.(i, t, r, n);
-    if (z(i) || ne(e) && z(e?.[0])) return We(e) ? U?.getOrInsert?.(e, or)?.(e, t, r, n) : ne(e) ? U?.getOrInsert?.(e, fr)?.(e, t, r, n) : typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? U?.getOrInsert?.(e, nr)?.(e, t, r, n) : U?.getOrInsert?.(e, rr)?.(i, t, r, n);
+    if (V(i) || ne(e) && V(e?.[0])) return We(e) ? U?.getOrInsert?.(e, cr)?.(e, t, r, n) : ne(e) ? U?.getOrInsert?.(e, or)?.(e, t, r, n) : typeof HTMLInputElement < "u" && e instanceof HTMLInputElement ? U?.getOrInsert?.(e, ir)?.(e, t, r, n) : U?.getOrInsert?.(e, nr)?.(i, t, r, n);
     {
-      const s = ot(r, n, Se);
-      return s ? Ee(globalThis?.Promise?.try?.(() => ne(e) ? $e?.(e?.[0], e?.[1], s, null) : t != null && t != Symbol.iterator ? $e?.(e, t, s, null) : Ve?.(e, s, null))) : void 0;
+      const s = ct(r, n, Se);
+      return s ? Ee(globalThis?.Promise?.try?.(() => ne(e) ? $e?.(e?.[0], e?.[1], s, null) : t != null && t != Symbol.iterator ? $e?.(e, t, s, null) : Ce?.(e, s, null))) : void 0;
     }
   }
 };
-function cr(e, t, r) {
+function yr(e, t, r) {
   if (e == null || typeof e != "function") return;
-  if (ir(t) && r === void 0) return je(e, t);
+  if (lr(t) && r === void 0) return je(e, t);
   if (t == null) return je(e, r);
-  const n = ut(r), i = {
+  const n = ft(r), i = {
     affectTypes: n.affectTypes,
     triggerImmediately: n.triggerImmediately
-  }, s = lr(t).map((u) => {
-    const l = sr(u);
-    return b(l.target, l.prop, (f, o, y, a, ...v) => e(ur(l.source, l.target, f, o, y, a ?? null, v)), i);
+  }, s = sr(t).map((u) => {
+    const l = ur(u);
+    return b(l.target, l.prop, (f, o, y, a, ...v) => e(fr(l.source, l.target, f, o, y, a ?? null, v)), i);
   }).filter((u) => typeof u == "function");
   return () => s.forEach((u) => u?.());
 }
-function wr(e, t, r) {
-  return cr(t, e, r);
+function Rr(e, t, r) {
+  return yr(t, e, r);
 }
-var Rr = (e) => e instanceof Set ? ct(e) : e instanceof Map ? vr(e) : e, yr = class {
+var Tr = (e) => e instanceof Set ? yt(e) : e instanceof Map ? br(e) : e, ar = class {
   #t = /* @__PURE__ */ new WeakMap();
   #e(e) {
     let t = this.#t.get(e);
@@ -1474,8 +1476,8 @@ var Rr = (e) => e instanceof Set ? ct(e) : e instanceof Map ? vr(e) : e, yr = cl
     const s = t([r, n]);
     return i.set(n, s), s;
   }
-}, Me = new yr();
-function ar(e, t, r = ["*"]) {
+}, Me = new ar();
+function hr(e, t, r = ["*"]) {
   if (!e) return;
   if (Me.has([e, t])) return Me.get([e, t]);
   const n = (i, s, u, l) => {
@@ -1485,31 +1487,31 @@ function ar(e, t, r = ["*"]) {
         const v = a ?? (u?.value ?? u)?.[y] ?? null, A = o?.[y];
         v == null && A != null ? t(A, y, null, "add") : v != null && A == null ? t(null, y, v, "delete") : x(v, A) && t(A, y, v, "set");
       }
-      return ar(i ?? e?.value, t, r);
+      return hr(i ?? e?.value, t, r);
     }
     return s == null ? void 0 : e[s];
   };
-  return Me.getOrInsertComputed([e, t], () => e instanceof Set ? b([ct(e), Symbol.iterator], t, r) : e instanceof Map ? b(e, t, r) : I(e) ? b(e, n, r) : Array.isArray(e) && !(e?.length == 2 && C(e?.[1]) && z(e?.[0])) ? b([e, Symbol.iterator], t, r) : b(e, t, r));
+  return Me.getOrInsertComputed([e, t], () => e instanceof Set ? b([yt(e), Symbol.iterator], t, r) : e instanceof Map ? b(e, t, r) : I(e) ? b(e, n, r) : Array.isArray(e) && !(e?.length == 2 && z(e?.[1]) && V(e?.[0])) ? b([e, Symbol.iterator], t, r) : b(e, t, r));
 }
 function Ie(e, t) {
-  return xt(e, (r) => {
-    const n = Array.isArray(r) && r?.length == 2 && ["object", "function"].indexOf(typeof r?.[0]) >= 0 && C(r?.[1]), i = n ? r?.[1] : null;
+  return wt(e, (r) => {
+    const n = Array.isArray(r) && r?.length == 2 && ["object", "function"].indexOf(typeof r?.[0]) >= 0 && z(r?.[1]), i = n ? r?.[1] : null;
     r = n && i != null ? r?.[0] ?? r : r;
     const s = typeof r == "object" || typeof r == "function" ? r?.[g] ?? r : r;
     (r?.[se] ?? p.get(s))?.unaffected?.(t, i);
   });
 }
-var hr = (e, t, r) => (b(t, null, (n, i) => {
+var dr = (e, t, r) => (b(t, null, (n, i) => {
   ie(e, n, i, !0);
 }), r?.(() => e, (n) => {
   for (const i in n) ie(t, n[i], i, !0);
-}, { deep: !0 }), e), Tr = (e, t, r) => hr(t(he(e)), e, r), Pr = (e, t, r = () => "") => b(t, null, (n, i) => {
+}, { deep: !0 }), e), Pr = (e, t, r) => dr(t(he(e)), e, r), Mr = (e, t, r = () => "") => b(t, null, (n, i) => {
   i == r() && ie(e, n, null, !0);
-}), Mr = (e = []) => {
-  const t = T({ value: 0 }), r = (l) => typeof l == "function" ? l() : I(l) ? l.value : l, i = br([t, "value"], () => e.findIndex((l) => !!r(l)), "value"), s = () => {
+}), Ir = (e = []) => {
+  const t = T({ value: 0 }), r = (l) => typeof l == "function" ? l() : I(l) ? l.value : l, i = Sr([t, "value"], () => e.findIndex((l) => !!r(l)), "value"), s = () => {
     t.value++;
   }, u = [];
-  z(e) && u.push(b(e, s, {
+  V(e) && u.push(b(e, s, {
     affectTypes: [
       "add",
       "set",
@@ -1522,7 +1524,7 @@ var hr = (e, t, r) => (b(t, null, (n, i) => {
     triggerImmediately: !1
   }));
   return M(i, Symbol.dispose, () => u.forEach((l) => l?.())), i;
-}, dr = (e, t, r, n) => {
+}, vr = (e, t, r, n) => {
   if (m(e)) return e ? t : r;
   const i = () => t, s = () => r, u = (o) => (o != null && (e.value = I(o) ? o?.value : o), (I(e) ? e?.value : e) ? i() : s()), l = T({
     [d]: u(),
@@ -1549,20 +1551,20 @@ var hr = (e, t, r) => (b(t, null, (n, i) => {
     });
   });
   return M(l, Symbol.dispose, f), l;
-}, Ir = dr, kr = (e, t, r) => {
+}, kr = vr, Er = (e, t, r) => {
   r || (r = T({}));
   const n = b(e, (i, s, u) => {
     if (s == null) return;
     const l = t?.(i, s, u);
-    typeof l == "object" ? St(r, l) : x(r[s], l) && (r[s] = l);
+    typeof l == "object" ? pt(r, l) : x(r[s], l) && (r[s] = l);
   });
   return r && M(r, Symbol.dispose, n), r;
-}, Er = (...e) => {
+}, Wr = (...e) => {
   const t = T({});
   return e?.forEach?.((r) => b(r, (n, i, s) => {
     i != null && x(t[i], n) && (t[i] = n);
   })), t;
-}, ct = (e) => {
+}, yt = (e) => {
   const t = T([]);
   return t.push(...Array.from(e?.values?.() || [])), M(t, Symbol.dispose, b(e, (r, n, i) => {
     if (x(r, i)) if (i == null && r != null) t.push(r);
@@ -1574,7 +1576,7 @@ var hr = (e, t, r) => (b(t, null, (n, i) => {
       s >= 0 && x(t[s], r) && (t[s] = r);
     }
   })), t;
-}, vr = (e) => {
+}, br = (e) => {
   const t = T([]), r = Array.from(e.entries());
   return t.push(...r), M(t, Symbol.dispose, b(e, (n, i, s) => {
     if (x(n, s) || s == null && n != null || s != null && n == null) if (s != null && n == null) {
@@ -1586,10 +1588,10 @@ var hr = (e, t, r) => (b(t, null, (n, i) => {
     }
   })), t;
 }, F = /* @__PURE__ */ new WeakMap(), Ye = (e, t, r = "value") => {
-  const n = typeof e?.[1] == "function" && e?.length == 2, i = typeof t?.[1] == "function" && t?.length == 2, s = i ? t?.[1] : null, u = (C(e?.[1]) || e?.[1] == Symbol.iterator) && e?.length == 2;
+  const n = typeof e?.[1] == "function" && e?.length == 2, i = typeof t?.[1] == "function" && t?.length == 2, s = i ? t?.[1] : null, u = (z(e?.[1]) || e?.[1] == Symbol.iterator) && e?.length == 2;
   let l = u && !n ? e?.[1] : Array.isArray(e) ? null : r;
   !u && !n && (e = [e, l]), n && (e[1] = l);
-  const f = (C(t?.[1]) || t?.[1] == Symbol.iterator) && t?.length == 2;
+  const f = (z(t?.[1]) || t?.[1] == Symbol.iterator) && t?.length == 2;
   let o = f && !i ? t?.[1] : Array.isArray(t) ? null : r;
   if (!f && !i && (t = [t, o]), i && (t[1] = o), l == null || o == null || le(l, e?.[0]) || le(o, t?.[0])) return;
   if (!((typeof t?.[0] == "object" || typeof t?.[0] == "function") && t?.[0] != null) && !Array.isArray(e[0]))
@@ -1629,11 +1631,11 @@ var hr = (e, t, r) => (b(t, null, (n, i) => {
   })), w.unsub = b(t, y), w.cmpfx = s, M(O, Symbol.dispose, w?.dispose), M(k, Symbol.dispose, w?.dispose)), k && !Array.isArray(k) && ye(O, () => {
     k[o] ??= O?.[l] ?? k[o];
   }), w?.dispose;
-}, Wr = (e, t, r = "value") => {
+}, _r = (e, t, r = "value") => {
   const n = [Ye(e, t, r), Ye(t, e, r)];
   return () => n?.map?.((i) => i?.());
-}, br = (e, t, r, n = "value") => {
-  const i = typeof e?.[1] == "function" && e?.length == 2, s = (C(e?.[1]) || e?.[1] == Symbol.iterator) && e?.length == 2;
+}, Sr = (e, t, r, n = "value") => {
+  const i = typeof e?.[1] == "function" && e?.length == 2, s = (z(e?.[1]) || e?.[1] == Symbol.iterator) && e?.length == 2;
   let u = s && !i ? e?.[1] : Array.isArray(e) ? null : n;
   if (!s && !i && (e = [s ? e?.[0] : e, u]), i && (e[1] = u), u == null || le(u, e?.[0])) return;
   const l = (a) => {
@@ -1665,65 +1667,65 @@ var hr = (e, t, r) => (b(t, null, (n, i) => {
     });
   });
   return M(o, Symbol.dispose, y), o;
-}, _r = (e, t, r = 100) => {
+}, $r = (e, t, r = 100) => {
   let n;
   return b(e, "value", (i) => {
-    !i && n ? (clearTimeout(n), n = null) : i && !n && (n = Ce(e, t, r) ?? n);
+    !i && n ? (clearTimeout(n), n = null) : i && !n && (n = ze(e, t, r) ?? n);
   });
 };
 export {
   ue as $affected,
-  Yt as $ref,
+  Zt as $ref,
   D as $trigger,
-  gt as $triggerControl,
+  At as $triggerControl,
   me as $triggerLess,
   h as $triggerLock,
-  Rt as AssignObjectHandler,
-  yr as DoubleWeakMap,
+  Tt as AssignObjectHandler,
+  ar as DoubleWeakMap,
   M as addToCallChain,
   b as affected,
   Ye as assign,
   F as assignMap,
-  hr as bindBy,
-  Pr as bindByKey,
-  Qt as booleanRef,
-  br as computed,
-  Ir as conditional,
-  Mr as conditionalIndex,
-  dr as conditionalRef,
-  Ar as delayedBehavior,
-  Or as delayedOrInstantBehavior,
-  _r as delayedSubscribe,
-  V as deref,
-  Tr as derivate,
-  cr as effect,
-  wr as effected,
-  z as isObservable,
-  ar as iterated,
-  Wr as link,
-  Rr as makeArrayObservable,
-  pr as makeObjectAssignable,
-  jt as numberRef,
-  vr as observableByMap,
-  ct as observableBySet,
+  dr as bindBy,
+  Mr as bindByKey,
+  Xt as booleanRef,
+  Sr as computed,
+  kr as conditional,
+  Ir as conditionalIndex,
+  vr as conditionalRef,
+  Or as delayedBehavior,
+  xr as delayedOrInstantBehavior,
+  $r as delayedSubscribe,
+  C as deref,
+  Pr as derivate,
+  yr as effect,
+  Rr as effected,
+  V as isObservable,
+  hr as iterated,
+  _r as link,
+  Tr as makeArrayObservable,
+  mr as makeObjectAssignable,
+  Jt as numberRef,
+  br as observableByMap,
+  yt as observableBySet,
   T as observe,
-  gr as promised,
-  Xt as propRef,
-  Lt as recoverReactive,
-  Zt as ref,
-  kr as remap,
+  Ar as promised,
+  Yt as propRef,
+  er as recoverReactive,
+  Lt as ref,
+  Er as remap,
   he as safe,
   U as specializedSubscribe,
-  Jt as stringRef,
-  rr as subscribeDirectly,
-  nr as subscribeInput,
-  fr as subscribePaired,
-  or as subscribeThenable,
-  Ce as triggerWithDelay,
+  Qt as stringRef,
+  nr as subscribeDirectly,
+  ir as subscribeInput,
+  or as subscribePaired,
+  cr as subscribeThenable,
+  ze as triggerWithDelay,
   Ie as unaffected,
-  Er as unified,
-  Ot as unwrap,
-  xr as useObservable,
+  Wr as unified,
+  xt as unwrap,
+  wr as useObservable,
   Xe as wrapRef,
-  Sr as wrapSetAsArray
+  pr as wrapSetAsArray
 };

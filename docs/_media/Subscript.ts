@@ -55,12 +55,12 @@ type WR<T> = {
 };
 
 /** Track disposer rewrites for Observable-style subscribers so completion also unsubscribes. */
-const withUnsubSymbol = Symbol.for("object.ts@withUnsub");
-globalThis[withUnsubSymbol] ??= new WeakMap();
-const withUnsub = globalThis[withUnsubSymbol];
+const withUnsubSymbol = Symbol.for("object.ts@withUnsub"); //@ts-ignore
+globalThis[withUnsubSymbol] ??= new WeakMap<any, any>(); //@ts-ignore
+export const withUnsub = globalThis[withUnsubSymbol];
 
 /** Complete with unsubscription helper. */
-const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Subscript) => {
+const completeWithUnsub = (subscriber: any, weak: WeakRef<any> | WR<any>, handler: Subscript) => {
     // @ts-ignore
     return withUnsub.getOrInsert(subscriber, () => {
         const registry = weak?.deref?.(); registry?.affected?.(handler);
@@ -76,15 +76,22 @@ const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Su
 }
 
 /** Global registry that maps raw targets to their `Subscript` instance. */
-const subscriptRegistrySymbol = Symbol.for("object.ts@subscriptRegistry");
-globalThis[subscriptRegistrySymbol] ??= new WeakMap<any, Subscript>();
-export const subscriptRegistry = globalThis[subscriptRegistrySymbol] ??= new WeakMap<any, Subscript>();
+const subscriptRegistrySymbol = Symbol.for("object.ts@subscriptRegistry"); //@ts-ignore
+globalThis[subscriptRegistrySymbol] ??= new WeakMap<any, Subscript>(); //@ts-ignore
+export const subscriptRegistry = globalThis[subscriptRegistrySymbol];
 
 /** Global registry that maps effect callbacks to their trigger filters. */
-const globalEffectListenersSymbol = Symbol.for("object.ts@globalEffectListeners");
-globalThis[globalEffectListenersSymbol] ??= new Map<EffectCallback, Set<string>>();
-const globalEffectListeners = globalThis[globalEffectListenersSymbol];
+const globalEffectListenersSymbol = Symbol.for("object.ts@globalEffectListeners"); //@ts-ignore
+globalThis[globalEffectListenersSymbol] ??= new Map<any, Set<string>>(); //@ts-ignore
+export const globalEffectListeners = globalThis[globalEffectListenersSymbol];
 
+
+/** Global registry that maps wrapped targets to their `Subscript` instance. */
+const wrappedSymbol = Symbol.for("object.ts@wrapped"); //@ts-ignore
+globalThis[wrappedSymbol] ??= new WeakMap<any, any>(); //@ts-ignore
+export const wrapped = globalThis[wrappedSymbol];
+
+/** Global registry that maps effect callbacks to their trigger filters. */
 export const effectGlobally = (cb: EffectCallback, options: EffectConfig = ["*"]) => {
     if (cb == null || typeof cb != "function") return;
     const normalized = normalizeEffectOptions(options);
@@ -92,20 +99,15 @@ export const effectGlobally = (cb: EffectCallback, options: EffectConfig = ["*"]
     return () => globalEffectListeners.delete(cb);
 }
 
-/** Global registry that maps wrapped targets to their `Subscript` instance. */
-const wrappedSymbol = Symbol.for("object.ts@wrapped");
-globalThis[wrappedSymbol] ??= new WeakMap();;
-const wrapped = globalThis[wrappedSymbol];
-
 /** Ensure a target has a registry before reusing or returning a reactive handle. */
 export const register = (what: any, handle: any): any => {
     const unwrap = what?.[$extractKey$] ?? what;
-    let registry = subscriptRegistry.get(unwrap);
+    let registry = subscriptRegistry?.get?.(unwrap);
     if (!registry) {
         registry = new Subscript(unwrap);
-        subscriptRegistry.set(unwrap, registry);
+        subscriptRegistry?.set?.(unwrap, registry);
     } else {
-        registry.bindSource(unwrap);
+        registry?.bindSource?.(unwrap);
     }
     return handle;
 }

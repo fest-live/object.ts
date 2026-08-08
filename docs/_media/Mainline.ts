@@ -252,20 +252,25 @@ export const makeArrayObservable = (tg)=>{
     return tg;
 }
 
+const isWeakCompatible = (element: any) => {
+    return (typeof element == "object" || typeof element == "function") && element != null;
+}
+
 /** Two-level WeakMap used to memoize subscriptions keyed by `[target, callback]` pairs. */
 export class DoubleWeakMap {
     #top = new WeakMap(); // key1 -> WeakMap(key2 -> value)
   
-    #ensureInner(key1) {
+    #ensureInner(key1: any) {
+        if (!isWeakCompatible(key1)) return null;
         let inner = this.#top.get(key1);
-        if (!inner) {
+        if (!inner && isWeakCompatible(key1)) {
             inner = new WeakMap();
             this.#top.set(key1, inner);
         }
         return inner;
     }
   
-    #splitPair(pair) {
+    #splitPair(pair: any) {
         if (!Array.isArray(pair) || pair.length !== 2) {
             //throw new TypeError("Key must be a pair: [keyL1, keyL2]");
             return [null, null];
@@ -273,38 +278,38 @@ export class DoubleWeakMap {
         return pair;
     }
 
-    hasL1(key1) {
+    hasL1(key1: any) {
         return this.#top.has(key1);
     }
   
-    set(pair, value) {
+    set(pair: any, value: any) {
         const [key1, key2] = this.#splitPair(pair);
         this.#ensureInner(key1).set(key2, value);
         return this;
     }
   
-    get(pair) {
+    get(pair: any) {
         const [key1, key2] = this.#splitPair(pair);
         return this.#top.get(key1)?.get(key2);
     }
   
-    has(pair) {
+    has(pair: any) {
         const [key1, key2] = this.#splitPair(pair);
         return this.#top.get(key1)?.has(key2) ?? false;
     }
   
-    delete(pair) {
+    delete(pair: any) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#top.get(key1);
         return inner ? inner.delete(key2) : false;
     }
   
-    deleteTop(key1) {
+    deleteTop(key1: any) {
         return this.#top.delete(key1);
     }
   
     // Уже было: универсальный get-or-create (синонимно логике "computed")
-    getOrCreate(pair, factory) {
+    getOrCreate(pair: any, factory: any) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#ensureInner(key1);
     
@@ -316,7 +321,7 @@ export class DoubleWeakMap {
     }
   
     // getOrInsert: если нет — вставить *переданное* значение (без вычисления)
-    getOrInsert(pair, value) {
+    getOrInsert(pair: any, value: any) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#ensureInner(key1);
     
@@ -328,7 +333,7 @@ export class DoubleWeakMap {
   
     // getOrInsertComputed: если нет — вычислить через fn(pair) и вставить
     // (удобно, когда надо использовать ключи в вычислении)
-    getOrInsertComputed(pair, compute) {
+    getOrInsertComputed(pair: any, compute: any) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#ensureInner(key1);
     
