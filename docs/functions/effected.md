@@ -1,4 +1,4 @@
-[**@fest-lib/object API Documentation v0.1.3**](../README.md)
+[**@fest-lib/object API Documentation v0.1.4**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Function: effected()
 
-> **effected**(`targets`, `cb`, `options?`): (() => `void`) \| `undefined`
+> **effected**(`targets`, `cb`, `options?`): (() => `any`) \| `undefined`
 
 Defined in: core/Mainline.ts:244
 
@@ -28,4 +28,4 @@ Target-first alias for `effect()` when that reads better at the callsite.
 
 ## Returns
 
-(() => `void`) \| `undefined`
+(() => `any`) \| `undefined`

@@ -405,16 +405,15 @@ Legacy function for creating reactive Sets.
 
 ## Modules
 
-- [core/Assigned](docs/core/Assigned/README.md) - Assignment and binding utilities
-- [core/Legacy](docs/core/Legacy/README.md) - Legacy compatibility functions
-- [core/Mainline](docs/core/Mainline/README.md) - Core subscription and reactivity system
-- [core/Primitives](docs/core/Primitives/README.md) - Primitive reactive references
-- [core/Specific](docs/core/Specific/README.md) - Specific object type handlers
-- [core/Subscript](docs/core/Subscript/README.md) - Subscription registry system
-- [index](docs/index/README.md) - Main exports
-- [wrap/AssignObject](docs/wrap/AssignObject/README.md) - Object assignment proxy
-- [wrap/Symbol](docs/wrap/Symbol/README.md) - Internal symbols and triggers
-- [wrap/Utils](docs/wrap/Utils/README.md) - Utility functions and types
+- [core/Assigned](src/core/Assigned.ts) - Assignment and binding utilities
+- [core/Mainline](src/core/Mainline.ts) - Core subscription and reactivity system
+- [core/Primitives](src/core/Primitives.ts) - Primitive reactive references
+- [core/Specific](src/core/Specific.ts) - Specific object type handlers
+- [core/Subscript](src/core/Subscript.ts) - Subscription registry system
+- [index](src/index.ts) - Main exports
+- [wrap/AssignObject](src/wrap/AssignObject.ts) - Object assignment proxy
+- [wrap/Symbol](src/wrap/Symbol.ts) - Internal symbols and triggers
+- [wrap/Utils](src/wrap/Utils.ts) - Utility functions and types
 
 ---
 

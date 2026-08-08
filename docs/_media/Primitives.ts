@@ -1,0 +1,323 @@
+/**
+ * Reactive primitive/ref helpers plus the main `observe()` entrypoint.
+ *
+ * This module creates typed refs (`numberRef`, `stringRef`, `booleanRef`),
+ * property refs, delayed trigger behaviors, and the canonical dispatcher that
+ * chooses the correct observable wrapper for arrays, objects, maps, and sets.
+ */
+import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "@fest-lib/core";
+import { $value, $behavior, $promise, $extractKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
+import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
+import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
+import { subscriptRegistry } from "./Subscript";
+import { affected } from "./Mainline";
+import { hasValue } from "@fest-lib/core";
+
+export interface refWrap<T = any> {
+    [$promise]?: Promise<T>|null|undefined;
+    [$behavior]?: any;
+    [$realProp]?: keyType | null;
+    realProp?: keyType | null;
+    [Symbol.toStringTag]?(): string;
+    [Symbol.toPrimitive]?(hint: any): any;
+    [$value]?: T;
+    set value(v: T|null|undefined);
+    get value(): T|null|undefined;
+}
+
+//
+export type refType<T = any> = (refWrap<T> | (T extends object ? T : any)) & MethodsOf<T> & (T extends symbol | object | Function ? T : any);
+
+/** Numeric ref with coercion, primitive conversion hooks, and optional promise initialization. */
+export const numberRef = (initial?: number|null|undefined|Promise<number>, behavior?: any): refType<number> => {
+    const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<number>)?.then == "function";
+    const obj: refWrap<number> = {
+        [$promise]: isPromise ? (initial as unknown as Promise<number>) : null as unknown as Promise<number>,
+        [$value]: isPromise ? 0 : (Number(deref(initial) || 0) || 0),
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint((typeof this?.[$value] != "object" ? this?.[$value] : (this?.[$value]?.value || 0)) ?? 0, hint); },
+        set value(v: any) { this[$value] = ((v != null && !Number.isNaN(v)) ? Number(v) : this[$value]) || 0; },
+        get value() { return Number(this[$value] || 0) || 0; }
+    };
+    const $r = observe(obj) as observeValid<refType<number>>; (initial as unknown as Promise<number>)?.then?.((v)=>$r.value = v); return $r;
+}
+
+/** String ref with coercion, primitive conversion hooks, and optional promise initialization. */
+export const stringRef = (initial?: string|null|undefined|Promise<string>, behavior?: any): refType<string> => {
+    const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<string>)?.then == "function";
+    const obj: refWrap<string> = {
+        [$promise]: isPromise ? (initial as unknown as Promise<string>) : null as unknown as Promise<string>,
+        [$value]: (isPromise ? "" : String(deref(typeof initial == "number" ? String(initial) : (initial || "")))) ?? "",
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") ?? ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(this?.[$value] ?? "", hint); },
+        set value(v: any) { this[$value] = String(typeof v == "number" ? String(v) : (v || "")) ?? ""; },
+        get value() { return String(this[$value] ?? "") ?? ""; },
+    };
+    const $r = observe(obj) as observeValid<refType<string>>; (initial as unknown as Promise<string>)?.then?.((v)=>$r.value = v); return $r;
+}
+
+/** Boolean ref with truthy/falsy coercion and optional promise initialization. */
+export const booleanRef = (initial?: boolean|null|undefined|Promise<boolean>, behavior?: any): refType<boolean> => {
+    const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<boolean>)?.then == "function";
+    const obj: refWrap<boolean> = {
+        [$promise]: isPromise ? (initial as unknown as Promise<boolean>) : null as unknown as Promise<boolean>,
+        [$value]: (isPromise ? false : ((deref(initial) != null ? (typeof deref(initial) == "string" ? true : !!deref(initial)) : false) || false)) || false,
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this?.[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(!!this?.[$value] || false, hint); },
+        set value(v: any) { this[$value] = (v != null ? (typeof v == "string" ? true : !!v) : this[$value]) || false; },
+        get value() { return this[$value] || false; }
+    };
+    const $r = observe(obj) as observeValid<refType<boolean>>; (initial as unknown as Promise<boolean>)?.then?.((v)=>$r.value = v); return $r;
+}
+
+/** Generic ref wrapper for values that do not need one of the specialized primitive ref shapes. */
+export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior?: any): observeValid<refType<T>> => {
+    const isPromise = initial instanceof Promise || typeof (initial as unknown as Promise<T>)?.then == "function";
+    const obj: refWrap<T> = {
+        [$promise]: isPromise ? (initial as unknown as Promise<T>) : null as unknown as Promise<T>,
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(this.value ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(this.value, hint); },
+        value: isPromise ? null : deref(initial)
+    };
+    const $r = observe(obj) as observeValid<refType<T>>;
+    (initial as unknown as Promise<T>)?.then?.((v) => $r.value = v);
+    affected(initial, (v) => { /*wr?.deref?.()*/$r?.[$trigger]?.(); });
+    return $r;
+}
+
+const markRealProp = <T = any>(target: T, realProp: keyType | null): T => {
+    if (target == null || (typeof target != "object" && typeof target != "function")) return target;
+    try { Object.defineProperty(target, $realProp, { value: realProp, writable: true, configurable: true }); }
+    catch { try { (target as any)[$realProp] = realProp; } catch {} }
+    try { Object.defineProperty(target, "realProp", { value: realProp, writable: true, configurable: true }); }
+    catch { try { (target as any).realProp = realProp; } catch {} }
+    return target;
+}
+
+/**
+ * Create a reactive reference to one property/slot of an observable source.
+ *
+ * WHY: this keeps duplex synchronization between the source slot and the
+ * returned ref-like object while still behaving like a regular `value` ref.
+ *
+ * Supported sources:
+ * - object / array: `src[srcProp]`
+ * - Map / WeakMap: `src.get(srcProp)` / `src.set(srcProp, v)`
+ * - Set / WeakSet: boolean membership of `srcProp` (`has` / `add` / `delete`)
+ *
+ * Also accepts `[map|set, key]` pair form (same shape as `affected()`).
+ *
+ * WHY (Set → boolean): observable object `fallThrough` maps `null`/`undefined`
+ * `.value` back to the wrapper itself, so absence must be a real primitive (`false`).
+ */
+export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null = "value", initial?: any, behavior?: any): any => {
+    if (isPrimitive(src) || !src) return src;
+
+    // COMPAT: `[map|set, key]` pair (same shape as affected); keys may be objects.
+    if (
+        Array.isArray(src) && src.length == 2 && src[0] != null &&
+        (src[0] instanceof Map || src[0] instanceof WeakMap || src[0] instanceof Set || src[0] instanceof WeakSet)
+    ) {
+        if (srcProp == null || srcProp === "value") srcProp = src[1] as keyType;
+        src = src[0];
+    } else if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) {
+        src = src?.[0];
+    }
+
+    //
+    const isMap = src instanceof Map || src instanceof WeakMap;
+    const isSet = src instanceof Set || src instanceof WeakSet;
+
+    // Map/Set require an explicit slot key; arrays still reject invalid indexes.
+    if (isMap || isSet) {
+        if (srcProp == null) return;
+    } else if ((srcProp ??= Array.isArray(src) ? null : "value") == null || isArrayInvalidKey(srcProp, src)) {
+        return;
+    }
+
+    // INVARIANT: collection slots use Map/Set APIs, never bracket access on the container.
+    const readSlot = () => {
+        if (isMap) return (src as Map<any, any>).get(srcProp as any);
+        if (isSet) return (src as Set<any>).has(srcProp as any);
+        return (src as any)?.[srcProp as any];
+    };
+    const writeSlot = (v: any) => {
+        if (isMap) {
+            (src as Map<any, any>).set(srcProp as any, v);
+            return v;
+        }
+        if (isSet) {
+            // membership ref: truthy → ensure key present; falsy → remove
+            if (v) (src as Set<any>).add(srcProp as any);
+            else (src as Set<any>).delete(srcProp as any);
+            return (src as Set<any>).has(srcProp as any);
+        }
+        return ((src as any)[srcProp as any] = v);
+    };
+
+    // seed missing Map/Set slots from `initial` before first read
+    if (isMap && initial !== undefined && !(src as Map<any, any>).has(srcProp as any)) {
+        (src as Map<any, any>).set(srcProp as any, initial);
+    } else if (isSet && initial && !(src as Set<any>).has(srcProp as any)) {
+        (src as Set<any>).add(srcProp as any);
+    }
+
+    const current = readSlot();
+
+    // isn't needed to proxy reactive value, it's already reactive
+    // WHY: Set membership is a boolean, never a nested `.value` ref
+    if (!isSet && srcProp != null && hasValue(current) && isObservable(current)) {
+        return markRealProp(recoverReactive(current), srcProp);
+    }
+
+    // legally use in LUR.E/GLit properties
+    if (!isMap && !isSet && srcProp && typeof (src as any)?.getProperty == "function" && isObservable((src as any)?.getProperty?.(srcProp))) {
+        return markRealProp((src as any)?.getProperty?.(srcProp), srcProp);
+    }
+
+    // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
+    //if (srcProp && !isObservable(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
+    //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
+
+    // truly reflective for object / array / Map / Set slot
+    if (!isMap && !isSet) {
+        ((src as any)[srcProp as any] ??= initial ?? (src as any)[srcProp as any]);
+    }
+
+    const r: any = observe({
+        [$value]: isSet ? !!readSlot() : (readSlot() ?? initial),
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(readSlot() ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(readSlot(), hint); },
+        set value(v) {
+            r[$triggerLock] = true;
+            if (isSet) {
+                this[$value] = writeSlot(v);
+            } else {
+                const next = v ?? defaultByType(readSlot());
+                this[$value] = writeSlot(next);
+            }
+            r[$triggerLock] = false;
+        },
+        get value() {
+            const slot = readSlot();
+            return (this[$value] = isSet ? !!slot : (slot ?? this[$value]));
+        }
+    });
+    markRealProp(r, srcProp);
+
+    // affected now used for `src` object observe, and filtering prop key
+    // for avoid potential infinite loop, when `src` is itself a reactive object
+    // NOTE: Set triggers pass the member/null; normalize to boolean for the ref surface.
+    const usb = affected(src, (v, _prop, old, trigger) => {
+        if (_prop === srcProp) {
+            const value = isSet ? (v != null) : v;
+            const oldValue = isSet ? (old != null) : old;
+            r?.[$trigger]?.({ key: srcProp, value, oldValue, trigger});
+        }
+    });
+    addToCallChain(r, Symbol.dispose, usb);
+    return r;
+}
+
+/** Pick the most suitable ref implementation for the provided value type. */
+export const $ref = <T = any>(typed: T|null|undefined|Promise<T>, behavior?: any): (T extends object|Function|symbol ? observeValid<T>|refType<T> : refType<T>) => {
+    switch (typeof typed) {
+        case "boolean": return booleanRef(typed, behavior) as refType<boolean>;
+        case "number" : return numberRef(typed, behavior) as refType<number>;
+        case "string" : return stringRef(typed, behavior) as refType<string>;
+        case "object" : if (typed != null) { return wrapRef(observe(typed), behavior) as any; }
+        default: return wrapRef(typed, behavior) as any;
+    }
+}
+
+/** Public ref helper that can either wrap a value or target one specific property. */
+export const ref = <T = any>(
+    typed: T | null | undefined | Promise<T>,
+    prop: keyType | null = "value",
+    behavior?: any
+): (
+    T extends object | Function | symbol ? observeValid<T> | refType<T> : refType<T>
+) & (
+    T extends symbol | object | Function ? T : any
+) => {
+    // 1. Ensure we have an observable or ref for the input
+    const $r = isObservable(typed)
+        ? (typed as observeValid<T>)
+        : ($ref(typed, behavior) as observeValid<T>);
+    
+    // 2. If a prop is given, get a ref to that prop, otherwise use the value as is
+    if (prop != null) {
+        // propRef always returns a refType<X> or observeValid<X>
+        // We cannot guarantee T extends prop type. So just return as best match
+        return propRef(
+            $r as unknown as refType<T>,
+            prop,
+            behavior
+        ) as any;
+    } else {
+        return $r as any;
+    }
+};
+
+/** Backward-compatible alias for `ref()` when the source is a promise-like value. */
+export const promised = (promise: any, behavior?: any) => {
+    return ref(promise, behavior);
+}
+
+/** Schedule a callback only if the ref/value is currently truthy. */
+export const triggerWithDelay = (ref: any, cb: Function, delay = 100): ReturnType<typeof setTimeout> | undefined => { if (ref?.value ?? ref) { return setTimeout(()=>{ if (ref.value) cb?.(); }, delay); } }
+
+/** Create a deferred trigger behavior that aborts cleanly when the subscription is disposed. */
+export const delayedBehavior  = (delay = 100) => {
+    return (cb: Function, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); };
+}
+
+/** Same as `delayedBehavior`, but invoke immediately when the delay gate is not needed. */
+export const delayedOrInstantBehavior = (delay = 100) => {
+    return (cb: Function, [val], [sig]) => { let tm = triggerWithDelay(val, cb, delay); sig?.addEventListener?.("abort", ()=>{ if (tm) clearTimeout(tm); }, { once: true }); if (!tm) { cb?.(); }; };
+}
+
+
+
+/** `function` (not `const`) so circular Mainline ↔ Primitives/Assigned init cannot TDZ in bundled output. */
+export function observe<T = any>(target: T, stateName?: string): observeValid<T> {
+    if (target == null || typeof target == "symbol" || !(typeof target == "object" || typeof target == "function") || $isObservable(target)) {
+        return target as observeValid<T>;
+    }
+
+    //
+    if ((target = deref?.(target)) == null || target instanceof Promise || target instanceof WeakRef || $isObservable(target)) {
+        return target as observeValid<T>; // promise forbidden
+    }
+
+    //
+    const unwrap: any = target;
+    if (unwrap == null ||
+        typeof unwrap == "symbol" || !(typeof unwrap == "object" || typeof unwrap == "function") ||
+        unwrap instanceof Promise || unwrap instanceof WeakRef
+    ) { return unwrap as observeValid<T>; };
+
+    //
+    let reactive = unwrap;
+    if (Array.isArray(unwrap)) { reactive = observeArray(unwrap); return reactive; } else
+    if (unwrap instanceof Map) { reactive = observeMap(unwrap); return reactive; } else
+    if (unwrap instanceof Set) { reactive = observeSet(unwrap); return reactive; } else
+    if (typeof unwrap == "function" || typeof unwrap == "object") { reactive = observeObject(unwrap); return reactive; }
+    return reactive;
+}
+
+/** Detect whether a value is already wrapped in the `object.ts` observable protocol. */
+export const isObservable = (target: any) => {
+    if (typeof HTMLInputElement != "undefined" && target instanceof HTMLInputElement) { return true; }
+    return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected] || subscriptRegistry?.has?.(target)));
+}
+
+/** Re-enter the observable pipeline only when the target already carries observable metadata. */
+export const recoverReactive = (target: any): any => {
+    return isObservable(target) ? observe(target) : null;
+}

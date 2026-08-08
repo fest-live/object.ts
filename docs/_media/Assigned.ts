@@ -1,0 +1,340 @@
+/**
+ * Higher-level composition helpers built on top of the primitive observer layer.
+ *
+ * This file provides conditional refs, collection-to-array adapters, duplex
+ * assignment/linking, and computed values that mirror changes back into refs.
+ */
+import { affected } from "./Mainline";
+import { addToCallChain, type observeValid, type subValid, type keyType } from "../wrap/Utils";
+import { observe, isObservable, triggerWithDelay, recoverReactive } from "./Primitives";
+import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Symbol";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "@fest-lib/core";
+
+/** Derive a computed ref whose value is the first truthy predicate index. */
+export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => {
+    const source = observe({ value: 0 });
+    const readCondition = (condition: any) => {
+        if (typeof condition == "function") return condition();
+        return hasValue(condition) ? condition.value : condition;
+    };
+    const evaluate = () => condList.findIndex((condition) => !!readCondition(condition));
+    const result = computed([source, "value"], evaluate, "value");
+    const invalidate = () => {
+        source.value++;
+    };
+    const disposers: any[] = [];
+
+    if (isObservable(condList)) {
+        disposers.push(affected(condList, invalidate, {
+            affectTypes: ["add", "set", "delete"],
+            triggerImmediately: false,
+        }));
+    }
+    for (const condition of condList) {
+        if (hasValue(condition)) {
+            disposers.push(affected([condition, "value"], invalidate, {
+                affectTypes: ["setter"],
+                triggerImmediately: false,
+            }));
+        }
+    }
+    addToCallChain(result, Symbol.dispose, () => disposers.forEach((dispose) => dispose?.()));
+    return result as observeValid<Under>;
+}
+
+//
+/*
+export const conditionalRef = <Under = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): refValid<Under> => {
+    const cur = autoRef((cond?.value ?? cond) ? ifTrue : ifFalse, behavior);
+    const usb = affected([cond, "value"], (val) => { if (cur != null && (typeof cur == "object" || typeof cur == "function")) cur.value = val ? ifTrue : ifFalse; });
+    addToCallChain(cur, Symbol.dispose, usb); return cur;
+}*/
+
+/** Switch reactively between two values based on a condition ref or value. */
+export const conditionalRef = <T = any>(cond: any, ifTrue: any, ifFalse: any, behavior?: any): observeValid<T> => {
+    if (isPrimitive(cond)) return cond ? ifTrue : ifFalse;
+
+    //
+    const getTrue = ()=>{ return ifTrue; };
+    const getFalse = ()=>{ return ifFalse; };
+
+    //
+    const valueOf = (n?: any)=>{
+        if (n != null) { cond.value = hasValue(n) ? n?.value : n; };
+        const cnd = hasValue(cond) ? cond?.value : cond;
+        return cnd ? getTrue() : getFalse();
+    }
+
+    // truly reflective
+    const r = observe({
+        [$value]: valueOf(),
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(valueOf() ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(valueOf() ?? this[$value], hint); },
+        set value(v) { this[$value] = valueOf(v); },
+        get value() { return (this[$value] = valueOf() ?? this[$value]); }
+    });
+
+    //
+    const usb = affected([cond, "value"], ()=>{
+        const oldValue = r?.[$value];
+        const value = valueOf();
+        r[$value] = value;
+        r?.[$trigger]?.({ key: "value", value, oldValue, trigger: "manual" });
+    });
+    addToCallChain(r, Symbol.dispose, usb); return r as unknown as observeValid<T>;
+}
+
+/** Alias kept for the shorter public API name. */
+export const conditional = conditionalRef;
+
+/** One-way projection from a source subscription into another observable object. */
+export const remap = <T = any>(sub: subValid<T>, cb?: Function | null, dest?: any | null) => {
+    if (!dest) dest = observe({}) as any;
+    const usb = affected(sub, (value, prop, old) => {
+        if (prop == null) return;
+        const got = cb?.(value, prop, old);
+        if (typeof got == "object") { objectAssignNotEqual(dest, got); } else
+            if (isNotEqual(dest[prop], got)) dest[prop] = got;
+    });
+    if (dest) { addToCallChain(dest, Symbol.dispose, usb); }; return dest; // return reactive value
+}
+
+/** Merge multiple subscriptions into one observable object, last write wins per property. */
+export const unified = <Under = any>(...subs: subValid<Under>[]) => {
+    const dest = observe({});
+    subs?.forEach?.((sub) => affected(sub, (value, prop, _) => {
+        if (prop == null) return;
+        if (isNotEqual(dest[prop], value)) { dest[prop] = value; };
+    })); return dest;
+}
+
+/** View a `Set` as a reactive array that stays synchronized with set membership. */
+export const observableBySet = <T = any>(set: Set<T>): observeValid<T[]> => { // @ts-ignore
+    const obs: T[] = observe<T[]>([]) as observeValid<T[]>; // @ts-ignore
+    // Initialize with existing set entries
+    obs.push(...Array.from(set?.values?.() || [])); // @ts-ignore
+    addToCallChain(obs, Symbol.dispose, affected(set, (value, _, old) => { // @ts-ignore
+        if (isNotEqual(value, old)) {
+            if (old == null && value != null) {
+                obs.push(value);
+            } else
+                if (old != null && value == null) {
+                    const idx = obs.indexOf(old);
+                    if (idx >= 0) obs.splice(idx, 1);
+                } else {
+                    const idx = obs.indexOf(old);
+                    if (idx >= 0 && isNotEqual(obs[idx], value)) obs[idx] = value;
+                }
+        }
+    }));
+    return obs;
+}
+
+/** View a `Map` as a reactive `[key, value][]` list for iteration-friendly consumers. */
+export const observableByMap = <T = any>(map: Map<any, T>): observeValid<[any, T][]> => { // @ts-ignore
+    const obs: [any, T][] = observe<[any, T][]>([]) as observeValid<[any, T][]>; // @ts-ignore
+
+    // Initialize with existing map entries
+    const initialEntries: [any, T][] = Array.from(map.entries());
+    obs.push(...initialEntries);
+
+    //
+    addToCallChain(obs, Symbol.dispose, affected(map, (value, prop, old) => {
+        if (isNotEqual(value, old) || (old == null && value != null) || (old != null && value == null)) {
+            if (old != null && value == null) {
+                // Map entry deleted (by name)
+                let idx = obs.findIndex(([name, _]) => (name == prop));
+
+                // alternative index search
+                if (idx < 0) idx = obs.findLastIndex(([_, val]) => (old === val));
+
+                // remove entry
+                if (idx >= 0) obs.splice(idx, 1);
+            } else {
+                // Map entry added or updated (by name)
+                let idx = obs.findIndex(([name, _]) => (name == prop));
+
+                // alternative index search
+                //if (idx < 0) idx = obs.findLastIndex(([_, val]) => (old === val));
+
+                //
+                if (idx >= 0 && idx < obs.length) {
+                    // Entry exists - update if value changed
+                    if (isNotEqual(obs[idx]?.[1], value)) {
+                        //obs[idx][1] = value;
+                        obs[idx] = [prop, value];
+                    }
+                } else {
+                    // New entry - add to array
+                    obs.push([prop, value]);
+                }
+            }
+        }
+    }));
+
+    //
+    return obs;
+}
+
+/** Bookkeeping for one active assignment bridge between two reactive endpoints. */
+export interface PropStore {
+    unsub?: any;
+    bound?: any;
+    cmpfx?: any;
+    compute?: any;
+    dispose?: any;
+}
+
+/** Registry of active property assignments keyed by target object and property name. */
+export const assignMap = new WeakMap<any, Map<any, PropStore>>();
+/**
+ * Bind one reactive endpoint to another, optionally with a compute function.
+ *
+ * AI-READ: `a` and `b` can be plain observables or tuple forms like
+ * `[target, prop]`; this function normalizes both forms before wiring.
+ */
+export const assign = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | null = "value") => {
+    const isACompute = typeof a?.[1] == "function" && (a as [any, keyType])?.length == 2, isBCompute = typeof b?.[1] == "function" && (b as [any, keyType])?.length == 2, cmpBFnc = isBCompute ? b?.[1] : null;
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : (Array.isArray(a) ? null : prop); if (!isAProp && !isACompute) { a = [a, a_prop] as subValid<T>; }; if (isACompute) { a[1] = a_prop; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : (Array.isArray(b) ? null : prop); if (!isBProp && !isBCompute) { b = [b, b_prop] as subValid<T>; }; if (isBCompute) { b[1] = b_prop; };
+
+    //
+    if (a_prop == null || b_prop == null || isArrayInvalidKey(a_prop, a?.[0]) || isArrayInvalidKey(b_prop, b?.[0])) { return; };
+    if (!((typeof b?.[0] == "object" || typeof b?.[0] == "function") && b?.[0] != null) && !Array.isArray(a[0]))
+        { $avoidTrigger(b, ()=>{ a[0][a_prop] = b?.[0]; }); return () => { }; };
+
+    //
+    const compute = (v, p) => {
+        const a_tmp = aRef?.deref?.();
+        const b_tmp = bRef?.deref?.();
+        if (assignMap?.get?.(a_tmp)?.get?.(a_prop)?.bound == b_tmp) {
+            let val: any = null;
+            const cmpfx = assignMap?.get?.(a_tmp)?.get?.(a_prop)?.cmpfx;
+            $avoidTrigger(b_tmp, ()=>{
+                if (typeof cmpfx == "function") { val = cmpfx?.($getValue(b_tmp) ?? v, p, null); } else { val = b_tmp?.[p] ?? v; };
+            });
+
+            //
+            const nv = $getValue(val);
+            if (isNotEqual(a_tmp[a_prop], nv)) {
+                $avoidTrigger(b_tmp, ()=>{ a_tmp[a_prop] = nv; });
+            };
+        } else {
+            const map = assignMap?.get?.(a_tmp);
+            const store = map?.get?.(a_prop);
+            store?.dispose?.();
+        }
+    };
+
+    //
+    const dispose = () => {
+        const a_tmp = aRef?.deref?.();
+        const map = assignMap?.get?.(a_tmp);
+        const store = map?.get?.(a_prop);
+        map?.delete?.(a_prop);
+        store?.unsub?.();
+    };
+
+    //
+    const
+        bRef = b?.[0] != null && (typeof b?.[0] == "object" || typeof b?.[0] == "function") && !(b?.[0] instanceof WeakRef || typeof b?.[0]?.deref == "function") ? new WeakRef(b?.[0]) : b?.[0],
+        aRef = a?.[0] != null && (typeof a?.[0] == "object" || typeof a?.[0] == "function") && !(a?.[0] instanceof WeakRef || typeof a?.[0]?.deref == "function") ? new WeakRef(a?.[0]) : a?.[0];
+
+    //
+    let store: PropStore = { compute, dispose, cmpfx: cmpBFnc };
+
+    //
+    const a_tmp = aRef?.deref?.(), b_tmp = bRef?.deref?.();
+    if (aRef instanceof WeakRef) {
+        if (assignMap?.get?.(a_tmp)?.get?.(a_prop)?.bound != b_tmp) {
+            assignMap?.get?.(a_tmp)?.delete?.(a_prop);
+        };
+
+        // @ts-ignore
+        const map = assignMap?.getOrInsert?.(a_tmp, new Map());
+        store = map?.getOrInsertComputed?.(a_prop, () => ({
+            bound: b_tmp,
+            cmpfx: cmpBFnc,
+            unsub: null,
+            compute,
+            dispose,
+        }));
+
+        //
+        store.unsub = affected(b, compute);
+        store.cmpfx = cmpBFnc;
+        addToCallChain(a_tmp, Symbol.dispose, store?.dispose);
+        addToCallChain(b_tmp, Symbol.dispose, store?.dispose);
+    }
+
+    // normalization isn't allowed for arrays
+    if (b_tmp && !Array.isArray(b_tmp)) {
+        $avoidTrigger(a_tmp, ()=>{
+            b_tmp[b_prop] ??= a_tmp?.[a_prop] ?? b_tmp[b_prop];
+        });
+    }
+
+    //
+    return store?.dispose;
+}
+
+/** Create a duplex link by composing `assign(a, b)` and `assign(b, a)`. */
+export const link = <T = any>(a: subValid<T>, b: subValid<T>, prop: keyType | null = "value") => {
+    /*const isACompute = typeof a?.[1] == "function", isBCompute = typeof b?.[1] == "function";
+    const isAProp = (isKeyType(a?.[1]) || a?.[1] == Symbol.iterator) && (a as [any, keyType])?.length == 2; let a_prop = (isAProp && !isACompute) ? a?.[1] : prop; if (!isAProp && !isACompute) { a = [a, a_prop]; }; if (isACompute) { a[1] = a_prop; };
+    const isBProp = (isKeyType(b?.[1]) || b?.[1] == Symbol.iterator) && (b as [any, keyType])?.length == 2; let b_prop = (isBProp && !isBCompute) ? b?.[1] : prop; if (!isBProp && !isBCompute) { b = [b, b_prop]; }; if (isBCompute) { b[1] = b_prop; };
+    const usub = [ assign(a, b, b_prop), assign(b, a, a_prop) ];*/
+    const usub = [assign(a, b, prop), assign(b, a, prop)];
+    return () => usub?.map?.((c) => c?.());
+}
+
+/** Build a computed ref whose getter and optional setter are driven by a source subscription. */
+export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null, behavior?: any, prop: keyType | null = "value"): observeValid<OT> => {
+    const isACompute = typeof src?.[1] == "function" && (src as [any, keyType])?.length == 2;
+    const isAProp = (isKeyType(src?.[1]) || src?.[1] == Symbol.iterator) && (src as [any, keyType])?.length == 2;
+    let a_prop = (isAProp && !isACompute) ? src?.[1] : (Array.isArray(src) ? null : prop);
+    if (!isAProp && !isACompute) { src = [(isAProp ? src?.[0] : src), a_prop] as subValid<T>; }; if (isACompute) { src[1] = a_prop; };
+    if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return undefined as any; }
+
+    //
+    const cmp = (v?: any)=>{
+        let oldValue: any = undefined;
+        if (v != undefined) {
+            oldValue = src[0][a_prop];
+            src[0][a_prop] = v;
+        }
+        return cb?.(src?.[0]?.[a_prop], a_prop, oldValue);
+    };
+
+    //
+    const isPromise = false; const initial = cmp();
+    const rf: any = observe({
+        [$promise]: isPromise ? initial : undefined,
+        [$value]: initial,
+        [$behavior]: behavior,
+        [Symbol?.toStringTag]() { return String(cmp() ?? this[$value] ?? "") || ""; },
+        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cmp() ?? this[$value], hint); },
+        set value(v) { this[$value] = cmp(v); },
+        get value() { return (this[$value] = cmp() ?? this[$value]); }
+    });
+
+    //
+    const usb = affected([src?.[0] ?? src, a_prop ?? "value"], ()=>{
+        const oldValue = rf?.[$value];
+        const value = cmp();
+        rf[$value] = value;
+        rf?.[$trigger]?.({ key: "value", value, oldValue, trigger: "manual" });
+    })
+    //const usb = assign([rf, "value"], src, a_prop)
+    addToCallChain(rf, Symbol.dispose, usb); return rf;
+}
+
+/** Subscribe to a truthy ref/value and trigger the callback only after a delay window. */
+export const delayedSubscribe = <Under = any>(ref: any, cb: Function, delay = 100): observeValid<Under> => {
+    let tm: any; //= triggerWithDelay(ref, cb, delay);
+    return affected<Under>(ref, "value", (v) => {
+        if (!v && tm) { clearTimeout(tm); tm = null; }
+        else if (v && !tm) { tm = triggerWithDelay(ref, cb, delay) ?? tm; };
+    }) as unknown as observeValid<Under>;
+}

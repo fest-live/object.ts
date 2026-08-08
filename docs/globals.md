@@ -1,8 +1,8 @@
-[**@fest-lib/object API Documentation v0.1.3**](README.md)
+[**@fest-lib/object API Documentation v0.1.4**](README.md)
 
 ***
 
-# @fest-lib/object API Documentation v0.1.3
+# @fest-lib/object API Documentation v0.1.4
 
 ## Classes
 

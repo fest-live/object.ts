@@ -1,4 +1,4 @@
-[**@fest-lib/object API Documentation v0.1.3**](../README.md)
+[**@fest-lib/object API Documentation v0.1.4**](../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Function: effect()
 
-> **effect**(`cb`, `targets?`, `options?`): (() => `void`) \| `undefined`
+> **effect**(`cb`, `targets?`, `options?`): (() => `any`) \| `undefined`
 
 Defined in: core/Mainline.ts:219
 
@@ -31,4 +31,4 @@ registered or emitted the event. It does not emit initial events by default.
 
 ## Returns
 
-(() => `void`) \| `undefined`
+(() => `any`) \| `undefined`
