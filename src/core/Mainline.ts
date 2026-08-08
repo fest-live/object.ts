@@ -27,7 +27,11 @@ export const useObservable = <Under = any>(unwrap: any): observeValid<Under> => 
 //
 type callable = AffectedCallback;
 type subscript = (target: any, prop: keyType | null, cb: callable, options?: AffectedConfig) => any;
-export const specializedSubscribe = new WeakMap<any, subscript>();
+
+//
+const specializedSubscribeSymbol = Symbol.for("object.ts@specializedSubscribe");
+const specializedSubscribe = globalThis[specializedSubscribeSymbol] ??= new WeakMap<any, subscript>();
+export { specializedSubscribe };
 
 //
 const checkValidObj = (obj: any) => {

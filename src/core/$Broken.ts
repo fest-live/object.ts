@@ -11,11 +11,12 @@ import { deref, type keyType, type MapLike, type observeValid, type SetLike } fr
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "@fest-lib/core";
 
 /** Safe getter with re-entrancy protection to avoid recursive accessor loops. */
-const __safeGetGuard = new WeakMap<any, Set<any>>();
+const __safeGetGuardSymbol = Symbol.for("object.ts@__safeGetGuard");
+const __safeGetGuard = globalThis[__safeGetGuardSymbol] ??= new WeakMap<any, Set<any>>();
 export const safeGet = (obj: any, key: any) => {
     if (obj == null) { return undefined; }
-    let active = __safeGetGuard.get(obj);
-    if (!active) { active = new Set(); __safeGetGuard.set(obj, active); }
+    let active = __safeGetGuard?.get?.(obj);
+    if (!active) { active = new Set(); __safeGetGuard?.set?.(obj, active); }
     if (active.has(key)) { return null; }
     active.add(key);
     try {
@@ -24,7 +25,7 @@ export const safeGet = (obj: any, key: any) => {
         return undefined;
     } finally {
         active.delete(key);
-        if (active.size === 0) { __safeGetGuard.delete(obj); }
+        if (active.size === 0) { __safeGetGuard?.delete?.(obj); }
     }
 }
 

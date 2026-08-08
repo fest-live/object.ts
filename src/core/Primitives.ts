@@ -123,7 +123,7 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
         (src[0] instanceof Map || src[0] instanceof WeakMap || src[0] instanceof Set || src[0] instanceof WeakSet)
     ) {
         if (srcProp == null || srcProp === "value") srcProp = src[1] as keyType;
-        src = src[0];
+        src = src[0] as unknown as observeValid<T>;
     } else if (Array.isArray(src) && !isArrayInvalidKey(src?.[1], src) && (Array.isArray(src?.[0]) || typeof src?.[0] == "object" || typeof src?.[0] == "function")) {
         src = src?.[0];
     }
@@ -141,29 +141,29 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
 
     // INVARIANT: collection slots use Map/Set APIs, never bracket access on the container.
     const readSlot = () => {
-        if (isMap) return (src as Map<any, any>).get(srcProp as any);
-        if (isSet) return (src as Set<any>).has(srcProp as any);
+        if (isMap) return (src as unknown as Map<any, any>).get(srcProp as any);
+        if (isSet) return (src as unknown as Set<any>).has(srcProp as any);
         return (src as any)?.[srcProp as any];
     };
     const writeSlot = (v: any) => {
         if (isMap) {
-            (src as Map<any, any>).set(srcProp as any, v);
+            (src as unknown as Map<any, any>).set(srcProp as any, v);
             return v;
         }
         if (isSet) {
             // membership ref: truthy → ensure key present; falsy → remove
-            if (v) (src as Set<any>).add(srcProp as any);
-            else (src as Set<any>).delete(srcProp as any);
-            return (src as Set<any>).has(srcProp as any);
+            if (v) (src as unknown as Set<any>).add(srcProp as any);
+            else (src as unknown as Set<any>).delete(srcProp as any);
+            return (src as unknown as Set<any>).has(srcProp as any);
         }
         return ((src as any)[srcProp as any] = v);
     };
 
     // seed missing Map/Set slots from `initial` before first read
-    if (isMap && initial !== undefined && !(src as Map<any, any>).has(srcProp as any)) {
-        (src as Map<any, any>).set(srcProp as any, initial);
-    } else if (isSet && initial && !(src as Set<any>).has(srcProp as any)) {
-        (src as Set<any>).add(srcProp as any);
+    if (isMap && initial !== undefined && !(src as unknown as Map<any, any>).has(srcProp as any)) {
+        (src as unknown as Map<any, any>).set(srcProp as any, initial);
+    } else if (isSet && initial && !(src as unknown as Set<any>).has(srcProp as any)) {
+        (src as unknown as Set<any>).add(srcProp as any);
     }
 
     const current = readSlot();

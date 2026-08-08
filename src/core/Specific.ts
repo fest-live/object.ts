@@ -11,6 +11,9 @@ import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess,
 import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "@fest-lib/core";
 
+const __safeGetGuardSymbol = Symbol.for("object.ts@__safeGetGuard");
+const __safeSetGuardSymbol = Symbol.for("object.ts@__safeSetGuard");
+
 //
 const __systemSkip = new Set<any>([
     Symbol.toStringTag,
@@ -40,7 +43,7 @@ const systemSkipGet = (target: any, name: any) => {
 };
 
 //
-const __safeGetGuard = new WeakMap<any, Set<any>>();
+const __safeGetGuard = globalThis[__safeGetGuardSymbol] ??= new WeakMap<any, Set<any>>();
 function isGetter(obj, propName) {
     let got = true;
     try { // @ts-ignore
@@ -80,7 +83,7 @@ export const safeSet = <T = any>(obj: any, key: any, value: T): boolean => {
     if (obj == null) { return false; }
 
     // @ts-ignore
-    let active = __safeSetGuard.getOrInsert(obj, new Set());
+    let active = __safeSetGuard?.getOrInsert?.(obj, new Set());
     if (active?.has?.(key)) { return false; }
     active?.add?.(key);
     return Reflect.set(obj, key, value);
@@ -96,7 +99,7 @@ export const safeGet = <T = any>(obj: any, key: any, rec?: any): T | undefined |
     if (obj == null) { return obj; }
 
     // @ts-ignore
-    let active = __safeGetGuard.getOrInsert(obj, new Set());
+    let active = __safeGetGuard?.getOrInsert?.(obj, new Set());
     if (active?.has?.(key)) { return null; }
 
     // directly return if not a getter
