@@ -55,7 +55,11 @@ type WR<T> = {
 };
 
 /** Track disposer rewrites for Observable-style subscribers so completion also unsubscribes. */
-const withUnsub = new WeakMap();
+const withUnsubSymbol = Symbol.for("object.ts@withUnsub");
+globalThis[withUnsubSymbol] ??= new WeakMap();
+const withUnsub = globalThis[withUnsubSymbol];
+
+/** Complete with unsubscription helper. */
 const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Subscript) => {
     // @ts-ignore
     return withUnsub.getOrInsert(subscriber, () => {
@@ -72,8 +76,14 @@ const completeWithUnsub = (subscriber, weak: WeakRef<any> | WR<any>, handler: Su
 }
 
 /** Global registry that maps raw targets to their `Subscript` instance. */
-export const subscriptRegistry = new WeakMap<any, Subscript>();
-const globalEffectListeners = new Map<EffectCallback, Set<string>>();
+const subscriptRegistrySymbol = Symbol.for("object.ts@subscriptRegistry");
+globalThis[subscriptRegistrySymbol] ??= new WeakMap<any, Subscript>();
+export const subscriptRegistry = globalThis[subscriptRegistrySymbol] ??= new WeakMap<any, Subscript>();
+
+/** Global registry that maps effect callbacks to their trigger filters. */
+const globalEffectListenersSymbol = Symbol.for("object.ts@globalEffectListeners");
+globalThis[globalEffectListenersSymbol] ??= new Map<EffectCallback, Set<string>>();
+const globalEffectListeners = globalThis[globalEffectListenersSymbol];
 
 export const effectGlobally = (cb: EffectCallback, options: EffectConfig = ["*"]) => {
     if (cb == null || typeof cb != "function") return;
@@ -82,8 +92,10 @@ export const effectGlobally = (cb: EffectCallback, options: EffectConfig = ["*"]
     return () => globalEffectListeners.delete(cb);
 }
 
-// @ts-ignore
-const wrapped = new WeakMap();
+/** Global registry that maps wrapped targets to their `Subscript` instance. */
+const wrappedSymbol = Symbol.for("object.ts@wrapped");
+globalThis[wrappedSymbol] ??= new WeakMap();;
+const wrapped = globalThis[wrappedSymbol];
 
 /** Ensure a target has a registry before reusing or returning a reactive handle. */
 export const register = (what: any, handle: any): any => {
@@ -119,9 +131,13 @@ const triggerAliases = new Map<string, string[]>([
     ["addAll", ["@addAll"]],
     ["deleteAll", ["@deleteAll", "@clear"]],
 ]);
-const triggerCanonicalNames = new Map(
+
+/** Global registry that maps trigger aliases to their canonical names. */
+const triggerCanonicalNamesSymbol = Symbol.for("object.ts@triggerCanonicalNames");
+globalThis[triggerCanonicalNamesSymbol] ??= new Map(
     Array.from(triggerAliases.entries()).flatMap(([canonical, aliases]) => aliases.map((alias) => [alias, canonical]))
 );
+const triggerCanonicalNames = globalThis[triggerCanonicalNamesSymbol];
 
 export const normalizeTriggerName = (trigger: TriggerName = "set"): TriggerName => {
     if (trigger == null) return trigger;
@@ -195,7 +211,9 @@ type ListenerRecord = {
 };
 
 /** Central subscription registry with batched dispatch and Observable interoperability helpers. */
-export class Subscript {
+type Subscript = typeof Subscript;
+const SubscriptSymbol = Symbol.for("object.ts@Subscript");
+globalThis[SubscriptSymbol] ??= class Subscript {
     compatible: any;
     #source: any;
     #listeners: Map<AffectedCallback, ListenerRecord>;
@@ -442,3 +460,8 @@ export class Subscript {
 
     get iterator() { return this.#iterator; }
 }
+
+//
+const Subscript = globalThis[SubscriptSymbol];
+export { Subscript };
+export default Subscript;
