@@ -261,6 +261,10 @@ export class DoubleWeakMap {
     #top = new WeakMap(); // key1 -> WeakMap(key2 -> value)
   
     #ensureInner(key1) {
+        // WHY: callers sometimes pass a bare object (not [k1,k2]); refuse nullish WeakMap keys.
+        if (key1 == null || (typeof key1 !== "object" && typeof key1 !== "function" && typeof key1 !== "symbol")) {
+            throw new TypeError("DoubleWeakMap keyL1 must be an object|function|symbol (use pair [keyL1, keyL2])");
+        }
         let inner = this.#top.get(key1);
         if (!inner) {
             inner = new WeakMap();
@@ -271,8 +275,7 @@ export class DoubleWeakMap {
   
     #splitPair(pair) {
         if (!Array.isArray(pair) || pair.length !== 2) {
-            //throw new TypeError("Key must be a pair: [keyL1, keyL2]");
-            return [null, null];
+            throw new TypeError("DoubleWeakMap key must be a pair: [keyL1, keyL2]");
         }
         return pair;
     }
