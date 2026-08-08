@@ -1,4 +1,4 @@
-**@fest-lib/object API Documentation v0.1.2**
+**@fest-lib/object API Documentation v0.1.3**
 
 ***
 
