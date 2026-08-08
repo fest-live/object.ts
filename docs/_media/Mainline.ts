@@ -27,7 +27,11 @@ export const useObservable = <Under = any>(unwrap: any): observeValid<Under> => 
 //
 type callable = AffectedCallback;
 type subscript = (target: any, prop: keyType | null, cb: callable, options?: AffectedConfig) => any;
-export const specializedSubscribe = new WeakMap<any, subscript>();
+
+//
+const specializedSubscribeSymbol = Symbol.for("object.ts@specializedSubscribe"); //@ts-ignore
+globalThis[specializedSubscribeSymbol] ??= new WeakMap<any, subscript>(); //@ts-ignore
+export const specializedSubscribe = globalThis[specializedSubscribeSymbol];
 
 //
 const checkValidObj = (obj: any) => {
@@ -346,7 +350,9 @@ export class DoubleWeakMap {
 }
 
 //
-const registeredIterated = new DoubleWeakMap();
+const registeredIteratedSymbol = Symbol.for("object.ts@registeredIterated"); //@ts-ignore
+globalThis[registeredIteratedSymbol] ??= new DoubleWeakMap(); //@ts-ignore
+export const registeredIterated = globalThis[registeredIteratedSymbol];
 
 /**
  * Subscribe to iteration-level changes for arrays, sets, maps, and ref-like
@@ -356,7 +362,7 @@ export function iterated<T = any>(tg: subValid<T>, cb: callable, options: Affect
     if (!tg) return;
 
     //
-    if (registeredIterated.has([tg, cb])) { return registeredIterated.get([tg, cb]); }
+    if (registeredIterated?.has?.(tg, cb)) { return registeredIterated?.get?.(tg, cb); }
 
     //
     const $sub: callable = (value: any, name: keyType | null, old?: any, trigger?: TriggerName) => {
