@@ -12,6 +12,7 @@
         "./src/**/*.jsx"
     ],
     "compilerOptions": {
+        "rootDir": "../",
         "outDir": "./dist/",
         "paths": {
             "@fest-lib/*": [
