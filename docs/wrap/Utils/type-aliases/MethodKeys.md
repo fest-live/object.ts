@@ -1,0 +1,19 @@
+[**@fest-lib/object v0.1.12**](../../../README.md)
+
+***
+
+[@fest-lib/object](../../../README.md) / [wrap/Utils](../README.md) / MethodKeys
+
+# Type Alias: MethodKeys\<T\>
+
+```ts
+type MethodKeys<T> = { [K in keyof T]-?: T[K] extends AnyFn ? K : never }[keyof T];
+```
+
+Defined in: wrap/Utils.ts:45
+
+## Type Parameters
+
+### T
+
+`T`
