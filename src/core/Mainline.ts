@@ -257,6 +257,10 @@ export class DoubleWeakMap {
     #top = new WeakMap(); // key1 -> WeakMap(key2 -> value)
   
     #ensureInner(key1) {
+        // SECURITY: WeakMap rejects primitives/null; fail soft instead of throw.
+        if (key1 == null || (typeof key1 !== "object" && typeof key1 !== "function")) {
+            return null;
+        }
         let inner = this.#top.get(key1);
         if (!inner) {
             inner = new WeakMap();
@@ -279,27 +283,33 @@ export class DoubleWeakMap {
   
     set(pair, value) {
         const [key1, key2] = this.#splitPair(pair);
-        this.#ensureInner(key1).set(key2, value);
+        const inner = this.#ensureInner(key1);
+        if (!inner || key2 == null || (typeof key2 !== "object" && typeof key2 !== "function")) return this;
+        inner.set(key2, value);
         return this;
     }
   
     get(pair) {
         const [key1, key2] = this.#splitPair(pair);
+        if (key1 == null || (typeof key1 !== "object" && typeof key1 !== "function")) return undefined;
         return this.#top.get(key1)?.get(key2);
     }
   
     has(pair) {
         const [key1, key2] = this.#splitPair(pair);
+        if (key1 == null || (typeof key1 !== "object" && typeof key1 !== "function")) return false;
         return this.#top.get(key1)?.has(key2) ?? false;
     }
   
     delete(pair) {
         const [key1, key2] = this.#splitPair(pair);
+        if (key1 == null || (typeof key1 !== "object" && typeof key1 !== "function")) return false;
         const inner = this.#top.get(key1);
         return inner ? inner.delete(key2) : false;
     }
   
     deleteTop(key1) {
+        if (key1 == null || (typeof key1 !== "object" && typeof key1 !== "function")) return false;
         return this.#top.delete(key1);
     }
   
@@ -307,6 +317,9 @@ export class DoubleWeakMap {
     getOrCreate(pair, factory) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#ensureInner(key1);
+        if (!inner || key2 == null || (typeof key2 !== "object" && typeof key2 !== "function")) {
+            return factory?.();
+        }
     
         if (inner.has(key2)) return inner.get(key2);
     
@@ -319,6 +332,9 @@ export class DoubleWeakMap {
     getOrInsert(pair, value) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#ensureInner(key1);
+        if (!inner || key2 == null || (typeof key2 !== "object" && typeof key2 !== "function")) {
+            return value;
+        }
     
         if (inner.has(key2)) return inner.get(key2);
     
@@ -331,6 +347,9 @@ export class DoubleWeakMap {
     getOrInsertComputed(pair, compute) {
         const [key1, key2] = this.#splitPair(pair);
         const inner = this.#ensureInner(key1);
+        if (!inner || key2 == null || (typeof key2 !== "object" && typeof key2 !== "function")) {
+            return compute?.([key1, key2]);
+        }
     
         if (inner.has(key2)) return inner.get(key2);
     
@@ -349,6 +368,9 @@ const registeredIterated = new DoubleWeakMap();
  */
 export function iterated<T = any>(tg: subValid<T>, cb: callable, options: AffectedConfig = ["*"]) {
     if (!tg) return;
+    // WHY: DoubleWeakMap keys must be objects; primitives (e.g. accidental string
+    // collection from Mapped) throw "Invalid value used as weak map key".
+    if (typeof tg !== "object" && typeof tg !== "function") return;
 
     //
     if (registeredIterated.has([tg, cb])) { return registeredIterated.get([tg, cb]); }
