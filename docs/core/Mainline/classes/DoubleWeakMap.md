@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Class: DoubleWeakMap
 
-Defined in: core/Mainline.ts:260
+Defined in: core/Mainline.ts:256
 
 Two-level WeakMap used to memoize subscriptions keyed by `[target, callback]` pairs.
 
@@ -30,7 +30,7 @@ new DoubleWeakMap(): DoubleWeakMap;
 delete(pair): any;
 ```
 
-Defined in: core/Mainline.ts:303
+Defined in: core/Mainline.ts:304
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: core/Mainline.ts:303
 deleteTop(key1): boolean;
 ```
 
-Defined in: core/Mainline.ts:309
+Defined in: core/Mainline.ts:311
 
 #### Parameters
 
@@ -70,7 +70,7 @@ Defined in: core/Mainline.ts:309
 get(pair): any;
 ```
 
-Defined in: core/Mainline.ts:293
+Defined in: core/Mainline.ts:292
 
 #### Parameters
 
@@ -90,7 +90,7 @@ Defined in: core/Mainline.ts:293
 getOrCreate(pair, factory): any;
 ```
 
-Defined in: core/Mainline.ts:314
+Defined in: core/Mainline.ts:317
 
 #### Parameters
 
@@ -114,7 +114,7 @@ Defined in: core/Mainline.ts:314
 getOrInsert(pair, value): any;
 ```
 
-Defined in: core/Mainline.ts:326
+Defined in: core/Mainline.ts:332
 
 #### Parameters
 
@@ -138,7 +138,7 @@ Defined in: core/Mainline.ts:326
 getOrInsertComputed(pair, compute): any;
 ```
 
-Defined in: core/Mainline.ts:338
+Defined in: core/Mainline.ts:347
 
 #### Parameters
 
@@ -182,7 +182,7 @@ Defined in: core/Mainline.ts:298
 hasL1(key1): boolean;
 ```
 
-Defined in: core/Mainline.ts:283
+Defined in: core/Mainline.ts:280
 
 #### Parameters
 
@@ -202,7 +202,7 @@ Defined in: core/Mainline.ts:283
 set(pair, value): DoubleWeakMap;
 ```
 
-Defined in: core/Mainline.ts:287
+Defined in: core/Mainline.ts:284
 
 #### Parameters
 

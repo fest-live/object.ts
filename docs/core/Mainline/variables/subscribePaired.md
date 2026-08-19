@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -10,6 +10,6 @@
 const subscribePaired: subscript;
 ```
 
-Defined in: core/Mainline.ts:155
+Defined in: core/Mainline.ts:151
 
 Subscription adapter for `[target, prop]` tuples.

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function makeArrayObservable(tg): any;
 ```
 
-Defined in: core/Mainline.ts:253
+Defined in: core/Mainline.ts:249
 
 Normalize collection inputs into observable array-like views when iteration matters.
 

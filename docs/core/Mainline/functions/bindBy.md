@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -13,7 +13,7 @@ function bindBy<Under>(
    watch?): any;
 ```
 
-Defined in: core/Mainline.ts:413
+Defined in: core/Mainline.ts:428
 
 Mirror changes from a reactive source into a plain target, with optional reverse watching hook.
 

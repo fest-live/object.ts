@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -10,6 +10,6 @@
 const subscribeInput: subscript;
 ```
 
-Defined in: core/Mainline.ts:103
+Defined in: core/Mainline.ts:99
 
 Subscription adapter for DOM inputs, mapping `change` events onto reactive callbacks.

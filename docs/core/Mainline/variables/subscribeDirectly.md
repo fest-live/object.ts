@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -10,6 +10,6 @@
 const subscribeDirectly: subscript;
 ```
 
-Defined in: core/Mainline.ts:73
+Defined in: core/Mainline.ts:69
 
 Default subscription strategy for already-observable targets.

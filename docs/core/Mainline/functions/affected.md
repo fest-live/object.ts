@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function affected<Under>(
    options?): Function | undefined;
 ```
 
-Defined in: core/Mainline.ts:169
+Defined in: core/Mainline.ts:165
 
 `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init.
 

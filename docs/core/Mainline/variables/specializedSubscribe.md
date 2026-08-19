@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.15**](../../../README.md)
+[**@fest-lib/object v0.1.16**](../../../README.md)
 
 ***
 
@@ -7,7 +7,7 @@
 # Variable: specializedSubscribe
 
 ```ts
-const specializedSubscribe: any;
+const specializedSubscribe: WeakMap<any, subscript>;
 ```
 
-Defined in: core/Mainline.ts:33
+Defined in: core/Mainline.ts:30
