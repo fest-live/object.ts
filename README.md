@@ -1,16 +1,14 @@
 # Object.TS
 
+`@fest-lib/object` — reactive proxies, refs, computed/derived values, and collection observe for fest-lib. Sits above `@fest-lib/core`. LUR.E and FL.UI subscribe through `affected`.
+
 <img src="https://img.shields.io/github/license/fest-live/object.ts?style=flat-square" alt="License"> <img src="https://img.shields.io/github/stars/fest-live/object.ts?style=flat-square" alt="Stars"> <img src="https://img.shields.io/github/last-commit/fest-live/object.ts?style=flat-square" alt="Last Commit">
 
-[![npm version](https://img.shields.io/npm/v/object.ts?style=flat-square)](https://www.npmjs.com/package/@fest-lib/object.ts)
+[![npm version](https://img.shields.io/npm/v/@fest-lib/object?style=flat-square)](https://www.npmjs.com/package/@fest-lib/object)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/fest-live/object.ts/ci.yml?branch=main&style=flat-square)](https://github.com/fest-live/object.ts/actions)
 [![Coverage Status](https://img.shields.io/codecov/c/github/fest-live/object.ts?style=flat-square)](https://codecov.io/gh/fest-live/object.ts)
 
----
-
-**Object.ts** is a lightweight library providing reactive primitives and object utilities for JavaScript. It is a minor sibling of [`Uniform.TS`](https://github.com/fest-live/uniform.ts), originally created in early 2024 and partially revisited in 2025. The library is primarily used in internal projects and is designed to be compatible with modern reactive libraries.
-
-The current version provides a comprehensive reactivity system with non-intrusive subscriptions, efficient change detection, and compatibility with modern JavaScript frameworks.
+Subscriptions do not retain the target. Updates fire only on actual value changes.
 
 ## Table of Contents
 
@@ -59,7 +57,7 @@ The current version provides a comprehensive reactivity system with non-intrusiv
 ### Install
 
 ```bash
-npm i @fest-lib/object.ts
+npm i @fest-lib/object
 ```
 
 ### Importing
@@ -114,7 +112,7 @@ import {
   createReactive,
   createReactiveMap,
   createReactiveSet
-} from "@fest-lib/object.ts";
+} from "@fest-lib/object";
 ```
 
 ### Quick start
