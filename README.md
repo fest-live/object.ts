@@ -1,420 +1,125 @@
-# Object.TS
+<p align="center">
+  <strong>@fest-lib/object</strong><br>
+  Level 1 — observe / affected / refs. LUR.E and FL.UI subscribe through <code>affected</code>.
+</p>
 
-`@fest-lib/object` — reactive proxies, refs, computed/derived values, and collection observe for fest-lib. Sits above `@fest-lib/core`. LUR.E and FL.UI subscribe through `affected`.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@fest-lib/object"><img src="https://img.shields.io/npm/v/@fest-lib/object?style=flat-square" alt="npm"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/@fest-lib/object?style=flat-square" alt="MIT"></a>
+  <a href="https://github.com/fest-live/object.ts"><img src="https://img.shields.io/github/stars/fest-live/object.ts?style=flat-square" alt="stars"></a>
+</p>
 
-<img src="https://img.shields.io/github/license/fest-live/object.ts?style=flat-square" alt="License"> <img src="https://img.shields.io/github/stars/fest-live/object.ts?style=flat-square" alt="Stars"> <img src="https://img.shields.io/github/last-commit/fest-live/object.ts?style=flat-square" alt="Last Commit">
+Reactive proxies for objects, arrays, `Set`, and `Map`. Subscriptions do **not** retain the target. Updates fire only when the value actually changes.
 
-[![npm version](https://img.shields.io/npm/v/@fest-lib/object?style=flat-square)](https://www.npmjs.com/package/@fest-lib/object)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/fest-live/object.ts/ci.yml?branch=main&style=flat-square)](https://github.com/fest-live/object.ts/actions)
-[![Coverage Status](https://img.shields.io/codecov/c/github/fest-live/object.ts?style=flat-square)](https://codecov.io/gh/fest-live/object.ts)
+```text
+core · uniform
+ └── fest/object      ← you are here
+      └── lure · veela · icon · image · fl-ui
+```
 
-Subscriptions do not retain the target. Updates fire only on actual value changes.
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [API Reference](#api-reference)
-  - [Reactivity](#reactivity)
-  - [DOM Utilities](#dom-utilities)
-- [Related Projects](#related-projects)
-- [License](#license)
-
----
-
-## Features
-
-- **Non-intrusive subscriptions:** Subscribers do not retain references to target objects.
-- **Efficient reactivity:** Triggers only on actual value changes.
-- **Compatibility:** Works with recent versions of popular reactive libraries.
-
----
-
-## Usage & Examples
-
-### Reactivity (basics)
-
-- **`observe(initial)`**
-  Creates a reactive primitive from an existing object, array, Set, or Map.
-
-- **`affected(obj, callback)`**
-  Subscribes to changes in an observable object, `Set`, or `Map`.
-  - Supports `[obj, key]` to subscribe to a specific property.
-  - Returns an unsubscribe function.
-
-- **`ref(initial)`**
-  Creates an observable reference with a `value` property.
-
-- **`computed(src, cb, behavior, prop)`**
-  Creates a computed reactive value from a source.
-  - Computes its value using a callback function.
-  - Automatically updates when dependencies change.
-
-- **`conditional(cond, ifTrue, ifFalse)`**
-  Reactive value that switches between `ifTrue` and `ifFalse` based on `cond.value`.
-
-### Install
+## Install
 
 ```bash
-npm i @fest-lib/object
+npm install @fest-lib/core @fest-lib/uniform @fest-lib/object
 ```
 
-### Importing
+Peers: `@fest-lib/core`, `@fest-lib/uniform` (`>=0.1.0`). ESM, Node **20+**.
 
 ```ts
-import {
-  // Core reactivity
-  observe,
-  affected,
-  makeArrayObservable,
-  isObservable,
-  recoverReactive,
+import { observe, affected, ref, computed } from "@fest-lib/object";
 
-  // Primitive refs
-  ref,
-  numberRef,
-  stringRef,
-  booleanRef,
-  autoRef,
-  promised,
-
-  // Computed and derived values
-  computed,
-  derivate,
-  conditional,
-  remap,
-  unified,
-
-  // Binding and assignment
-  bindBy,
-  assign,
-  link,
-
-  // Collection utilities
-  observableBySet,
-  observableByMap,
-  iterated,
-
-  // Subscription management
-  unaffected,
-  triggerWithDelay,
-  delayedBehavior,
-  delayedOrInstantBehavior,
-
-  // Utilities
-  safe,
-  deref,
-  unwrap,
-  propRef,
-
-  // Legacy (deprecated)
-  createReactive,
-  createReactiveMap,
-  createReactiveSet
-} from "@fest-lib/object";
-```
-
-### Quick start
-
-```ts
 const state = observe({ count: 0, user: { name: "Ada" } });
-
 const stop = affected(state, (value, prop) => {
-  console.log("changed:", prop, value[prop as keyof typeof value]);
+    console.log("changed:", prop, value[prop as keyof typeof value]);
 });
-
 state.count = 1;
 stop?.();
 ```
 
-### Primitive refs
+## Features
+
+- Non-intrusive subscriptions (disposer from `affected`).
+- `observe` adapts `Set` / `Map` so iteration changes notify.
+- Primitive refs with coercion (`numberRef`, `stringRef`, `booleanRef`).
+- `computed` / `derivate` / `conditional` / `propRef`.
+- `bindBy` / `assign` / `link` for shape sync.
+- `safe()` for JSON (cycles, WeakRef).
+
+## Primitive refs
 
 ```ts
+import { numberRef, stringRef, booleanRef, autoRef, promised } from "@fest-lib/object";
+
 const n = numberRef(0);
 const s = stringRef("hello");
 const b = booleanRef(false);
+n.value++;
+s.value = `${s}!`;
+b.value = 1;                    // truthy → true
 
-n.value++;            // 1
-s.value = s + "!";    // "hello!"
-b.value = 1;          // true (truthy coercion)
+const later = promised(fetch("/api").then((r) => r.status));
 ```
 
-#### Auto ref and promised
+`autoRef(true)` / `autoRef(42)` / `autoRef("hi")` pick the matching primitive ref.
 
-```ts
-const r1 = autoRef(true);     // booleanRef
-const r2 = autoRef(42);       // numberRef
-const r3 = autoRef("hi");    // stringRef
-const r4 = ref<any>({ a: 1 });
-
-const later = promised(fetch("/api").then(r => r.status));
-subscribe(later, () => console.log("ready:", later.value));
-```
-
-### Observing collections and properties
+## Collections
 
 ```ts
 const list = observe([1, 2, 3]);
-const bag  = observe(new Set(["a", "b"]));
-const map  = observe(new Map([["x", 1]]));
+const bag = observe(new Set(["a", "b"]));
+const map = observe(new Map([["x", 1]]));
 
-const unAll = affected(list, (v, prop) => console.log("list changed", prop));
-const unBag = affected(bag,  (v, prop) => console.log("set changed", prop));
-const unMap = affected(map,  (v, prop) => console.log("map changed", prop));
-
-const person = observe({ name: "Ada", age: 36 });
-const unName = affected([person, "name"], (v) => console.log("name:", v));
-
-person.name = "Grace";
-unAll?.(); unBag?.(); unMap?.(); unName?.();
+affected(list, (_v, prop) => console.log("list", prop));
+affected([observe({ name: "Ada" }), "name"], (v) => console.log("name:", v));
 ```
 
-### Deriving and binding
+`observableBySet` / `observableByMap` expose a reactive array view. `iterated` subscribes to iteration.
+
+## Derived & bind
 
 ```ts
 const source = observe({ x: 1, y: 2 });
+const total = computed(source, (s) => s.x + s.y);
+const view = derivate(source, (s) => ({ sum: s.x + s.y }));
 
-// Read-only derivative
-const sum = derivate(source, s => ({ sum: s.x + s.y }));
-affected(sum, () => console.log("sum:", sum.sum));
-
-// Two-way bind by shape
-const target: any = { x: 0, y: 0 };
-bindBy(target, source);
-
-source.x = 3; // target.x becomes 3
+const target = { x: 0, y: 0 };
+bindBy(target, source);         // two-way by shape
+source.x = 3;                   // target.x === 3
 ```
 
-### Safe serialization
-
 ```ts
-const complex = observe({ d: new Date(), w: new WeakRef({ a: 1 }) });
-JSON.stringify(safe(complex));
-```
+const cond = booleanRef(true);
+const pick = conditional(cond, "yes", "no");
+cond.value = false;             // pick.value === "no"
 
-### Computed values
-
-```ts
-const state = observe({ a: 1, b: 2 });
-const sum = computed(state, s => s.a + s.b);
-
-affected(sum, () => console.log("sum changed:", sum.value));
-state.a = 3; // triggers: sum changed: 5
-```
-
-### Conditional reactivity
-
-```ts
-const condition = booleanRef(true);
-const result = conditional(condition, "yes", "no");
-
-affected(result, () => console.log("result:", result.value));
-condition.value = false; // triggers: result: no
-```
-
-### Property references
-
-```ts
 const obj = observe({ nested: { value: 42 } });
-const propRef = propRef(obj, "nested.value");
-
-affected(propRef, () => console.log("nested value:", propRef.value));
-obj.nested.value = 100; // triggers: nested value: 100
+const deep = propRef(obj, "nested.value");
 ```
 
-### Collection observables
+## API map
 
-```ts
-const set = observe(new Set([1, 2, 3]));
-const arrayFromSet = observableBySet(set);
+| Group | Exports |
+| --- | --- |
+| Reactivity | `observe`, `affected`, `isObservable`, `recoverReactive`, `makeArrayObservable` |
+| Refs | `ref`, `numberRef`, `stringRef`, `booleanRef`, `autoRef`, `promised`, `propRef` |
+| Derived | `computed`, `derivate`, `conditional`, `remap`, `unified` |
+| Bind | `bindBy`, `assign`, `link` |
+| Collections | `observableBySet`, `observableByMap`, `iterated` |
+| Timing | `triggerWithDelay`, `delayedBehavior`, `delayedOrInstantBehavior` |
+| Utils | `safe`, `deref`, `unwrap`, `unaffected` |
+| Legacy | `createReactive`, `createReactiveMap`, `createReactiveSet` (deprecated) |
 
-affected(arrayFromSet, () => console.log("set as array:", arrayFromSet));
-set.add(4); // triggers: set as array: [1, 2, 3, 4]
+`affected(obj, cb)` or `affected([obj, key], cb)` → unsubscribe function. Keep it and call it.
+
+Sources: `src/core/Mainline.ts` (subscribe), `Primitives.ts`, `Assigned.ts`, `Subscript.ts`, `src/wrap/*`.
+
+## Workspace
+
+```bash
+cd modules/projects/object.ts
+npm test                 # node + deno + browser
+npm run build
+npm run publish
 ```
 
-### Notes
-
-- Subscriptions fire only on actual changes.
-- `observe` adapts `Set`/`Map` to emit iteration changes.
-- To stop listening, keep the disposer returned by `affected` and call it.
-
-## API Reference
-
-### Core Reactivity
-
-#### `observe<T>(target: T): observeValid<T>`
-
-Creates a reactive proxy from an object, array, Set, or Map. Changes to the reactive object will trigger subscriptions.
-
-```ts
-const obj = observe({ count: 0 });
-const arr = observe([1, 2, 3]);
-const set = observe(new Set([1, 2]));
-```
-
-#### `affected(obj, callback): UnsubscribeFn`
-
-Subscribes to changes on a reactive object. Returns an unsubscribe function.
-
-```ts
-const state = observe({ count: 0 });
-const unsubscribe = affected(state, (value, prop, old) => {
-  console.log(`${prop} changed from ${old} to ${value[prop]}`);
-});
-```
-
-#### `isObservable(obj): boolean`
-
-Checks if an object is already reactive.
-
-#### `recoverReactive(obj): observeValid | null`
-
-Attempts to recover the reactive version of an object.
-
-### Reactive References
-
-#### `ref<T>(initial: T): Ref<T>`
-
-Creates a reactive reference with a `.value` property.
-
-#### `numberRef(initial?: number): NumberRef`
-
-Creates a reactive number reference with type coercion.
-
-#### `stringRef(initial?: string): StringRef`
-
-Creates a reactive string reference with type coercion.
-
-#### `booleanRef(initial?: boolean): BooleanRef`
-
-Creates a reactive boolean reference with truthy coercion.
-
-#### `autoRef(initial: any): Ref`
-
-Automatically creates the appropriate ref type based on the initial value.
-
-#### `promised<T>(promise: Promise<T>): PromisedRef<T>`
-
-Creates a reactive reference from a Promise.
-
-### Computed Values
-
-#### `computed<T>(src, cb, behavior?, prop?): ComputedRef<T>`
-
-Creates a computed reactive value that updates when its dependencies change.
-
-```ts
-const state = observe({ a: 1, b: 2 });
-const sum = computed(state, s => s.a + s.b);
-```
-
-#### `derivate<T>(from, reactFn, watch?): observeValid`
-
-Creates a derived reactive object from a source.
-
-#### `conditional<T>(cond, ifTrue, ifFalse): ConditionalRef<T>`
-
-Creates a reactive value that switches between two values based on a condition.
-
-### Binding & Assignment
-
-#### `bindBy(target, reactive, watch?)`
-
-Two-way binds a target object to a reactive source.
-
-#### `assign<T>(a, b, prop?): UnsubscribeFn`
-
-Assigns reactive values between objects with automatic synchronization.
-
-#### `link<T>(a, b, prop?): UnsubscribeFn`
-
-Creates a bidirectional link between two reactive values.
-
-### Collection Utilities
-
-#### `observableBySet<T>(set: Set<T>): T[]`
-
-Converts a reactive Set to a reactive array.
-
-#### `observableByMap<K, V>(map: Map<K, V>): [K, V][]`
-
-Converts a reactive Map to a reactive array of key-value pairs.
-
-#### `iterated<T>(target, cb, ctx?): UnsubscribeFn`
-
-Subscribes to iteration changes on collections.
-
-#### `makeArrayObservable(target): observeValid`
-
-Makes arrays observable.
-
-### Utilities
-
-#### `safe(obj): any`
-
-Prepares an object for JSON serialization by handling circular references and WeakRefs.
-
-#### `deref(obj): any`
-
-Dereferences WeakRefs and unwraps reactive objects.
-
-#### `unwrap(obj): any`
-
-Unwraps reactive objects to their original form.
-
-#### `propRef<T>(src, prop, initial?, behavior?): Ref<T>`
-
-Creates a reactive reference to a specific property.
-
-### Subscription Management
-
-#### `unaffected<T>(target, cb?, ctx?): Promise<T>`
-
-Removes subscriptions from an object.
-
-#### `triggerWithDelay(ref, cb, delay?): Timeout`
-
-Triggers a callback after a delay if the ref value is truthy.
-
-#### `delayedBehavior(delay?): Function`
-
-Creates a behavior function that delays execution.
-
-#### `delayedOrInstantBehavior(delay?): Function`
-
-Creates a behavior that executes immediately or after delay.
-
-### Legacy (Deprecated)
-
-#### `createReactive(target, stateName?)`
-
-Legacy function for creating reactive objects.
-
-#### `createReactiveMap<K, V>(map?): Map<K, V>`
-
-Legacy function for creating reactive Maps.
-
-#### `createReactiveSet<V>(set?): Set<V>`
-
-Legacy function for creating reactive Sets.
-
-***
-
-## Modules
-
-- [core/Assigned](src/core/Assigned.ts) - Assignment and binding utilities
-- [core/Mainline](src/core/Mainline.ts) - Core subscription and reactivity system
-- [core/Primitives](src/core/Primitives.ts) - Primitive reactive references
-- [core/Specific](src/core/Specific.ts) - Specific object type handlers
-- [core/Subscript](src/core/Subscript.ts) - Subscription registry system
-- [index](src/index.ts) - Main exports
-- [wrap/AssignObject](src/wrap/AssignObject.ts) - Object assignment proxy
-- [wrap/Symbol](src/wrap/Symbol.ts) - Internal symbols and triggers
-- [wrap/Utils](src/wrap/Utils.ts) - Utility functions and types
-
----
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+License: [MIT](LICENSE).
