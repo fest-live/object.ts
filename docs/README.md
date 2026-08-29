@@ -1,8 +1,8 @@
-**@fest-lib/object v0.1.19**
+**@fest-lib/object v0.1.20**
 
 ***
 
-# @fest-lib/object v0.1.19
+# @fest-lib/object v0.1.20
 
 ## Modules
 
