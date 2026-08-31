@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.24**](../../../README.md)
+[**@fest-lib/object v0.1.25**](../../../README.md)
 
 ***
 
