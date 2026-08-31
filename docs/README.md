@@ -1,8 +1,8 @@
-**@fest-lib/object v0.1.23**
+**@fest-lib/object v0.1.24**
 
 ***
 
-# @fest-lib/object v0.1.23
+# @fest-lib/object v0.1.24
 
 ## Modules
 
