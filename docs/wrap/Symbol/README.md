@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../README.md)
+[**@fest-lib/object v0.1.27**](../../README.md)
 
 ***
 
@@ -18,6 +18,7 @@
 - [$promise](variables/$promise.md)
 - [$realProp](variables/$realProp.md)
 - [$registryKey$](variables/$registryKey$.md)
+- [$resolved](variables/$resolved.md)
 - [$rootKey$](variables/$rootKey$.md)
 - [$target](variables/$target.md)
 - [$trigger](variables/$trigger.md)

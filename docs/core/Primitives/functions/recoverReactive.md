@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function recoverReactive(target): any;
 ```
 
-Defined in: core/Primitives.ts:321
+Defined in: core/Primitives.ts:338
 
 Re-enter the observable pipeline only when the target already carries observable metadata.
 

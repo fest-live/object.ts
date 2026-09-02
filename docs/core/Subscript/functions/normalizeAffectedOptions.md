@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function normalizeAffectedOptions(options?): object;
 ```
 
-Defined in: core/Subscript.ts:179
+Defined in: core/Subscript.ts:180
 
 ## Parameters
 

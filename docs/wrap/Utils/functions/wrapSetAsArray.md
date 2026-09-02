@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function wrapSetAsArray<T>(source?, options?): SetArray<T>;
 ```
 
-Defined in: wrap/Utils.ts:213
+Defined in: wrap/Utils.ts:215
 
 Expose a `Set` through an array-like mutation API while preserving uniqueness.
 

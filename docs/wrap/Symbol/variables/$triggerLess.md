@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,4 +10,4 @@
 const $triggerLess: typeof $triggerLess;
 ```
 
-Defined in: wrap/Symbol.ts:23
+Defined in: wrap/Symbol.ts:24

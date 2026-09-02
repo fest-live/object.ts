@@ -8,7 +8,7 @@ import { affected } from "./Mainline";
 import { addToCallChain, type observeValid, type subValid, type keyType } from "../wrap/Utils";
 import { observe, isObservable, triggerWithDelay, recoverReactive } from "./Primitives";
 import { $promise, $triggerLock, $value, $behavior, $trigger } from "../wrap/Symbol";
-import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "@fest-lib/core";
+import { $avoidTrigger, $getValue, hasValue, isArrayInvalidKey, isKeyType, isNotEqual, isPrimitive, isPromise, objectAssignNotEqual, tryParseByHint, defaultByType, deref } from "@fest-lib/core";
 
 /** Derive a computed ref whose value is the first truthy predicate index. */
 export const conditionalIndex = <Under = any>(condList: any[] = []): observeValid<Under> => {
@@ -308,10 +308,11 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     };
 
     //
-    const isPromise = false; const initial = cmp();
+    const initial = cmp();
+    const pendingInitial = isPromise(initial);
     const rf: any = observe({
-        [$promise]: isPromise ? initial : undefined,
-        [$value]: initial,
+        [$promise]: pendingInitial ? initial : undefined,
+        [$value]: pendingInitial ? undefined : initial,
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(cmp() ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cmp() ?? this[$value], hint); },
@@ -319,12 +320,26 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
         get value() { return (this[$value] = cmp() ?? this[$value]); }
     });
 
+    const writeComputed = (value: any, trigger: string) => {
+        if (isPromise(value)) {
+            return Promise.resolve(value).then((v) => {
+                const oldValue = rf?.[$value];
+                rf[$value] = v;
+                rf?.[$trigger]?.({ key: "value", value: v, oldValue, trigger: "resolved" });
+                return v;
+            });
+        }
+        const oldValue = rf?.[$value];
+        rf[$value] = value;
+        rf?.[$trigger]?.({ key: "value", value, oldValue, trigger });
+        return value;
+    };
+
+    if (pendingInitial) writeComputed(initial, "resolved");
+
     //
     const usb = affected([src?.[0] ?? src, a_prop ?? "value"], ()=>{
-        const oldValue = rf?.[$value];
-        const value = cmp();
-        rf[$value] = value;
-        rf?.[$trigger]?.({ key: "value", value, oldValue, trigger: "manual" });
+        writeComputed(cmp(), "manual");
     })
     //const usb = assign([rf, "value"], src, a_prop)
     addToCallChain(rf, Symbol.dispose, usb); return rf;

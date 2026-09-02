@@ -127,6 +127,7 @@ const triggerAliases = new Map<string, string[]>([
     ["invalidate", ["@invalidate"]],
     ["manual", ["@manual"]],
     ["custom", ["@custom"]],
+    ["resolved", ["@resolved"]],
     ["setAll", ["@setAll"]],
     ["addAll", ["@addAll"]],
     ["deleteAll", ["@deleteAll", "@clear"]],

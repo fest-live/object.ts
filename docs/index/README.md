@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../README.md)
+[**@fest-lib/object v0.1.27**](../README.md)
 
 ***
 
@@ -17,6 +17,12 @@ Re-exports [$affected](../wrap/Symbol/variables/$affected.md)
 ### $ref
 
 Re-exports [$ref](../core/Primitives/functions/$ref.md)
+
+***
+
+### $resolved
+
+Re-exports [$resolved](../wrap/Symbol/variables/$resolved.md)
 
 ***
 
@@ -236,6 +242,12 @@ Re-exports [makeObjectAssignable](../wrap/AssignObject/functions/makeObjectAssig
 
 ***
 
+### makeResolvedOp
+
+Re-exports [makeResolvedOp](../core/Resolved/functions/makeResolvedOp.md)
+
+***
+
 ### numberRef
 
 Re-exports [numberRef](../core/Primitives/functions/numberRef.md)
@@ -311,6 +323,12 @@ Re-exports [refWrap](../core/Primitives/interfaces/refWrap.md)
 ### remap
 
 Re-exports [remap](../core/Assigned/functions/remap.md)
+
+***
+
+### resolved
+
+Re-exports [resolved](../core/Resolved/functions/resolved.md)
 
 ***
 

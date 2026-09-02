@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -13,7 +13,7 @@ function delayedSubscribe<Under>(
 delay?): observeValid<Under>;
 ```
 
-Defined in: core/Assigned.ts:334
+Defined in: core/Assigned.ts:349
 
 Subscribe to a truthy ref/value and trigger the callback only after a delay window.
 

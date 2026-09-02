@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function observeMap<K, V, T>(map): observeValid<T>;
 ```
 
-Defined in: core/Specific.ts:957
+Defined in: core/Specific.ts:992
 
 Wrap a map with the map-specific observable proxy.
 

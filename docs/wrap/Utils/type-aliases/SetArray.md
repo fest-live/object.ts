@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 type SetArray<T> = SetArrayMethods<T> & object;
 ```
 
-Defined in: wrap/Utils.ts:195
+Defined in: wrap/Utils.ts:197
 
 ## Type Declaration
 

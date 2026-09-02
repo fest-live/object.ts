@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function observe<T>(target, stateName?): observeValid<T>;
 ```
 
-Defined in: core/Primitives.ts:288
+Defined in: core/Primitives.ts:305
 
 `function` (not `const`) so circular Mainline ↔ Primitives/Assigned init cannot TDZ in bundled output.
 

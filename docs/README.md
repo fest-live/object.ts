@@ -1,8 +1,8 @@
-**@fest-lib/object v0.1.26**
+**@fest-lib/object v0.1.27**
 
 ***
 
-# @fest-lib/object v0.1.26
+# @fest-lib/object v0.1.27
 
 ## Modules
 
@@ -10,6 +10,7 @@
 - [core/Assigned](core/Assigned/README.md)
 - [core/Mainline](core/Mainline/README.md)
 - [core/Primitives](core/Primitives/README.md)
+- [core/Resolved](core/Resolved/README.md)
 - [core/Specific](core/Specific/README.md)
 - [core/Subscript](core/Subscript/README.md)
 - [index](index/README.md)

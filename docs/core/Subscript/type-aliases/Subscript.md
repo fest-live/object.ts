@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,6 +10,6 @@
 type Subscript = typeof Subscript;
 ```
 
-Defined in: core/Subscript.ts:214
+Defined in: core/Subscript.ts:215
 
 Central subscription registry with batched dispatch and Observable interoperability helpers.

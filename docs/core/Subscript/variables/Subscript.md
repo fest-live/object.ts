@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,4 +10,4 @@
 Subscript: any;
 ```
 
-Defined in: core/Subscript.ts:214
+Defined in: core/Subscript.ts:215

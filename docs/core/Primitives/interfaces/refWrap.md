@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Interface: refWrap\<T\>
 
-Defined in: core/Primitives.ts:16
+Defined in: core/Primitives.ts:15
 
 ## Type Parameters
 
@@ -22,7 +22,7 @@ Defined in: core/Primitives.ts:16
 optional [$behavior]?: any;
 ```
 
-Defined in: core/Primitives.ts:18
+Defined in: core/Primitives.ts:17
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: core/Primitives.ts:18
 optional [$promise]?: Promise<T> | null;
 ```
 
-Defined in: core/Primitives.ts:17
+Defined in: core/Primitives.ts:16
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: core/Primitives.ts:17
 optional [$realProp]?: keyType | null;
 ```
 
-Defined in: core/Primitives.ts:19
+Defined in: core/Primitives.ts:18
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: core/Primitives.ts:19
 optional [$value]?: T;
 ```
 
-Defined in: core/Primitives.ts:23
+Defined in: core/Primitives.ts:22
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: core/Primitives.ts:23
 optional realProp?: keyType | null;
 ```
 
-Defined in: core/Primitives.ts:20
+Defined in: core/Primitives.ts:19
 
 ## Accessors
 
@@ -74,7 +74,7 @@ Defined in: core/Primitives.ts:20
 get value(): T | null | undefined;
 ```
 
-Defined in: core/Primitives.ts:25
+Defined in: core/Primitives.ts:24
 
 ##### Returns
 
@@ -86,7 +86,7 @@ Defined in: core/Primitives.ts:25
 set value(v): void;
 ```
 
-Defined in: core/Primitives.ts:24
+Defined in: core/Primitives.ts:23
 
 ##### Parameters
 
@@ -106,7 +106,7 @@ Defined in: core/Primitives.ts:24
 optional toPrimitive: any;
 ```
 
-Defined in: core/Primitives.ts:22
+Defined in: core/Primitives.ts:21
 
 #### Parameters
 
@@ -126,7 +126,7 @@ Defined in: core/Primitives.ts:22
 optional toStringTag: string;
 ```
 
-Defined in: core/Primitives.ts:21
+Defined in: core/Primitives.ts:20
 
 #### Returns
 

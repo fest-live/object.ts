@@ -5,13 +5,12 @@
  * property refs, delayed trigger behaviors, and the canonical dispatcher that
  * chooses the correct observable wrapper for arrays, objects, maps, and sets.
  */
-import { defaultByType, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "@fest-lib/core";
+import { defaultByType, hasValue, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "@fest-lib/core";
 import { $value, $behavior, $promise, $extractKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
 import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
 import { affected } from "./Mainline";
-import { hasValue } from "@fest-lib/core";
 
 export interface refWrap<T = any> {
     [$promise]?: Promise<T>|null|undefined;
@@ -40,7 +39,12 @@ export const numberRef = (initial?: number|null|undefined|Promise<number>, behav
         set value(v: any) { this[$value] = ((v != null && !Number.isNaN(v)) ? Number(v) : this[$value]) || 0; },
         get value() { return Number(this[$value] || 0) || 0; }
     };
-    const $r = observe(obj) as observeValid<refType<number>>; (initial as unknown as Promise<number>)?.then?.((v)=>$r.value = v); return $r;
+    const $r = observe(obj) as observeValid<refType<number>>;
+    (initial as unknown as Promise<number>)?.then?.((v) => {
+        $r.value = v;
+        $r[$trigger]?.({ key: "value", value: v, trigger: "resolved" });
+    });
+    return $r;
 }
 
 /** String ref with coercion, primitive conversion hooks, and optional promise initialization. */
@@ -55,7 +59,12 @@ export const stringRef = (initial?: string|null|undefined|Promise<string>, behav
         set value(v: any) { this[$value] = String(typeof v == "number" ? String(v) : (v || "")) ?? ""; },
         get value() { return String(this[$value] ?? "") ?? ""; },
     };
-    const $r = observe(obj) as observeValid<refType<string>>; (initial as unknown as Promise<string>)?.then?.((v)=>$r.value = v); return $r;
+    const $r = observe(obj) as observeValid<refType<string>>;
+    (initial as unknown as Promise<string>)?.then?.((v) => {
+        $r.value = v;
+        $r[$trigger]?.({ key: "value", value: v, trigger: "resolved" });
+    });
+    return $r;
 }
 
 /** Boolean ref with truthy/falsy coercion and optional promise initialization. */
@@ -70,7 +79,12 @@ export const booleanRef = (initial?: boolean|null|undefined|Promise<boolean>, be
         set value(v: any) { this[$value] = (v != null ? (typeof v == "string" ? true : !!v) : this[$value]) || false; },
         get value() { return this[$value] || false; }
     };
-    const $r = observe(obj) as observeValid<refType<boolean>>; (initial as unknown as Promise<boolean>)?.then?.((v)=>$r.value = v); return $r;
+    const $r = observe(obj) as observeValid<refType<boolean>>;
+    (initial as unknown as Promise<boolean>)?.then?.((v) => {
+        $r.value = v;
+        $r[$trigger]?.({ key: "value", value: v, trigger: "resolved" });
+    });
+    return $r;
 }
 
 /** Generic ref wrapper for values that do not need one of the specialized primitive ref shapes. */
@@ -84,7 +98,10 @@ export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior
         value: isPromise ? null : deref(initial)
     };
     const $r = observe(obj) as observeValid<refType<T>>;
-    (initial as unknown as Promise<T>)?.then?.((v) => $r.value = v);
+    (initial as unknown as Promise<T>)?.then?.((v) => {
+        $r.value = v;
+        $r[$trigger]?.({ key: "value", value: v, trigger: "resolved" });
+    });
     affected(initial, (v) => { /*wr?.deref?.()*/$r?.[$trigger]?.(); });
     return $r;
 }

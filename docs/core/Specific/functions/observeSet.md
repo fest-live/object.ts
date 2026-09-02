@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function observeSet<K, V, T>(set): observeValid<T>;
 ```
 
-Defined in: core/Specific.ts:959
+Defined in: core/Specific.ts:997
 
 Wrap a set with the set-specific observable proxy.
 

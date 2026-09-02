@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -12,7 +12,7 @@ type refType<T> =
   | T extends object ? T : any & MethodsOf<T> & T extends symbol | object | Function ? T : any;
 ```
 
-Defined in: core/Primitives.ts:29
+Defined in: core/Primitives.ts:28
 
 ## Type Parameters
 

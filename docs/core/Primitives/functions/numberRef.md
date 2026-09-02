@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function numberRef(initial?, behavior?): any;
 ```
 
-Defined in: core/Primitives.ts:32
+Defined in: core/Primitives.ts:31
 
 Numeric ref with coercion, primitive conversion hooks, and optional promise initialization.
 

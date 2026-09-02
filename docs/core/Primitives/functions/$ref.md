@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -12,7 +12,7 @@ function $ref<T>(typed, behavior?): T extends symbol | object | Function ?
 | refType<T> : refType<T>;
 ```
 
-Defined in: core/Primitives.ts:228
+Defined in: core/Primitives.ts:245
 
 Pick the most suitable ref implementation for the provided value type.
 

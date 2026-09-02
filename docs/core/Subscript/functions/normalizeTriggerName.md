@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.26**](../../../README.md)
+[**@fest-lib/object v0.1.27**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function normalizeTriggerName(trigger?): TriggerName;
 ```
 
-Defined in: core/Subscript.ts:142
+Defined in: core/Subscript.ts:143
 
 ## Parameters
 

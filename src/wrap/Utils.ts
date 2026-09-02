@@ -6,7 +6,7 @@
  * chaining, promise-aware flows, and the Set-as-array adapter.
  */
 import { hasValue, isPrimitive } from "@fest-lib/core";
-import { $extractKey$, $originalKey$, $registryKey$ } from "./Symbol";
+import { $extractKey$, $originalKey$, $promise, $registryKey$ } from "./Symbol";
 
 /*
 //
@@ -128,7 +128,9 @@ export const isThenable = (val: any): val is PromiseLike<any> => val != null && 
 export const withPromise = (target, cb) => {
     if (isPrimitive(target) || typeof target == "function") { return cb?.(target); };
     if (isThenable(target)) return target.then(cb);
+    if (typeof target?.resolved == "function") return Promise.resolve(target.resolved()).then(cb);
     if (target?.promise && isThenable(target.promise)) return target.promise.then(cb);
+    if (target?.[$promise] && isThenable(target[$promise])) return target[$promise].then(cb);
     return cb?.(target);
 }
 

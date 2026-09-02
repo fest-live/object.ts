@@ -7,9 +7,10 @@
  */
 import { affected, unaffected } from "./Mainline";
 import { normalizeTriggerName, subscriptRegistry, wrapWith } from "./Subscript";
-import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected, $realProp } from "../wrap/Symbol";
+import { $extractKey$, $originalKey$, $registryKey$, $triggerLock, $triggerLess, $triggerControl, $value, $trigger, $isNotEqual, $affected, $realProp, $resolved } from "../wrap/Symbol";
 import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
-import { bindCtx, hasValue, isNotEqual, isPrimitive, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "@fest-lib/core";
+import { bindCtx, hasValue, isNotEqual, isPrimitive, isPromise, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "@fest-lib/core";
+import { bindExistingThenables, emitResolved, makeResolvedOp } from "./Resolved";
 
 const __safeGetGuardSymbol = Symbol.for("object.ts@__safeGetGuard");
 const __safeSetGuardSymbol = Symbol.for("object.ts@__safeSetGuard");
@@ -161,7 +162,7 @@ const triggerValueOf = (target: any, key: keyType | null) => {
     if (realProp != null && key == realProp) return safeGet(target, "value") ?? safeGet(target, $value) ?? safeGet(target, key);
     return key == null ? undefined : safeGet(target, key);
 }
-const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => any) => {
+const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => any, target?: any) => {
     const api: any = (key?: any, opOrOptions?: string | null | TriggerEmitOptions, trigger?: string | null) => {
         if (!isTriggerEmitOptions(opOrOptions as string | null)) {
             trigger ??= opOrOptions as string | null;
@@ -177,6 +178,7 @@ const createTriggerAPI = (registry: any, emit: (options: TriggerEmitOptions) => 
     const control = registry?.triggerControl;
     if (control) Object.assign(api, control);
     api.custom = (trigger: string, key?: keyType | null, value?: any, oldValue?: any) => api({ key, trigger, value, oldValue });
+    if (target != null) api.resolved = makeResolvedOp(target, true);
     return api;
 }
 
@@ -195,6 +197,9 @@ const systemGet = (target: any, name: any, registry: any)=>{
     if ($extK.indexOf(name as any) >= 0) { return safeGet(target, name as any) ?? target; }
     if (name == $value)               { return safeGet(target, name) ?? safeGet(target, "value"); }
     if (name == $registryKey$)        { return registry; } // @ts-ignore
+    if (name == $resolved || (name == "resolved" && !Object.prototype.hasOwnProperty.call(target, "resolved"))) {
+        return makeResolvedOp(target);
+    }
     if (name == $triggerControl)      { return registry?.triggerControl; }
     if (name == (Symbol as any).observable) { return registry?.compatible; }
     if (name == (Symbol as any).subscribe)  { return (cb, prop?, options?)=>affected(prop != null ? [target, prop] : target, cb, options); }
@@ -405,7 +410,7 @@ export class ObserveArrayHandler {
                 const value = triggerOptionValue(options, "value", () => safeGet(target, key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
                 return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-            });
+            }, target);
         }
 
         //
@@ -440,37 +445,34 @@ export class ObserveArrayHandler {
         if (name == $triggerLock && value) { this[$triggerLock] = !!value; return true; }
         if (name == $triggerLock && !value) { delete this[$triggerLock]; return true; }
 
-        // array property changes
-        const old = safeGet(target, name);
+        const pending = isPromise(value);
+        return potentiallyAsync(value, (v) => {
+            const old = safeGet(target, name);
+            const xyzw = ["x", "y", "z", "w"];
+            const rgba = ["r", "g", "b", "a"];
+            const xyzw_idx = xyzw.indexOf(name);
+            const rgba_idx = rgba.indexOf(name);
 
-        //
-        const xyzw = ["x", "y", "z", "w"];
-        const rgba = ["r", "g", "b", "a"];
+            let got = false;
+            if (xyzw_idx >= 0) { got = Reflect.set(target, xyzw_idx, v); } else
+            if (rgba_idx >= 0) { got = Reflect.set(target, rgba_idx, v); } else
+            { got = Reflect.set(target, name, v); }
 
-        //
-        const xyzw_idx = xyzw.indexOf(name);
-        const rgba_idx = rgba.indexOf(name);
-
-        //
-        let got = false;
-        if (xyzw_idx >= 0) { got = Reflect.set(target, xyzw_idx, value); } else
-        if (rgba_idx >= 0) { got = Reflect.set(target, rgba_idx, value); } else
-        { got = Reflect.set(target, name, value); }
-
-        // bit different trigger rules
-        if (name == "length") {
-            if (isNotEqual(old, value)) {
-                triggerWhenLengthChange(this, target, old, value);
+            if (name == "length") {
+                if (isNotEqual(old, v)) {
+                    triggerWhenLengthChange(this, target, old, v);
+                }
             }
-        }
 
-        //
-        if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(old, value)) {
-            (subscriptRegistry)?.get?.(target)?.trigger?.(name, value, old, "set");
-        }
+            if (!this[$triggerLock] && typeof name != "symbol") {
+                if (isNotEqual(old, v)) {
+                    (subscriptRegistry)?.get?.(target)?.trigger?.(name, v, old, "set");
+                }
+                if (pending) emitResolved(target, name, v, old);
+            }
 
-        //
-        return got;
+            return got;
+        });
     }
 
     //
@@ -541,7 +543,7 @@ export class ObserveObjectHandler<T=any> {
                 // current value, so capture the prior snapshot first.
                 const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
                 return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-            });
+            }, target);
         }
 
         //
@@ -653,9 +655,12 @@ export class ObserveObjectHandler<T=any> {
             if (typeof name == "symbol" && !(safeGet(target, name) != null && name in target)) return;
             const triggerName = triggerKeyOf(target, name);
             const oldValue = name == "value" ? (safeGet(target, $value) ?? safeGet(target, name)) : safeGet(target, name); target[name] = v; const newValue = safeGet(target, name) ?? v;
-            if (!this[$triggerLock] && typeof name != "symbol" && (safeGet(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) {
+            if (!this[$triggerLock] && typeof name != "symbol") {
                 const subscript = subscriptRegistry.get(target) ?? subscriptRegistry.get($original);
-                subscript?.trigger?.(triggerName, v, oldValue);
+                if ((safeGet(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) {
+                    subscript?.trigger?.(triggerName, v, oldValue);
+                }
+                if (isPromise(value)) emitResolved($original, triggerName, v, oldValue);
             };
             return true;
         })
@@ -765,7 +770,7 @@ export class ObserveMapHandler<K=any, V=any> {
                 if (value == null && !hasOwn(options, "value")) { return; }
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
                 return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-            });
+            }, target);
         }
         
         //
@@ -792,13 +797,35 @@ export class ObserveMapHandler<K=any, V=any> {
         if (name == "set") {
             return (prop, value) => potentiallyAsyncMap(value, (v)=>{
                 const had = target.has(prop), oldValue = target.get(prop), result = valueOrFx(prop, v);
-                if (!had || isNotEqual(oldValue, v)) {
-                    if (!this[$triggerLock]) {
+                if (!this[$triggerLock]) {
+                    if (!had || isNotEqual(oldValue, v)) {
                         (subscriptRegistry).get(target)?.trigger?.(prop, v, had ? oldValue : null, had ? "set" : "add");
                     }
+                    if (isPromise(value)) emitResolved(target, prop, v, oldValue);
                 };
                 return result;
             });
+        }
+
+        // Native upsert: insert+trigger like `set` only when the key is missing.
+        if (name == "getOrInsert" || name == "getOrInsertComputed") {
+            const computed = name == "getOrInsertComputed";
+            return (key, defaultOrCompute) => {
+                if (target.has(key)) return target.get(key);
+                const incoming = computed
+                    ? (typeof defaultOrCompute == "function" ? defaultOrCompute(key) : defaultOrCompute)
+                    : defaultOrCompute;
+                return potentiallyAsyncMap(incoming, (v) => {
+                    const result = typeof target.getOrInsert == "function"
+                        ? target.getOrInsert(key, v)
+                        : (target.set(key, v), target.get(key));
+                    if (!this[$triggerLock]) {
+                        (subscriptRegistry).get(target)?.trigger?.(key, v, null, "add");
+                        if (isPromise(incoming)) emitResolved(target, key, v, null);
+                    }
+                    return result;
+                });
+            };
         }
 
         //
@@ -872,7 +899,7 @@ export class ObserveSetHandler<T=any> {
                 const value = triggerOptionValue(options, "value", () => target.has(key));
                 const oldValue = triggerOptionValue(options, "oldValue", () => undefined);
                 return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-            });
+            }, target);
         }
         
         //
@@ -895,12 +922,14 @@ export class ObserveSetHandler<T=any> {
 
         //
         if (name == "add") {
-            // TODO: add potentially async set
-            return (value) => {
-                const had = target.has(value), oldValue = had ? value : null, result = valueOrFx(value);
-                if (!had) { if (!this[$triggerLock]) { (subscriptRegistry).get(target)?.trigger?.(value, value, oldValue, "add"); } };
+            return (value) => potentiallyAsync(value, (v) => {
+                const had = target.has(v), oldValue = had ? v : null, result = valueOrFx(v);
+                if (!this[$triggerLock]) {
+                    if (!had) { (subscriptRegistry).get(target)?.trigger?.(v, v, oldValue, "add"); }
+                    if (isPromise(value)) emitResolved(target, v, v, oldValue);
+                }
                 return result;
-            };
+            });
         }
 
         //
@@ -950,10 +979,22 @@ export const $isObservable = (target: any) => {
 }
 
 /** Wrap an array with the array-specific observable proxy. */
-export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => { return ($isObservable(arr) ? arr : wrapWith(arr, new ObserveArrayHandler())); };
+export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => {
+    if ($isObservable(arr)) return arr;
+    return bindExistingThenables(wrapWith(arr, new ObserveArrayHandler()), arr);
+};
 /** Wrap an object with the object-specific observable proxy. */
-export const observeObject = <T = any>(obj: T): observeValid<T> => { return ($isObservable(obj) ? (obj as observeValid<T>) : wrapWith(obj, new ObserveObjectHandler())); };
+export const observeObject = <T = any>(obj: T): observeValid<T> => {
+    if ($isObservable(obj)) return obj as observeValid<T>;
+    return bindExistingThenables(wrapWith(obj, new ObserveObjectHandler()), obj);
+};
 /** Wrap a map with the map-specific observable proxy. */
-export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => { return ($isObservable(map) ? map : wrapWith(map, new ObserveMapHandler())); };
+export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => {
+    if ($isObservable(map)) return map;
+    return bindExistingThenables(wrapWith(map, new ObserveMapHandler()), map);
+};
 /** Wrap a set with the set-specific observable proxy. */
-export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => { return ($isObservable(set) ? set : wrapWith(set, new ObserveSetHandler())); };
+export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => {
+    if ($isObservable(set)) return set;
+    return wrapWith(set, new ObserveSetHandler());
+};
