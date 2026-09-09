@@ -128,8 +128,7 @@ const markRealProp = <T = any>(target: T, realProp: keyType | null): T => {
  *
  * Also accepts `[map|set, key]` pair form (same shape as `affected()`).
  *
- * WHY (Set → boolean): observable object `fallThrough` maps `null`/`undefined`
- * `.value` back to the wrapper itself, so absence must be a real primitive (`false`).
+ * Set slot: present → the member key; absent → `null` (not a comparison bool).
  */
 export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null = "value", initial?: any, behavior?: any): any => {
     if (isPrimitive(src) || !src) return src;
@@ -164,24 +163,21 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     };
     const writeSlot = (v: any) => {
         if (isMap) {
-            if ((src as unknown as Map<any, any>)?.has?.(srcProp) && isNotEqual(v, (src as unknown as Map<any, any>)?.get?.(srcProp as any))) {
-                (src as unknown as Map<any, any>)?.set?.(srcProp as any, v);
-            }
+            const map = src as unknown as Map<any, any>;
+            if (isNotEqual(v, map?.get?.(srcProp as any))) map?.set?.(srcProp as any, v);
             return v;
-        } else
+        }
         if (isSet) {
-            v ??= srcProp;
-            // membership ref: truthy → ensure key present; falsy → remove
-            if (!(src as unknown as Set<any>)?.has?.(v as any) && v != null) {
-                (src as unknown as Set<any>)?.add?.(v as any); return v;
-            } else
-            if ((src as unknown as Set<any>)?.has?.(v as any)) {
-                if (v == null) 
-                { (src as unknown as Set<any>)?.delete?.(v as any); return v; }
-                else { return v; };
+            const set = src as unknown as Set<any>;
+            const member = v ?? srcProp;
+            if (member == null) {
+                set?.delete?.(srcProp as any);
+                return member;
             }
-        } else
-        if ((src as any)?.[srcProp as any] && isNotEqual(v, (src as any)?.[srcProp as any])) {
+            if (!set?.has?.(member)) set?.add?.(member);
+            return member;
+        }
+        if (isNotEqual(v, (src as any)?.[srcProp as any])) {
             (src as any)[srcProp as any] = v;
         }
         return v;
@@ -223,7 +219,7 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
 
     //
     const r: any = observe({
-        [$value]: isSet ? !!readSlot() : (readSlot() ?? initial),
+        [$value]: isSet ? readSlot() : (readSlot() ?? initial),
         [$behavior]: behavior,
         [Symbol?.toStringTag]() { return String(readSlot() ?? this[$value] ?? "") || ""; },
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(readSlot(), hint); },
@@ -244,15 +240,15 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     });
     markRealProp(r, srcProp);
 
-    // affected now used for `src` object observe, and filtering prop key
-    // for avoid potential infinite loop, when `src` is itself a reactive object
-    // NOTE: Set triggers pass the member/null; normalize to boolean for the ref surface.
+    /* WHY: listen to the source slot and re-emit on the ref (`value` → realProp).
+     * Skip when the ref setter already holds $triggerLock (that write owns src). */
     const usb = affected(src, (v, _prop, old, trigger) => {
-        if (isNotEqual(_prop, srcProp)) {
-            //const value = isSet ? (v != null) : v;
-            //const oldValue = isSet ? (old != null) : old;
-            if (!isNotEqual(v, readSlot() ?? old)) { writeSlot(v); }
-        }
+        if (_prop != srcProp) return;
+        if (r[$triggerLock]) return;
+        const next = isSet ? readSlot() : v;
+        const prev = r[$value];
+        r[$value] = next;
+        r[$trigger]?.({ key: "value", value: next, oldValue: old ?? prev, trigger: trigger ?? "set" });
     });
 
     //

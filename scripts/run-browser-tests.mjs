@@ -1,25 +1,34 @@
-import { access, readdir } from "node:fs/promises";
-import { resolve } from "node:path";
+import { spawn } from "node:child_process";
+import { access, mkdir, readdir, stat } from "node:fs/promises";
+import { homedir } from "node:os";
+import { basename, resolve } from "node:path";
 import puppeteer from "puppeteer";
 import { createServer } from "vite";
 import viteConfig from "../vite.config.js";
 
 const root = resolve(import.meta.dirname, "..");
 const localBrowserCache = resolve(root, "chrome-headless-shell");
+const sharedBrowserCache = resolve(root, "..", "chrome-headless-shell");
+const puppeteerShellCache = resolve(homedir(), ".cache/puppeteer/chrome-headless-shell");
 
-const findHeadlessShell = async (dir = localBrowserCache) => {
+const exists = async (path) => {
+    try { await access(path); return true; } catch { return false; }
+};
+
+const findHeadlessShell = async (dir) => {
+    if (!dir) return null;
+    let info;
+    try { info = await stat(dir); } catch { return null; }
+    if (info.isFile() && basename(dir) == "chrome-headless-shell") return dir;
+    if (!info.isDirectory()) return null;
+
     let entries = [];
-    try {
-        entries = await readdir(dir, { withFileTypes: true });
-    } catch {
-        return null;
-    }
+    try { entries = await readdir(dir, { withFileTypes: true }); } catch { return null; }
 
     for (const entry of entries) {
         const path = resolve(dir, entry.name);
         if (entry.isFile() && entry.name == "chrome-headless-shell") {
-            await access(path);
-            return path;
+            if (await exists(path)) return path;
         }
         if (entry.isDirectory()) {
             const nested = await findHeadlessShell(path);
@@ -29,18 +38,57 @@ const findHeadlessShell = async (dir = localBrowserCache) => {
     return null;
 };
 
-const resolveHeadlessShell = async () => {
-    const explicit = process.env.CHROME_BIN ?? process.env.CHROMIUM_BIN;
-    if (explicit) {
-        await access(explicit);
-        return explicit;
+const resolveFromHint = async (hint) => {
+    if (!hint) return null;
+    let info;
+    try { info = await stat(hint); } catch { return null; }
+    if (info.isFile()) return hint;
+    return findHeadlessShell(hint);
+};
+
+const lookupHeadlessShell = async () => {
+    const explicit = await resolveFromHint(process.env.CHROME_BIN ?? process.env.CHROMIUM_BIN);
+    if (explicit) return explicit;
+
+    for (const dir of [localBrowserCache, sharedBrowserCache, puppeteerShellCache]) {
+        const found = await findHeadlessShell(dir);
+        if (found) return found;
     }
 
-    const local = await findHeadlessShell();
-    if (local) return local;
-
     const bundled = puppeteer.executablePath();
-    if (bundled) return bundled;
+    if (bundled && await exists(bundled)) return bundled;
+    return null;
+};
+
+const installHeadlessShell = async () => {
+    await mkdir(sharedBrowserCache, { recursive: true });
+    await new Promise((resolvePromise, reject) => {
+        const child = spawn("npx", [
+            "--yes",
+            "@puppeteer/browsers",
+            "install",
+            "chrome-headless-shell@stable",
+            "--path",
+            sharedBrowserCache,
+        ], {
+            cwd: root,
+            stdio: "inherit",
+        });
+        child.on("error", reject);
+        child.on("exit", (code) => {
+            if (code == 0) resolvePromise();
+            else reject(new Error(`chrome-headless-shell install exited ${code}`));
+        });
+    });
+};
+
+const resolveHeadlessShell = async () => {
+    const existing = await lookupHeadlessShell();
+    if (existing) return existing;
+
+    await installHeadlessShell();
+    const installed = await lookupHeadlessShell();
+    if (installed) return installed;
 
     throw new Error("No Chrome headless shell found. Run `npm run test:browser:install` or set CHROME_BIN.");
 };
@@ -64,10 +112,11 @@ try {
     const port = typeof address == "object" && address ? address.port : null;
     if (!port) throw new Error("Unable to determine Vite test server port.");
 
+    const executablePath = await resolveHeadlessShell();
     const url = `http://127.0.0.1:${port}/`;
     const browser = await puppeteer.launch({
-        executablePath: await resolveHeadlessShell(),
-        headless: "shell",
+        executablePath,
+        headless: basename(executablePath) == "chrome-headless-shell" ? "shell" : true,
         args: [
             "--disable-gpu",
             "--no-sandbox",

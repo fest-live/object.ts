@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.36**](../../../README.md)
+[**@fest-lib/object v0.1.37**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function unaffected<T>(tg, cb?): any;
 ```
 
-Defined in: core/Mainline.ts:417
+Defined in: core/Mainline.ts:418
 
 Remove a previously registered subscription.
 

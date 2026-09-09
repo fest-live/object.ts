@@ -1,7 +1,7 @@
 {
     "name": "@fest-lib/object",
     "description": "fest-lib reactivity: observe, affected, refs, computed, collection proxies",
-    "version": "0.1.37",
+    "version": "0.1.38",
     "license": "MIT",
     "type": "module",
     "sideEffects": false,
@@ -52,8 +52,8 @@
     "scripts": {
         "test": "npm run test:node && npm run test:deno && npm run test:browser",
         "test:node": "node ./scripts/run-node-tests.mjs",
-        "test:deno": "deno test --unstable-sloppy-imports --allow-read --import-map=./test/deno.import_map.json ./test/Subscribe.deno.test.ts",
-        "test:browser:install": "npx @puppeteer/browsers install chrome-headless-shell@stable --path ./chrome-headless-shell",
+        "test:deno": "PATH=\"$HOME/.deno/bin:$PATH\" deno test --unstable-sloppy-imports --allow-read --import-map=./test/deno.import_map.json ./test/Subscribe.deno.test.ts",
+        "test:browser:install": "mkdir -p ../chrome-headless-shell && npx @puppeteer/browsers install chrome-headless-shell@stable --path ../chrome-headless-shell",
         "test:browser": "node ./scripts/run-browser-tests.mjs",
         "test:dev": "npm run demo",
         "dev": "npm run demo",

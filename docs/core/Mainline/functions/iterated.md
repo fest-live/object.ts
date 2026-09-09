@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.36**](../../../README.md)
+[**@fest-lib/object v0.1.37**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function iterated<T>(
 ): any;
 ```
 
-Defined in: core/Mainline.ts:369
+Defined in: core/Mainline.ts:370
 
 Subscribe to iteration-level changes for arrays, sets, maps, and ref-like
 containers whose `value` should itself be treated as a collection.

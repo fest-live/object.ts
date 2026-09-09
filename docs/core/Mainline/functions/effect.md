@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.36**](../../../README.md)
+[**@fest-lib/object v0.1.37**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function effect(
 ): (() => any) | undefined;
 ```
 
-Defined in: core/Mainline.ts:219
+Defined in: core/Mainline.ts:220
 
 Subscribe to one or many reactive triggers and receive a structured event.
 

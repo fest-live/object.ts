@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.36**](../../../README.md)
+[**@fest-lib/object v0.1.37**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function bindByKey<Under>(
 ): Function | undefined;
 ```
 
-Defined in: core/Mainline.ts:436
+Defined in: core/Mainline.ts:437
 
 ## Type Parameters
 

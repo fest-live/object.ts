@@ -163,9 +163,10 @@ export const subscribeThenable: subscript = (obj: any, prop: keyType | null, cb:
 
 /** `function` (not `const`) so circular imports from Assigned/Primitives cannot hit TDZ during bundle init. */
 export const affected = <Under = any>(obj: any, prop: keyType | callable | null, cb: callable | AffectedConfig = ()=>{}, options?: AffectedConfig): Function | undefined =>{
-    if (typeof prop == "function") 
-        { options = cb as AffectedConfig; cb = prop; prop = null; } else 
-        { prop = normalizeAffectedProp(obj, prop); }
+    let key: keyType | null = null;
+    if (typeof prop == "function")
+        { options = cb as AffectedConfig; cb = prop; } else
+        { key = normalizeAffectedProp(obj, prop); }
     if (typeof cb == "object" || Array.isArray(cb)) { options = cb as AffectedConfig; cb = ()=>{}; }
 
     //
@@ -178,32 +179,32 @@ export const affected = <Under = any>(obj: any, prop: keyType | callable | null,
 
     //
     if (typeof obj?.[$affected] == "function") {
-        return obj?.[$affected]?.(cb, prop, options);
+        return obj?.[$affected]?.(cb, key, options);
     } else
     if (checkValidObj(obj)) {
         const wrapped = obj;
         if (specializedSubscribe?.has?.(obj = obj?.[$extractKey$] ?? obj)) {
-            return specializedSubscribe?.get?.(obj)?.(wrapped, prop, cb as callable, options);
+            return specializedSubscribe?.get?.(obj)?.(wrapped, key, cb as callable, options);
         }
 
         //
         if (isObservable(wrapped) || (checkIsPaired(obj) && isObservable(obj?.[0]))) {
             // when no exists, add a new specialized subscribe function
             if (isThenable(obj)) //@ts-ignore
-                { return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, prop, cb, options); } else
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, key, cb, options); } else
             if (checkIsPaired(obj))  //@ts-ignore
-                { return specializedSubscribe?.getOrInsert?.(obj, subscribePaired)?.(obj, prop, cb, options); } else
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribePaired)?.(obj, key, cb, options); } else
             if (typeof HTMLInputElement != "undefined" && obj instanceof HTMLInputElement)  //@ts-ignore
-                { return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, prop, cb, options); } else  //@ts-ignore
-                { return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(wrapped, prop, cb, options); }
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, key, cb, options); } else  //@ts-ignore
+                { return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(wrapped, key, cb, options); }
         } else {
             const initialCb = withTrigger(cb as callable, options, initialTrigger);
             if (!initialCb) return;
             return Promised(globalThis?.Promise?.try?.(() => {
                 if (checkIsPaired(obj)) 
                     { return callByPropRefAware?.(obj?.[0], obj?.[1] as any, initialCb, null); } else
-                if (prop != null && prop != Symbol.iterator)
-                    { return callByPropRefAware?.(obj, prop, initialCb, null); } else
+                if (key != null && key != Symbol.iterator)
+                    { return callByPropRefAware?.(obj, key, initialCb, null); } else
                 return callByAllProp?.(obj, initialCb, null);
             }));
         }

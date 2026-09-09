@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.36**](../../../README.md)
+[**@fest-lib/object v0.1.37**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function effected(
 ): (() => any) | undefined;
 ```
 
-Defined in: core/Mainline.ts:244
+Defined in: core/Mainline.ts:245
 
 Target-first alias for `effect()` when that reads better at the callsite.
 

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.36**](../../../README.md)
+[**@fest-lib/object v0.1.37**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function derivate<Under, T>(
 ): any;
 ```
 
-Defined in: core/Mainline.ts:435
+Defined in: core/Mainline.ts:436
 
 Derive a plain target object from a source by combining `safe()` cloning with `bindBy()`.
 
