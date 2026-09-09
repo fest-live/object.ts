@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -11,7 +11,8 @@ function conditionalRef<T>(
    cond, 
    ifTrue, 
    ifFalse, 
-behavior?): observeValid<T>;
+   behavior?
+): observeValid<T>;
 ```
 
 Defined in: core/Assigned.ts:54

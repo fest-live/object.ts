@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,8 @@
 function addToCallChain(
    obj, 
    methodKey, 
-   callback?): void;
+   callback?
+): void;
 ```
 
 Defined in: wrap/Utils.ts:147

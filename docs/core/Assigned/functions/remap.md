@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,8 @@
 function remap<T>(
    sub, 
    cb?, 
-   dest?): any;
+   dest?
+): any;
 ```
 
 Defined in: core/Assigned.ts:92

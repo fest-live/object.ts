@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -11,7 +11,8 @@ function computed<T, OT>(
    src, 
    cb?, 
    behavior?, 
-prop?): observeValid<OT>;
+   prop?
+): observeValid<OT>;
 ```
 
 Defined in: core/Assigned.ts:293

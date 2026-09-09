@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function delayedBehavior(delay?): (cb, __namedParameters, __namedParameters) => void;
 ```
 
-Defined in: core/Primitives.ts:293
+Defined in: core/Primitives.ts:312
 
 Create a deferred trigger behavior that aborts cleanly when the subscription is disposed.
 

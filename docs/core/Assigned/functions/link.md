@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,8 @@
 function link<T>(
    a, 
    b, 
-   prop?): () => any[];
+   prop?
+): () => any[];
 ```
 
 Defined in: core/Assigned.ts:283

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -11,7 +11,8 @@ function propRef<T>(
    src, 
    srcProp?, 
    initial?, 
-   behavior?): any;
+   behavior?
+): any;
 ```
 
 Defined in: core/Primitives.ts:134

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function isObservable(target): boolean;
 ```
 
-Defined in: core/Primitives.ts:332
+Defined in: core/Primitives.ts:351
 
 Detect whether a value is already wrapped in the `object.ts` observable protocol.
 

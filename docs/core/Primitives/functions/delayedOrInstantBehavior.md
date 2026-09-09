@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function delayedOrInstantBehavior(delay?): (cb, __namedParameters, __namedParameters) => void;
 ```
 
-Defined in: core/Primitives.ts:298
+Defined in: core/Primitives.ts:317
 
 Same as `delayedBehavior`, but invoke immediately when the delay gate is not needed.
 

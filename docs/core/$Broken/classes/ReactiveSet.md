@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -42,7 +42,8 @@ Defined in: core/$Broken.ts:516
 apply(
    target, 
    ctx, 
-   args): unknown;
+   args
+): unknown;
 ```
 
 Defined in: core/$Broken.ts:596
@@ -73,7 +74,8 @@ Defined in: core/$Broken.ts:596
 construct(
    target, 
    args, 
-   newT): unknown;
+   newT
+): unknown;
 ```
 
 Defined in: core/$Broken.ts:597
@@ -128,7 +130,8 @@ Defined in: core/$Broken.ts:605
 get(
    target, 
    name, 
-   ctx): any;
+   ctx
+): any;
 ```
 
 Defined in: core/$Broken.ts:520
@@ -247,7 +250,8 @@ Defined in: core/$Broken.ts:598
 set(
    target, 
    name, 
-   value): boolean;
+   value
+): boolean;
 ```
 
 Defined in: core/$Broken.ts:588

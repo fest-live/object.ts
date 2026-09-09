@@ -5,7 +5,7 @@
  * property refs, delayed trigger behaviors, and the canonical dispatcher that
  * chooses the correct observable wrapper for arrays, objects, maps, and sets.
  */
-import { defaultByType, hasValue, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType } from "@fest-lib/core";
+import { defaultByType, hasValue, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType, isNotEqual } from "@fest-lib/core";
 import { $value, $behavior, $promise, $extractKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
 import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
@@ -146,8 +146,8 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     }
 
     //
-    const isMap = src instanceof Map || src instanceof WeakMap;
-    const isSet = src instanceof Set || src instanceof WeakSet;
+    const isMap = (src instanceof Map || src instanceof WeakMap) || (typeof (src as any)?.get == "function" && typeof (src as any)?.set == "function" && (typeof (src as any)?.delete == "function" || typeof (src as any)?.remove == "function"));
+    const isSet = (src instanceof Set || src instanceof WeakSet) || (typeof (src as any)?.has == "function" && typeof (src as any)?.add == "function" && (typeof (src as any)?.delete == "function" || typeof (src as any)?.remove == "function"));
 
     // Map/Set require an explicit slot key; arrays still reject invalid indexes.
     if (isMap || isSet) {
@@ -158,31 +158,43 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
 
     // INVARIANT: collection slots use Map/Set APIs, never bracket access on the container.
     const readSlot = () => {
-        if (isMap) return (src as unknown as Map<any, any>).get(srcProp as any);
-        if (isSet) return (src as unknown as Set<any>).has(srcProp as any);
+        if (isMap) return (src as unknown as Map<any, any>)?.get?.(srcProp as any);
+        if (isSet) return (src as unknown as Set<any>)?.has?.(srcProp as any) ? srcProp : null;
         return (src as any)?.[srcProp as any];
     };
     const writeSlot = (v: any) => {
         if (isMap) {
-            (src as unknown as Map<any, any>).set(srcProp as any, v);
+            if ((src as unknown as Map<any, any>)?.has?.(srcProp) && isNotEqual(v, (src as unknown as Map<any, any>)?.get?.(srcProp as any))) {
+                (src as unknown as Map<any, any>)?.set?.(srcProp as any, v);
+            }
             return v;
-        }
+        } else
         if (isSet) {
+            v ??= srcProp;
             // membership ref: truthy → ensure key present; falsy → remove
-            if (v) (src as unknown as Set<any>).add(srcProp as any);
-            else (src as unknown as Set<any>).delete(srcProp as any);
-            return (src as unknown as Set<any>).has(srcProp as any);
+            if (!(src as unknown as Set<any>)?.has?.(v as any) && v != null) {
+                (src as unknown as Set<any>)?.add?.(v as any); return v;
+            } else
+            if ((src as unknown as Set<any>)?.has?.(v as any)) {
+                if (v == null) 
+                { (src as unknown as Set<any>)?.delete?.(v as any); return v; }
+                else { return v; };
+            }
+        } else
+        if ((src as any)?.[srcProp as any] && isNotEqual(v, (src as any)?.[srcProp as any])) {
+            (src as any)[srcProp as any] = v;
         }
-        return ((src as any)[srcProp as any] = v);
+        return v;
     };
 
     // seed missing Map/Set slots from `initial` before first read
-    if (isMap && initial !== undefined && !(src as unknown as Map<any, any>).has(srcProp as any)) {
-        (src as unknown as Map<any, any>).set(srcProp as any, initial);
-    } else if (isSet && initial && !(src as unknown as Set<any>).has(srcProp as any)) {
-        (src as unknown as Set<any>).add(srcProp as any);
+    if (isMap && initial !== undefined && !(src as unknown as Map<any, any>)?.has?.(srcProp as any)) {
+        (src as unknown as Map<any, any>)?.set?.(srcProp as any, initial);
+    } else if (isSet && initial && !(src as unknown as Set<any>)?.has?.(srcProp as any)) {
+        (src as unknown as Set<any>)?.add?.(srcProp as any);
     }
 
+    //
     const current = readSlot();
 
     // isn't needed to proxy reactive value, it's already reactive
@@ -199,12 +211,17 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     // is regular object, isn't can be reactive (or reactive one-directional, not duplex), just return the value directly
     //if (srcProp && !isObservable(src)) { return src?.[srcProp]; } // commented line means enabled one directional reactivity
     //if (isReactive(src)) { src = recoverReactive(src); }; // recover no necessary, subscribe already checks if reactive
-
+ 
     // truly reflective for object / array / Map / Set slot
     if (!isMap && !isSet) {
-        ((src as any)[srcProp as any] ??= initial ?? (src as any)[srcProp as any]);
+        ((src as any)[srcProp as any] ??= initial ?? (src as any)?.[srcProp as any]);
+    } else if (isMap && isNotEqual(initial ?? (src as unknown as Map<any, any>)?.get?.(srcProp as any), (src as unknown as Map<any, any>)?.get?.(srcProp as any))) {
+        (src as unknown as Map<any, any>)?.set?.(srcProp as any, initial ?? (src as unknown as Map<any, any>)?.get?.(srcProp as any));
+    } else if (isSet && src?.has?.(initial ?? srcProp as any)) {
+        (src as unknown as Set<any>)?.add?.(initial ?? srcProp as any);
     }
 
+    //
     const r: any = observe({
         [$value]: isSet ? !!readSlot() : (readSlot() ?? initial),
         [$behavior]: behavior,
@@ -222,7 +239,7 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
         },
         get value() {
             const slot = readSlot();
-            return (this[$value] = isSet ? !!slot : (slot ?? this[$value]));
+            return (this[$value] = (slot ?? this[$value])); 
         }
     });
     markRealProp(r, srcProp);
@@ -231,12 +248,14 @@ export const propRef = <T = any>(src: observeValid<T>, srcProp: keyType | null =
     // for avoid potential infinite loop, when `src` is itself a reactive object
     // NOTE: Set triggers pass the member/null; normalize to boolean for the ref surface.
     const usb = affected(src, (v, _prop, old, trigger) => {
-        if (_prop === srcProp) {
-            const value = isSet ? (v != null) : v;
-            const oldValue = isSet ? (old != null) : old;
-            r?.[$trigger]?.({ key: srcProp, value, oldValue, trigger});
+        if (isNotEqual(_prop, srcProp)) {
+            //const value = isSet ? (v != null) : v;
+            //const oldValue = isSet ? (old != null) : old;
+            if (!isNotEqual(v, readSlot() ?? old)) { writeSlot(v); }
         }
     });
+
+    //
     addToCallChain(r, Symbol.dispose, usb);
     return r;
 }

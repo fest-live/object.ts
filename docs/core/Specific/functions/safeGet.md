@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,8 @@
 function safeGet<T>(
    obj, 
    key, 
-   rec?): T | null | undefined;
+   rec?
+): T | null | undefined;
 ```
 
 Defined in: core/Specific.ts:94

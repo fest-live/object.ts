@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -66,7 +66,8 @@ Defined in: core/Specific.ts:479
 get(
    target, 
    name, 
-   rec): any;
+   rec
+): any;
 ```
 
 Defined in: core/Specific.ts:391
@@ -121,7 +122,8 @@ Defined in: core/Specific.ts:387
 set(
    target, 
    name, 
-   value): any;
+   value
+): any;
 ```
 
 Defined in: core/Specific.ts:438

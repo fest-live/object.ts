@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,12 +10,13 @@
 function ref<T>(
    typed, 
    prop?, 
-   behavior?): T extends symbol | object | Function ? 
+   behavior?
+): T extends symbol | object | Function ? 
   | observeValid<T>
   | refType<T> : refType<T> & T extends symbol | object | Function ? T : any;
 ```
 
-Defined in: core/Primitives.ts:256
+Defined in: core/Primitives.ts:275
 
 Public ref helper that can either wrap a value or target one specific property.
 

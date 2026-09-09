@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -48,7 +48,8 @@ Defined in: core/Specific.ts:506
 apply(
    target, 
    ctx, 
-   args): unknown;
+   args
+): unknown;
 ```
 
 Defined in: core/Specific.ts:603
@@ -79,7 +80,8 @@ Defined in: core/Specific.ts:603
 construct(
    target, 
    args, 
-   newT): unknown;
+   newT
+): unknown;
 ```
 
 Defined in: core/Specific.ts:605
@@ -110,7 +112,8 @@ Defined in: core/Specific.ts:605
 defineProperty(
    target, 
    name, 
-   descriptor): any;
+   descriptor
+): any;
 ```
 
 Defined in: core/Specific.ts:670
@@ -165,7 +168,8 @@ Defined in: core/Specific.ts:713
 get(
    target, 
    name, 
-   ctx): any;
+   ctx
+): any;
 ```
 
 Defined in: core/Specific.ts:510
@@ -284,7 +288,8 @@ Defined in: core/Specific.ts:604
 set(
    target, 
    name, 
-   value): any;
+   value
+): any;
 ```
 
 Defined in: core/Specific.ts:625

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -11,7 +11,8 @@ function affected<Under>(
    obj, 
    prop, 
    cb?, 
-   options?): Function | undefined;
+   options?
+): Function | undefined;
 ```
 
 Defined in: core/Mainline.ts:165

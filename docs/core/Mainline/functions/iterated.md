@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,8 @@
 function iterated<T>(
    tg, 
    cb, 
-   options?): any;
+   options?
+): any;
 ```
 
 Defined in: core/Mainline.ts:369

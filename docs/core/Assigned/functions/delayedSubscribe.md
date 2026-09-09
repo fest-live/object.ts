@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,7 +10,8 @@
 function delayedSubscribe<Under>(
    ref, 
    cb, 
-delay?): observeValid<Under>;
+   delay?
+): observeValid<Under>;
 ```
 
 Defined in: core/Assigned.ts:349

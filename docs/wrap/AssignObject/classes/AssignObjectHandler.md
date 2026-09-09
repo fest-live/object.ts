@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -32,7 +32,8 @@ Defined in: wrap/AssignObject.ts:13
 apply(
    target, 
    ctx, 
-   args): unknown;
+   args
+): unknown;
 ```
 
 Defined in: wrap/AssignObject.ts:16
@@ -63,7 +64,8 @@ Defined in: wrap/AssignObject.ts:16
 construct(
    target, 
    args, 
-   newT): unknown;
+   newT
+): unknown;
 ```
 
 Defined in: wrap/AssignObject.ts:15
@@ -118,7 +120,8 @@ Defined in: wrap/AssignObject.ts:14
 get(
    target, 
    name, 
-   ctx): any;
+   ctx
+): any;
 ```
 
 Defined in: wrap/AssignObject.ts:19
@@ -173,7 +176,8 @@ Defined in: wrap/AssignObject.ts:17
 set(
    target, 
    name, 
-   value): boolean;
+   value
+): boolean;
 ```
 
 Defined in: wrap/AssignObject.ts:18

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.34**](../../../README.md)
+[**@fest-lib/object v0.1.36**](../../../README.md)
 
 ***
 
@@ -10,10 +10,11 @@
 function triggerWithDelay(
    ref, 
    cb, 
-   delay?): number | undefined;
+   delay?
+): number | undefined;
 ```
 
-Defined in: core/Primitives.ts:290
+Defined in: core/Primitives.ts:309
 
 Schedule a callback only if the ref/value is currently truthy.
 
