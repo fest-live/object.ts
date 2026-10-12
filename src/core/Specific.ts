@@ -600,7 +600,7 @@ export class ObserveObjectHandler<T=any> {
     }
 
     //
-    apply(target, ctx, args) { return Reflect.apply(target, ctx, args); }
+    apply(target, ctx, args) { return Reflect.apply(target?.[Symbol.for("@@apply")]?.bind?.(target?.[Symbol.for("@@apply")] ?? target) ?? target, ctx, args); }
     ownKeys(target) { return Reflect.ownKeys(target); }
     construct(target, args, newT) { return Reflect.construct(target, args, newT); }
     isExtensible(target) { return Reflect.isExtensible(target); }

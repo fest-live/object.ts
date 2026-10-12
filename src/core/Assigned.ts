@@ -298,28 +298,51 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     if (a_prop == null || isArrayInvalidKey(a_prop, src?.[0])) { return undefined as any; }
 
     //
-    const cmp = (v?: any)=>{
-        let oldValue: any = undefined;
-        if (v != undefined) {
-            oldValue = src[0][a_prop];
-            src[0][a_prop] = v;
+    let oldValue: any = undefined;
+    let oldArg: any = undefined;
+
+    //
+    const cmp = (arg?: any, force?: boolean)=>{
+        arg ??= src?.[0]?.[a_prop] ?? oldArg ?? arg;
+        if (force || isNotEqual(oldArg, arg) || oldValue == undefined) {
+            let nv = cb?.(arg, a_prop, oldArg); return nv;
         }
-        return cb?.(src?.[0]?.[a_prop], a_prop, oldValue);
+        return oldValue;
     };
 
     //
-    const initial = cmp();
-    const pendingInitial = isPromise(initial);
-    const rf: any = observe({
-        [$promise]: pendingInitial ? initial : undefined,
-        [$value]: pendingInitial ? undefined : initial,
-        [$behavior]: behavior,
-        [Symbol?.toStringTag]() { return String(cmp() ?? this[$value] ?? "") || ""; },
-        [Symbol?.toPrimitive](hint: any) { return tryParseByHint(cmp() ?? this[$value], hint); },
-        set value(v) { this[$value] = cmp(v); },
-        get value() { return (this[$value] = cmp() ?? this[$value]); }
-    });
+    const wrpFunc = (arg: any, prop: any = "value", oldArg$?: any, op?: any) => {
+        oldArg = oldArg$ ?? oldArg; arg ??= src?.[0]?.[a_prop];
+        if ((isNotEqual(oldArg, arg) || oldValue == undefined)) {
+            let nv = cb?.(arg, a_prop, oldArg, op); oldArg = arg;
+            if ((isNotEqual(nv, oldValue) || oldValue == undefined)) {
+                rf[prop] = (oldValue = nv); oldValue = rf[prop];
+            }
+            return nv;
+        }
+        return rf[prop];
+    };
 
+    //
+    const initial = cmp(src[0][a_prop] ?? oldArg);
+    const pendingInitial = isPromise(initial);
+
+    //
+    const $apply = Symbol.for("@@apply");
+    Object.defineProperty(wrpFunc, $promise, { value: initial, writable: true });
+    Object.defineProperty(wrpFunc, $value, { value: initial, writable: true });
+    Object.defineProperty(wrpFunc, $behavior, { value: behavior, writable: true });
+    Object.defineProperty(wrpFunc, Symbol?.toStringTag, { value: String(wrpFunc[$value] ?? "") || "", writable: true });
+    Object.defineProperty(wrpFunc, Symbol?.toPrimitive, { value: tryParseByHint(wrpFunc[$value], "number"), writable: true });
+    Object.defineProperty(wrpFunc, "value", {
+        enumerable: true,
+        get: function () { const cp = cmp(); if (cp != null) { wrpFunc[$value] = cp; }; return wrpFunc[$value]; }, 
+        set: function (v) { wrpFunc[$value] = cmp(v, true); }
+    });
+    Object.defineProperty(wrpFunc, $apply, { value: (v: any) => { return cb?.(v, a_prop, undefined); }, writable: true });
+ 
+    //
+    const rf: any = observe(wrpFunc);
     const writeComputed = (value: any, trigger: string) => {
         if (isPromise(value)) {
             return Promise.resolve(value).then((v) => {
@@ -335,12 +358,14 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
         return value;
     };
 
+    //
     if (pendingInitial) writeComputed(initial, "resolved");
 
     //
     const usb = affected([src?.[0] ?? src, a_prop ?? "value"], ()=>{
         writeComputed(cmp(), "manual");
     })
+
     //const usb = assign([rf, "value"], src, a_prop)
     addToCallChain(rf, Symbol.dispose, usb); return rf;
 }
