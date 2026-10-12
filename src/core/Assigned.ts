@@ -304,8 +304,8 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     //
     const cmp = (arg?: any, force?: boolean)=>{
         arg ??= src?.[0]?.[a_prop] ?? oldArg ?? arg;
-        if (force || isNotEqual(oldArg, arg) || oldValue == undefined) {
-            let nv = cb?.(arg, a_prop, oldArg); return nv;
+        if (force || (isNotEqual(oldArg, arg) && arg != undefined) || oldValue == undefined) {
+            let nv = cb?.(arg, a_prop, oldArg); oldValue = nv; return nv;
         }
         return oldValue;
     };
@@ -313,7 +313,7 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     //
     const wrpFunc = (arg: any, prop: any = "value", oldArg$?: any, op?: any) => {
         oldArg = oldArg$ ?? oldArg; arg ??= src?.[0]?.[a_prop];
-        if ((isNotEqual(oldArg, arg) || oldValue == undefined)) {
+        if ((isNotEqual(oldArg, arg) && arg != undefined || oldValue == undefined)) {
             let nv = cb?.(arg, a_prop, oldArg, op); oldArg = arg;
             if ((isNotEqual(nv, oldValue) || oldValue == undefined)) {
                 rf[prop] = (oldValue = nv); oldValue = rf[prop];
@@ -332,14 +332,17 @@ export const computed = <T = any, OT = T>(src: subValid<T>, cb?: Function | null
     Object.defineProperty(wrpFunc, $promise, { value: initial, writable: true });
     Object.defineProperty(wrpFunc, $value, { value: initial, writable: true });
     Object.defineProperty(wrpFunc, $behavior, { value: behavior, writable: true });
-    Object.defineProperty(wrpFunc, Symbol?.toStringTag, { value: String(wrpFunc[$value] ?? "") || "", writable: true });
-    Object.defineProperty(wrpFunc, Symbol?.toPrimitive, { value: tryParseByHint(wrpFunc[$value], "number"), writable: true });
+    Object.defineProperty(wrpFunc, Symbol?.toStringTag, { value: String(wrpFunc[$value] ?? "") || "", writable: false });
+    Object.defineProperty(wrpFunc, Symbol?.toPrimitive, { value: tryParseByHint(wrpFunc[$value], "number"), writable: false });
     Object.defineProperty(wrpFunc, "value", {
         enumerable: true,
         get: function () { const cp = cmp(); if (cp != null) { wrpFunc[$value] = cp; }; return wrpFunc[$value]; }, 
-        set: function (v) { wrpFunc[$value] = cmp(v, true); }
+        set: function (arg) { wrpFunc[$value] = cmp(arg, true); }
     });
-    Object.defineProperty(wrpFunc, $apply, { value: (v: any) => { return cb?.(v, a_prop, undefined); }, writable: true });
+    Object.defineProperty(wrpFunc, $apply, { value: (v?: any) => {
+        if (v == undefined) return rf?.value;
+        rf.value = v; return rf?.value;
+    }, writable: false });
  
     //
     const rf: any = observe(wrpFunc);
