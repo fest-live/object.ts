@@ -77,7 +77,7 @@ export const subscribeDirectly: subscript = (target: any, prop: keyType | null, 
     target = target?.[$extractKey$] ?? target;
 
     //
-    queueMicrotask(() => {
+    scheduler?.yield?.()?.then?.(() => {
         const initialCb = withTrigger(cb, options, initialTrigger);
         if (!initialCb) return;
         if (tProp != null && tProp != Symbol.iterator) { callByPropRefAware(target, tProp, initialCb, null); } else { callByAllProp(target, initialCb, null); }
