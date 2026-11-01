@@ -16,6 +16,154 @@ const __safeGetGuardSymbol = Symbol.for("object.ts@__safeGetGuard");
 const __safeSetGuardSymbol = Symbol.for("object.ts@__safeSetGuard");
 
 //
+const reactiveProperties = new WeakMap<object, Set<PropertyKey>>();
+
+function markReactiveProperty(target: object, key: PropertyKey) {
+    let keys = reactiveProperties.get(target);
+    if (!keys) reactiveProperties.set(target, keys = new Set());
+    keys.add(key);
+}
+
+export function isReactiveProperty(target: object, key: PropertyKey): boolean {
+    for (let current: object | null = target; current; current = Reflect.getPrototypeOf(current)) {
+        if (reactiveProperties.get(current)?.has(key)) return true;
+    }
+    return false;
+}
+
+function notifyReactiveProperty(
+    receiver: object,
+    owner: object,
+    key: PropertyKey,
+    oldValue: unknown,
+    newValue: unknown,
+) {
+    const registry =
+        subscriptRegistry.get(receiver) ??
+        subscriptRegistry.get(owner);
+
+    const triggerName = triggerKeyOf(receiver, key);
+    const unequal = safeGet(receiver, $isNotEqual) ?? isNotEqual;
+
+    if (unequal(oldValue, newValue)) {
+        registry?.trigger?.(triggerName, newValue, oldValue);
+    }
+
+    if (isPromise(newValue)) {
+        emitResolved(receiver, triggerName, newValue, oldValue);
+    }
+}
+
+export function defineReactiveProperty(
+    target: object,
+    key: PropertyKey,
+): boolean {
+    const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
+
+    // Нет собственного свойства, оно неконфигурируемое
+    // или data property доступно только для чтения.
+    if (!descriptor || !descriptor.configurable) return false;
+    if ("value" in descriptor && descriptor.writable === false) return false;
+    if (isReactiveProperty(target, key)) return true;
+
+    if ("value" in descriptor) {
+        const initialValue = descriptor.value;
+        const values = new WeakMap<object, unknown>();
+        values.set(target, initialValue);
+
+        const result = Reflect.defineProperty(target, key, {
+            enumerable: descriptor.enumerable,
+            configurable: true,
+
+            get(this: object) {
+                return values.has(this) ? values.get(this) : initialValue;
+            },
+
+            set(this: object, nextValue: unknown) {
+                const oldValue = values.has(this)
+                    ? values.get(this)
+                    : initialValue;
+
+                values.set(this, nextValue);
+                notifyReactiveProperty(this, target, key, oldValue, nextValue);
+            },
+        });
+
+        if (result) markReactiveProperty(target, key);
+        return result;
+    }
+
+    // Accessor property: сохраняем исходные getter/setter.
+    if (!descriptor.set) return false;
+
+    const lastAssigned = new WeakMap<object, unknown>();
+    const result = Reflect.defineProperty(target, key, {
+        ...descriptor,
+
+        get: descriptor.get
+            ? function (this: object) {
+                return descriptor.get!.call(this);
+            }
+            : undefined,
+
+        set: function (this: object, nextValue: unknown) {
+            const oldValue = descriptor.get
+                ? descriptor.get.call(this)
+                : lastAssigned.get(this);
+
+            descriptor.set!.call(this, nextValue);
+
+            const actualValue = descriptor.get
+                ? descriptor.get.call(this)
+                : nextValue;
+
+            if (!descriptor.get) lastAssigned.set(this, actualValue);
+
+            notifyReactiveProperty(
+                this,
+                target,
+                key,
+                oldValue,
+                actualValue,
+            );
+        },
+    });
+
+    if (result) markReactiveProperty(target, key);
+    return result;
+}
+
+export function reactive<This extends object, Value>(
+    accessor: ClassAccessorDecoratorTarget<This, Value>,
+    context: ClassAccessorDecoratorContext<This, Value>,
+): ClassAccessorDecoratorResult<This, Value> {
+    context.addInitializer(function (this: This) {
+        markReactiveProperty(this, context.name);
+    });
+
+    return {
+        get(this: This) {
+            return accessor.get.call(this);
+        },
+
+        set(this: This, nextValue: Value) {
+            const oldValue = accessor.get.call(this);
+
+            accessor.set.call(this, nextValue);
+
+            const actualValue = accessor.get.call(this);
+            notifyReactiveProperty(
+                this,
+                this,
+                context.name,
+                oldValue,
+                actualValue,
+            );
+        },
+    };
+}
+
+//
 const __systemSkip = new Set<any>([
     Symbol.toStringTag,
     Symbol.iterator,
@@ -655,7 +803,11 @@ export class ObserveObjectHandler<T=any> {
             if (typeof name == "symbol" && !(safeGet(target, name) != null && name in target)) return;
             const triggerName = triggerKeyOf(target, name);
             const oldValue = name == "value" ? (safeGet(target, $value) ?? safeGet(target, name)) : safeGet(target, name); target[name] = v; const newValue = safeGet(target, name) ?? v;
-            if (!this[$triggerLock] && typeof name != "symbol") {
+            if (
+                !this[$triggerLock] &&
+                typeof name !== "symbol" &&
+                !isReactiveProperty($original, name)
+            ) {
                 const subscript = subscriptRegistry.get(target) ?? subscriptRegistry.get($original);
                 if ((safeGet(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) {
                     subscript?.trigger?.(triggerName, v, oldValue);
