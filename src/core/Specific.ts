@@ -20,6 +20,11 @@ const __safeSetGuardSymbol = Symbol.for("object.ts@__safeSetGuard");
 const reactivePropertiesSymbol = Symbol.for("object.ts@reactiveProperties");
 const reactiveProperties = (globalThis[reactivePropertiesSymbol] ??= new WeakMap<object, Set<PropertyKey>>());
 
+//
+const reactiveMethodsSymbol = Symbol.for("object.ts@reactiveMethods");
+const reactiveMethods = (globalThis[reactiveMethodsSymbol] ??= new WeakMap<object, Set<PropertyKey>>());
+
+
 function markReactiveProperty(target: object, key: PropertyKey) {
     let keys = reactiveProperties.get(target);
     if (!keys) reactiveProperties.set(target, keys = new Set());
@@ -171,6 +176,129 @@ export function reactive<This extends object, Value>(
         },
     };
 }
+
+
+
+type ReactiveMethodAdapter<T extends object> = {
+    snapshot(target: T): unknown;
+
+    notify(
+        target: T,
+        key: PropertyKey,
+        args: unknown[],
+        before: unknown,
+        after: unknown,
+        result: unknown,
+    ): void;
+};
+
+
+function isReactiveMethod(target: object, key: PropertyKey): boolean {
+    return reactiveMethods.get(target)?.has(key) ?? false;
+}
+
+function markReactiveMethod(target: object, key: PropertyKey): void {
+    let keys = reactiveMethods.get(target);
+    if (!keys) reactiveMethods.set(target, keys = new Set());
+    keys.add(key);
+}
+
+/**
+ * Replaces a method with an instance-level wrapper that snapshots state
+ * and lets a collection-specific adapter emit normalized events.
+ */
+export function defineReactiveMethod<T extends object>(
+    target: T,
+    key: PropertyKey,
+    adapter: ReactiveMethodAdapter<T>,
+): boolean {
+    if (isReactiveMethod(target, key)) return true;
+
+    const ownDescriptor = Reflect.getOwnPropertyDescriptor(target, key);
+    const original = Reflect.get(target, key, target);
+
+    if (typeof original !== "function") return false;
+
+    // A method inherited from Array.prototype / Map.prototype / Set.prototype
+    // can be shadowed only if the instance is extensible.
+    if (!ownDescriptor && !Object.isExtensible(target)) return false;
+
+    // Preserve ordinary data-method descriptors. Accessor methods need
+    // a separate policy because replacing them changes getter/setter behavior.
+    if (ownDescriptor && !("value" in ownDescriptor)) return false;
+
+    // A non-configurable, non-writable own method cannot be replaced.
+    if (ownDescriptor && !ownDescriptor.configurable && !ownDescriptor.writable) {
+        return false;
+    }
+
+    const wrapped = function (this: unknown, ...args: unknown[]) {
+        // Use the original object as receiver. This matters for Map/Set:
+        // native methods require a genuine collection, not a Proxy.
+        const before = adapter.snapshot(target);
+        let result: unknown;
+
+        try {
+            result = Reflect.apply(original, target, args);
+        } finally {
+            const after = adapter.snapshot(target);
+
+            if (!safeGet(target, $triggerLock)) {
+                adapter.notify(target, key, args, before, after, result);
+            }
+        }
+
+        // Preserve the common fluent API: sort/reverse and Map.set/Set.add
+        // return the collection itself.
+        return result === target ? target : result;
+    };
+
+    const descriptor: PropertyDescriptor = ownDescriptor
+        ? { ...ownDescriptor, value: wrapped }
+        : {
+            value: wrapped,
+            writable: true,
+            configurable: true,
+            enumerable: false,
+        };
+
+    if (!Reflect.defineProperty(target, key, descriptor)) return false;
+
+    markReactiveMethod(target, key);
+    return true;
+}
+
+export function reactiveMethod<T extends object>(adapter: ReactiveMethodAdapter<T>,) {
+    return function <This extends T, Args extends unknown[], Result>(
+        original: (this: This, ...args: Args) => Result,
+        _context: ClassMethodDecoratorContext<This>,
+    ) {
+        return function (this: This, ...args: Args): Result {
+            const before = adapter.snapshot(this);
+            let result: Result;
+
+            try {
+                result = original.apply(this, args);
+            } finally {
+                const after = adapter.snapshot(this);
+
+                if (!safeGet(this, $triggerLock)) {
+                    adapter.notify(
+                        this,
+                        _context.name,
+                        args,
+                        before,
+                        after,
+                        undefined,
+                    );
+                }
+            }
+
+            return result;
+        };
+    };
+}
+
 
 //
 const __systemSkip = new Set<any>([
