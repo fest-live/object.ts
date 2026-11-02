@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Class: ObserveMapHandler\<K, V\>
 
-Defined in: core/Specific.ts:903
+Defined in: core/Specific.ts:1031
 
 Proxy handler for observable maps, mapping native map operations to trigger events.
 
@@ -28,7 +28,7 @@ Proxy handler for observable maps, mapping native map operations to trigger even
 new ObserveMapHandler<K, V>(): ObserveMapHandler<K, V>;
 ```
 
-Defined in: core/Specific.ts:905
+Defined in: core/Specific.ts:1033
 
 #### Returns
 
@@ -42,7 +42,7 @@ Defined in: core/Specific.ts:905
 optional [$triggerLock]?: boolean;
 ```
 
-Defined in: core/Specific.ts:904
+Defined in: core/Specific.ts:1032
 
 ## Methods
 
@@ -56,7 +56,7 @@ apply(
 ): unknown;
 ```
 
-Defined in: core/Specific.ts:1005
+Defined in: core/Specific.ts:1133
 
 #### Parameters
 
@@ -88,7 +88,7 @@ construct(
 ): unknown;
 ```
 
-Defined in: core/Specific.ts:1006
+Defined in: core/Specific.ts:1134
 
 #### Parameters
 
@@ -116,7 +116,7 @@ Defined in: core/Specific.ts:1006
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:1026
+Defined in: core/Specific.ts:1154
 
 #### Parameters
 
@@ -144,7 +144,7 @@ get(
 ): any;
 ```
 
-Defined in: core/Specific.ts:908
+Defined in: core/Specific.ts:1036
 
 #### Parameters
 
@@ -172,7 +172,7 @@ Defined in: core/Specific.ts:908
 getOwnPropertyDescriptor(target, key): TypedPropertyDescriptor<any> | undefined;
 ```
 
-Defined in: core/Specific.ts:1011
+Defined in: core/Specific.ts:1139
 
 #### Parameters
 
@@ -196,7 +196,7 @@ Defined in: core/Specific.ts:1011
 has(target, prop): boolean;
 ```
 
-Defined in: core/Specific.ts:1004
+Defined in: core/Specific.ts:1132
 
 #### Parameters
 
@@ -220,7 +220,7 @@ Defined in: core/Specific.ts:1004
 isExtensible(target): boolean;
 ```
 
-Defined in: core/Specific.ts:1008
+Defined in: core/Specific.ts:1136
 
 #### Parameters
 
@@ -240,7 +240,7 @@ Defined in: core/Specific.ts:1008
 ownKeys(target): (string | symbol)[];
 ```
 
-Defined in: core/Specific.ts:1007
+Defined in: core/Specific.ts:1135
 
 #### Parameters
 
@@ -264,7 +264,7 @@ set(
 ): boolean;
 ```
 
-Defined in: core/Specific.ts:997
+Defined in: core/Specific.ts:1125
 
 #### Parameters
 

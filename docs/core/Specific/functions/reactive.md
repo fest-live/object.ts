@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function reactive<This, Value>(accessor, context): ClassAccessorDecoratorResult<This, Value>;
 ```
 
-Defined in: core/Specific.ts:145
+Defined in: core/Specific.ts:150
 
 ## Type Parameters
 

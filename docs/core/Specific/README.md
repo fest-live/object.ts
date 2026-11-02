@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../README.md)
+[**@fest-lib/object v0.1.48**](../../README.md)
 
 ***
 
@@ -17,6 +17,7 @@
 ## Functions
 
 - [$isObservable](functions/$isObservable.md)
+- [defineReactiveMethod](functions/defineReactiveMethod.md)
 - [defineReactiveProperty](functions/defineReactiveProperty.md)
 - [fallThrough](functions/fallThrough.md)
 - [isReactiveProperty](functions/isReactiveProperty.md)
@@ -26,5 +27,6 @@
 - [observeObject](functions/observeObject.md)
 - [observeSet](functions/observeSet.md)
 - [reactive](functions/reactive.md)
+- [reactiveMethod](functions/reactiveMethod.md)
 - [safeGet](functions/safeGet.md)
 - [safeSet](functions/safeSet.md)

@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Class: ObserveArrayHandler
 
-Defined in: core/Specific.ts:538
+Defined in: core/Specific.ts:666
 
 Proxy handler for observable arrays, including index writes and mutation methods.
 
@@ -18,7 +18,7 @@ Proxy handler for observable arrays, including index writes and mutation methods
 new ObserveArrayHandler(): ObserveArrayHandler;
 ```
 
-Defined in: core/Specific.ts:540
+Defined in: core/Specific.ts:668
 
 #### Returns
 
@@ -32,7 +32,7 @@ Defined in: core/Specific.ts:540
 optional [$triggerLock]?: boolean;
 ```
 
-Defined in: core/Specific.ts:539
+Defined in: core/Specific.ts:667
 
 ## Methods
 
@@ -42,7 +42,7 @@ Defined in: core/Specific.ts:539
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:636
+Defined in: core/Specific.ts:764
 
 #### Parameters
 
@@ -70,7 +70,7 @@ get(
 ): any;
 ```
 
-Defined in: core/Specific.ts:548
+Defined in: core/Specific.ts:676
 
 #### Parameters
 
@@ -98,7 +98,7 @@ Defined in: core/Specific.ts:548
 has(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:544
+Defined in: core/Specific.ts:672
 
 #### Parameters
 
@@ -126,7 +126,7 @@ set(
 ): any;
 ```
 
-Defined in: core/Specific.ts:595
+Defined in: core/Specific.ts:723
 
 #### Parameters
 

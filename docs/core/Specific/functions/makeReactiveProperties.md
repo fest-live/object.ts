@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function makeReactiveProperties(obj): void;
 ```
 
-Defined in: core/Specific.ts:1143
+Defined in: core/Specific.ts:1271
 
 ## Parameters
 

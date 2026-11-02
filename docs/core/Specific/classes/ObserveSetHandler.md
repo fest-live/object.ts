@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Class: ObserveSetHandler\<T\>
 
-Defined in: core/Specific.ts:1034
+Defined in: core/Specific.ts:1162
 
 Proxy handler for observable sets, emitting membership changes as reactive events.
 
@@ -24,7 +24,7 @@ Proxy handler for observable sets, emitting membership changes as reactive event
 new ObserveSetHandler<T>(): ObserveSetHandler<T>;
 ```
 
-Defined in: core/Specific.ts:1036
+Defined in: core/Specific.ts:1164
 
 #### Returns
 
@@ -38,7 +38,7 @@ Defined in: core/Specific.ts:1036
 optional [$triggerLock]?: boolean = false;
 ```
 
-Defined in: core/Specific.ts:1035
+Defined in: core/Specific.ts:1163
 
 ## Methods
 
@@ -52,7 +52,7 @@ apply(
 ): unknown;
 ```
 
-Defined in: core/Specific.ts:1109
+Defined in: core/Specific.ts:1237
 
 #### Parameters
 
@@ -84,7 +84,7 @@ construct(
 ): unknown;
 ```
 
-Defined in: core/Specific.ts:1110
+Defined in: core/Specific.ts:1238
 
 #### Parameters
 
@@ -112,7 +112,7 @@ Defined in: core/Specific.ts:1110
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:1130
+Defined in: core/Specific.ts:1258
 
 #### Parameters
 
@@ -140,7 +140,7 @@ get(
 ): any;
 ```
 
-Defined in: core/Specific.ts:1039
+Defined in: core/Specific.ts:1167
 
 #### Parameters
 
@@ -168,7 +168,7 @@ Defined in: core/Specific.ts:1039
 getOwnPropertyDescriptor(target, key): TypedPropertyDescriptor<any> | undefined;
 ```
 
-Defined in: core/Specific.ts:1115
+Defined in: core/Specific.ts:1243
 
 #### Parameters
 
@@ -192,7 +192,7 @@ Defined in: core/Specific.ts:1115
 has(target, prop): boolean;
 ```
 
-Defined in: core/Specific.ts:1108
+Defined in: core/Specific.ts:1236
 
 #### Parameters
 
@@ -216,7 +216,7 @@ Defined in: core/Specific.ts:1108
 isExtensible(target): boolean;
 ```
 
-Defined in: core/Specific.ts:1112
+Defined in: core/Specific.ts:1240
 
 #### Parameters
 
@@ -236,7 +236,7 @@ Defined in: core/Specific.ts:1112
 ownKeys(target): (string | symbol)[];
 ```
 
-Defined in: core/Specific.ts:1111
+Defined in: core/Specific.ts:1239
 
 #### Parameters
 
@@ -260,7 +260,7 @@ set(
 ): boolean;
 ```
 
-Defined in: core/Specific.ts:1101
+Defined in: core/Specific.ts:1229
 
 #### Parameters
 

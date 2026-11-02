@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function $isObservable(target): boolean;
 ```
 
-Defined in: core/Specific.ts:1138
+Defined in: core/Specific.ts:1266
 
 Lightweight internal check used before wrapping a target again.
 

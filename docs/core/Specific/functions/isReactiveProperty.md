@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.47**](../../../README.md)
+[**@fest-lib/object v0.1.48**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function isReactiveProperty(target, key): boolean;
 ```
 
-Defined in: core/Specific.ts:29
+Defined in: core/Specific.ts:34
 
 ## Parameters
 
