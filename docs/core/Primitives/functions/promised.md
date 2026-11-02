@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.45**](../../../README.md)
+[**@fest-lib/object v0.1.46**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function promised(promise, behavior?): any;
 ```
 
-Defined in: core/Primitives.ts:300
+Defined in: core/Primitives.ts:304
 
 Backward-compatible alias for `ref()` when the source is a promise-like value.
 

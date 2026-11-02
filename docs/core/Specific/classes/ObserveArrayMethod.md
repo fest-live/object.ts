@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.45**](../../../README.md)
+[**@fest-lib/object v0.1.46**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Class: ObserveArrayMethod
 
-Defined in: core/Specific.ts:242
+Defined in: core/Specific.ts:393
 
 Wrap mutating array methods so they emit normalized add/set/delete events.
 
@@ -22,7 +22,7 @@ new ObserveArrayMethod(
 ): ObserveArrayMethod;
 ```
 
-Defined in: core/Specific.ts:244
+Defined in: core/Specific.ts:395
 
 #### Parameters
 
@@ -54,7 +54,7 @@ apply(
 ): any;
 ```
 
-Defined in: core/Specific.ts:258
+Defined in: core/Specific.ts:409
 
 #### Parameters
 
@@ -86,7 +86,7 @@ get(
 ): any;
 ```
 
-Defined in: core/Specific.ts:251
+Defined in: core/Specific.ts:402
 
 #### Parameters
 

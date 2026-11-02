@@ -12,11 +12,13 @@ import type { keyType, MapLike, observeValid, SetLike } from "../wrap/Utils";
 import { bindCtx, hasValue, isNotEqual, isPrimitive, isPromise, makeTriggerLess, potentiallyAsync, potentiallyAsyncMap, tryParseByHint } from "@fest-lib/core";
 import { bindExistingThenables, emitResolved, makeResolvedOp } from "./Resolved";
 
+//
 const __safeGetGuardSymbol = Symbol.for("object.ts@__safeGetGuard");
 const __safeSetGuardSymbol = Symbol.for("object.ts@__safeSetGuard");
-
+ 
 //
-const reactiveProperties = new WeakMap<object, Set<PropertyKey>>();
+const reactivePropertiesSymbol = Symbol.for("object.ts@reactiveProperties");
+const reactiveProperties = (globalThis[reactivePropertiesSymbol] ??= new WeakMap<object, Set<PropertyKey>>());
 
 function markReactiveProperty(target: object, key: PropertyKey) {
     let keys = reactiveProperties.get(target);
@@ -99,12 +101,13 @@ export function defineReactiveProperty(
     const lastAssigned = new WeakMap<object, unknown>();
     const result = Reflect.defineProperty(target, key, {
         ...descriptor,
-
+        configurable: true,
+        enumerable: descriptor.enumerable,
         get: descriptor.get
             ? function (this: object) {
                 return descriptor.get!.call(this);
             }
-            : undefined,
+            : (lastAssigned.get(this) as any),
 
         set: function (this: object, nextValue: unknown) {
             const oldValue = descriptor.get
@@ -1130,23 +1133,40 @@ export const $isObservable = (target: any) => {
     return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected]));
 }
 
+//
+export const makeReactiveProperties = (obj: any)=>{
+    if (Array.isArray(obj)) {
+        const entries = obj.entries();
+        for (const [key, value] of entries) {
+            defineReactiveProperty(obj, key);
+        }
+    } else 
+    if (obj != null && (typeof obj == "object" || typeof obj == "function")) {
+        const entries = Object.entries(obj);
+        for (const [key, value] of entries) {
+            defineReactiveProperty(obj, key);
+        }
+    }
+}
+
+
 /** Wrap an array with the array-specific observable proxy. */
 export const observeArray  = <T = any>(arr: T[]): observeValid<T[]> => {
-    if ($isObservable(arr)) return arr;
+    if ($isObservable(arr)) return arr; makeReactiveProperties(arr);
     return bindExistingThenables(wrapWith(arr, new ObserveArrayHandler()), arr);
 };
 /** Wrap an object with the object-specific observable proxy. */
 export const observeObject = <T = any>(obj: T): observeValid<T> => {
-    if ($isObservable(obj)) return obj as observeValid<T>;
+    if ($isObservable(obj)) return obj as observeValid<T>; makeReactiveProperties(obj);
     return bindExistingThenables(wrapWith(obj, new ObserveObjectHandler()), obj);
 };
 /** Wrap a map with the map-specific observable proxy. */
 export const observeMap    = <K = any, V = any, T extends MapLike<K, V> = Map<K, V>>(map: T): observeValid<T> => {
-    if ($isObservable(map)) return map;
+    if ($isObservable(map)) return map; makeReactiveProperties(map);
     return bindExistingThenables(wrapWith(map, new ObserveMapHandler()), map);
 };
 /** Wrap a set with the set-specific observable proxy. */
 export const observeSet    = <K = any, V = any, T extends SetLike<K, V> = Set<K>>(set: T): observeValid<T> => {
-    if ($isObservable(set)) return set;
+    if ($isObservable(set)) return set; makeReactiveProperties(set);
     return wrapWith(set, new ObserveSetHandler());
 };

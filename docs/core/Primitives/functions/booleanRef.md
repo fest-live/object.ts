@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.45**](../../../README.md)
+[**@fest-lib/object v0.1.46**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function booleanRef(initial?, behavior?): any;
 ```
 
-Defined in: core/Primitives.ts:71
+Defined in: core/Primitives.ts:73
 
 Boolean ref with truthy/falsy coercion and optional promise initialization.
 

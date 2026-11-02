@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.45**](../../../README.md)
+[**@fest-lib/object v0.1.46**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function safeSet<T>(
 ): boolean;
 ```
 
-Defined in: core/Specific.ts:83
+Defined in: core/Specific.ts:234
 
 Safe setter with re-entrancy protection to avoid recursive accessor loops.
 

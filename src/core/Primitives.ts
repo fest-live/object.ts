@@ -8,7 +8,7 @@
 import { defaultByType, hasValue, isPrimitive, $triggerLock, tryParseByHint, isArrayInvalidKey, type keyType, isNotEqual } from "@fest-lib/core";
 import { $value, $behavior, $promise, $extractKey$, $affected, $trigger, $realProp } from "../wrap/Symbol";
 import { addToCallChain, deref, type MethodsOf, type observeValid, type WeakKey } from "../wrap/Utils";
-import { $isObservable, observeArray, observeMap, observeObject, observeSet } from "./Specific";
+import { $isObservable, defineReactiveProperty, observeArray, observeMap, observeObject, observeSet } from "./Specific";
 import { subscriptRegistry } from "./Subscript";
 import { affected } from "./Mainline";
 
@@ -39,6 +39,7 @@ export const numberRef = (initial?: number|null|undefined|Promise<number>, behav
         set value(v: any) { this[$value] = ((v != null && !Number.isNaN(v)) ? Number(v) : this[$value]) || 0; },
         get value() { return Number(this[$value] || 0) || 0; }
     };
+    defineReactiveProperty(obj, "value");
     const $r = observe(obj) as observeValid<refType<number>>;
     (initial as unknown as Promise<number>)?.then?.((v) => {
         $r.value = v;
@@ -59,6 +60,7 @@ export const stringRef = (initial?: string|null|undefined|Promise<string>, behav
         set value(v: any) { this[$value] = String(typeof v == "number" ? String(v) : (v || "")) ?? ""; },
         get value() { return String(this[$value] ?? "") ?? ""; },
     };
+    defineReactiveProperty(obj, "value");
     const $r = observe(obj) as observeValid<refType<string>>;
     (initial as unknown as Promise<string>)?.then?.((v) => {
         $r.value = v;
@@ -79,6 +81,7 @@ export const booleanRef = (initial?: boolean|null|undefined|Promise<boolean>, be
         set value(v: any) { this[$value] = (v != null ? (typeof v == "string" ? true : !!v) : this[$value]) || false; },
         get value() { return this[$value] || false; }
     };
+    defineReactiveProperty(obj, "value");
     const $r = observe(obj) as observeValid<refType<boolean>>;
     (initial as unknown as Promise<boolean>)?.then?.((v) => {
         $r.value = v;
@@ -97,6 +100,7 @@ export const wrapRef = <T = any>(initial?: T|null|undefined|Promise<T>, behavior
         [Symbol?.toPrimitive](hint: any) { return tryParseByHint(this.value, hint); },
         value: isPromise ? null : deref(initial)
     };
+    defineReactiveProperty(obj, "value");
     const $r = observe(obj) as observeValid<refType<T>>;
     (initial as unknown as Promise<T>)?.then?.((v) => {
         $r.value = v;

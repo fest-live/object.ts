@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.45**](../../../README.md)
+[**@fest-lib/object v0.1.46**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function wrapRef<T>(initial?, behavior?): observeValid<refType<T>>;
 ```
 
-Defined in: core/Primitives.ts:91
+Defined in: core/Primitives.ts:94
 
 Generic ref wrapper for values that do not need one of the specialized primitive ref shapes.
 

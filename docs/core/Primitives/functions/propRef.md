@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.45**](../../../README.md)
+[**@fest-lib/object v0.1.46**](../../../README.md)
 
 ***
 
@@ -15,7 +15,7 @@ function propRef<T>(
 ): any;
 ```
 
-Defined in: core/Primitives.ts:133
+Defined in: core/Primitives.ts:137
 
 Create a reactive reference to one property/slot of an observable source.
 
