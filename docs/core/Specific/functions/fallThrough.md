@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.46**](../../../README.md)
+[**@fest-lib/object v0.1.47**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function fallThrough(obj, key): any;
 ```
 
-Defined in: core/Specific.ts:215
+Defined in: core/Specific.ts:221
 
 Follow `.value` chains when a wrapper stores the actual object one level deeper.
 

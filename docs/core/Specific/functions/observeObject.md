@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.46**](../../../README.md)
+[**@fest-lib/object v0.1.47**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function observeObject<T>(obj): observeValid<T>;
 ```
 
-Defined in: core/Specific.ts:1159
+Defined in: core/Specific.ts:1165
 
 Wrap an object with the object-specific observable proxy.
 

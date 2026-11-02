@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.46**](../../../README.md)
+[**@fest-lib/object v0.1.47**](../../../README.md)
 
 ***
 
@@ -10,7 +10,7 @@
 function observeArray<T>(arr): observeValid<T[]>;
 ```
 
-Defined in: core/Specific.ts:1154
+Defined in: core/Specific.ts:1160
 
 Wrap an array with the array-specific observable proxy.
 

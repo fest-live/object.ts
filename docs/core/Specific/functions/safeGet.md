@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.46**](../../../README.md)
+[**@fest-lib/object v0.1.47**](../../../README.md)
 
 ***
 
@@ -14,7 +14,7 @@ function safeGet<T>(
 ): T | null | undefined;
 ```
 
-Defined in: core/Specific.ts:245
+Defined in: core/Specific.ts:251
 
 Safe getter with re-entrancy protection to avoid recursive accessor loops.
 

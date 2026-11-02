@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.46**](../../../README.md)
+[**@fest-lib/object v0.1.47**](../../../README.md)
 
 ***
 
@@ -6,7 +6,7 @@
 
 # Class: ObserveObjectHandler\<T\>
 
-Defined in: core/Specific.ts:656
+Defined in: core/Specific.ts:662
 
 Proxy handler for observable objects and ref-like `{ value }` containers.
 
@@ -24,7 +24,7 @@ Proxy handler for observable objects and ref-like `{ value }` containers.
 new ObserveObjectHandler<T>(): ObserveObjectHandler<T>;
 ```
 
-Defined in: core/Specific.ts:658
+Defined in: core/Specific.ts:664
 
 #### Returns
 
@@ -38,7 +38,7 @@ Defined in: core/Specific.ts:658
 optional [$triggerLock]?: boolean;
 ```
 
-Defined in: core/Specific.ts:657
+Defined in: core/Specific.ts:663
 
 ## Methods
 
@@ -52,7 +52,7 @@ apply(
 ): unknown;
 ```
 
-Defined in: core/Specific.ts:754
+Defined in: core/Specific.ts:760
 
 #### Parameters
 
@@ -84,7 +84,7 @@ construct(
 ): unknown;
 ```
 
-Defined in: core/Specific.ts:756
+Defined in: core/Specific.ts:762
 
 #### Parameters
 
@@ -116,7 +116,7 @@ defineProperty(
 ): any;
 ```
 
-Defined in: core/Specific.ts:825
+Defined in: core/Specific.ts:831
 
 #### Parameters
 
@@ -144,7 +144,7 @@ Defined in: core/Specific.ts:825
 deleteProperty(target, name): boolean;
 ```
 
-Defined in: core/Specific.ts:868
+Defined in: core/Specific.ts:874
 
 #### Parameters
 
@@ -172,7 +172,7 @@ get(
 ): any;
 ```
 
-Defined in: core/Specific.ts:661
+Defined in: core/Specific.ts:667
 
 #### Parameters
 
@@ -200,7 +200,7 @@ Defined in: core/Specific.ts:661
 getOwnPropertyDescriptor(target, key): TypedPropertyDescriptor<any> | undefined;
 ```
 
-Defined in: core/Specific.ts:760
+Defined in: core/Specific.ts:766
 
 #### Parameters
 
@@ -224,7 +224,7 @@ Defined in: core/Specific.ts:760
 has(target, prop): boolean;
 ```
 
-Defined in: core/Specific.ts:775
+Defined in: core/Specific.ts:781
 
 #### Parameters
 
@@ -248,7 +248,7 @@ Defined in: core/Specific.ts:775
 isExtensible(target): boolean;
 ```
 
-Defined in: core/Specific.ts:757
+Defined in: core/Specific.ts:763
 
 #### Parameters
 
@@ -268,7 +268,7 @@ Defined in: core/Specific.ts:757
 ownKeys(target): (string | symbol)[];
 ```
 
-Defined in: core/Specific.ts:755
+Defined in: core/Specific.ts:761
 
 #### Parameters
 
@@ -292,7 +292,7 @@ set(
 ): any;
 ```
 
-Defined in: core/Specific.ts:776
+Defined in: core/Specific.ts:782
 
 #### Parameters
 

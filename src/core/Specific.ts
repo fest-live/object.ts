@@ -59,6 +59,7 @@ function notifyReactiveProperty(
 export function defineReactiveProperty(
     target: object,
     key: PropertyKey,
+    value?: any
 ): boolean {
     const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
 
@@ -98,16 +99,12 @@ export function defineReactiveProperty(
     // Accessor property: сохраняем исходные getter/setter.
     if (!descriptor.set) return false;
 
+    //
     const lastAssigned = new WeakMap<object, unknown>();
-    const result = Reflect.defineProperty(target, key, {
+    const propertyDesc = {
         ...descriptor,
         configurable: true,
         enumerable: descriptor.enumerable,
-        get: descriptor.get
-            ? function (this: object) {
-                return descriptor.get!.call(this);
-            }
-            : (lastAssigned.get(this) as any),
 
         set: function (this: object, nextValue: unknown) {
             const oldValue = descriptor.get
@@ -130,7 +127,16 @@ export function defineReactiveProperty(
                 actualValue,
             );
         },
-    });
+    };
+
+    if (descriptor.get) {
+        propertyDesc.get = function (this: object) {
+            return descriptor.get!.call(this);
+        }
+    }
+
+    if (value !== undefined && typeof value != "undefined") { lastAssigned.set(target, value); };
+    const result = Reflect.defineProperty(target, key, propertyDesc);
 
     if (result) markReactiveProperty(target, key);
     return result;

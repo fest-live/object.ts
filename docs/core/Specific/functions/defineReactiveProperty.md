@@ -1,4 +1,4 @@
-[**@fest-lib/object v0.1.46**](../../../README.md)
+[**@fest-lib/object v0.1.47**](../../../README.md)
 
 ***
 
@@ -7,7 +7,11 @@
 # Function: defineReactiveProperty()
 
 ```ts
-function defineReactiveProperty(target, key): boolean;
+function defineReactiveProperty(
+   target, 
+   key, 
+   value?
+): boolean;
 ```
 
 Defined in: core/Specific.ts:59
@@ -21,6 +25,10 @@ Defined in: core/Specific.ts:59
 ### key
 
 `PropertyKey`
+
+### value?
+
+`any`
 
 ## Returns
 
