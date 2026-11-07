@@ -1,7 +1,7 @@
 {
     "name": "@fest-lib/object",
     "description": "fest-lib reactivity: observe, affected, refs, computed, collection proxies",
-    "version": "0.1.49",
+    "version": "0.1.50",
     "license": "MIT",
     "type": "module",
     "sideEffects": false,
@@ -71,13 +71,13 @@
         "docs:md:clean": "rm -rf ./docs-md && typedoc --options ./typedoc.md.json"
     },
     "devDependencies": {
-        "@puppeteer/browsers": "^3.2.2",
+        "@puppeteer/browsers": ">=3.2.2",
         "@types/node": ">=26.4.1",
-        "puppeteer": "^25.10.0",
-        "typedoc": "^0.28.20",
-        "typedoc-plugin-markdown": "^4.13.0",
-        "typescript": "^6.0.3",
-        "vite": "^8.2.2",
+        "puppeteer": ">=25.10.0",
+        "typedoc": ">=0.23.25",
+        "typedoc-plugin-markdown": ">=3.17.1",
+        "typescript": ">=6.0.3",
+        "vite": ">=8.2.2",
         "vite-plugin-dynamic-import": ">=1.6.0",
         "vite-plugin-external": ">=8.0.3",
         "vite-plugin-optimizer": ">=1.4.3"
