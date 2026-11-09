@@ -275,7 +275,7 @@ export function wrapSetAsArray<T>(
             const toPrepend: T[] = [];
 
             for (const item of items) {
-                if (current.includes(item) || toPrepend.includes(item)) {
+                if (current?.includes?.(item) || toPrepend?.includes?.(item)) {
                     notifyDuplicate(item, 'unshift', 0);
                     continue;
                 }
@@ -300,7 +300,7 @@ export function wrapSetAsArray<T>(
 
             let insertPosition = normalizedStart;
             for (const item of items) {
-                if (arr.includes(item)) {
+                if (arr?.includes?.(item)) {
                     notifyDuplicate(item, 'splice', insertPosition);
                     continue;
                 }
@@ -376,7 +376,7 @@ export function wrapSetAsArray<T>(
                     }
                     arr[index] = nextValue;
                 } else {
-                    if (arr.includes(nextValue)) {
+                    if (arr?.includes?.(nextValue)) {
                         notifyDuplicate(nextValue, 'set', index);
                         return true;
                     }
