@@ -50,9 +50,9 @@ export function makeResolvedOp(target: any, emit = false): ResolvedOp {
     return run;
 }
 
-export function emitResolved(target: any, key: any, value: any, oldValue: any) {
+export function emitResolved(target: any, key: any, value: any, oldValue: any, op: any = "resolved") {
     const raw = rawOf(target) ?? target;
-    subscriptRegistry.get(raw)?.trigger?.(key, value, oldValue, "resolved");
+    subscriptRegistry.get(raw)?.trigger?.(key, value, oldValue, op);
 }
 
 /** Re-assign thenable fields through the live proxy so set + `resolved` share one path. */

@@ -429,7 +429,11 @@ globalThis[SubscriptSymbol] ??= class Subscript {
         if (this.#flushScheduled) return;
         this.#flushScheduled = true;
 
-        scheduler?.yield?.()?.then?.(()=>{
+        const schedule = (cb) => {
+            return (typeof scheduler != "undefined") ? scheduler?.yield?.()?.then?.(cb) : queueMicrotask(cb);
+        }
+
+        schedule?.(()=>{
             this.#flushScheduled = false;
 
             // забираем пачку и очищаем, чтобы триггеры во время dispatch попали в следующий тик

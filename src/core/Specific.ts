@@ -44,6 +44,7 @@ function notifyReactiveProperty(
     key: PropertyKey,
     oldValue: unknown,
     newValue: unknown,
+    op: any = "set"
 ) {
     const registry =
         subscriptRegistry.get(receiver) ??
@@ -53,7 +54,7 @@ function notifyReactiveProperty(
     const unequal = safeGet(receiver, $isNotEqual) ?? isNotEqual;
 
     if (unequal(oldValue, newValue)) {
-        registry?.trigger?.(triggerName, newValue, oldValue);
+        registry?.trigger?.(triggerName, newValue, oldValue, op);
     }
 
     if (isPromise(newValue)) {
