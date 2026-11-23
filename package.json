@@ -41,10 +41,6 @@
         "./dist/index.js": "./dist/object.js",
         "./index.js": "./dist/object.js"
     },
-    "dependecies": {
-        "@fest-lib/uniform": "github:fest-live/uniform.ts#main",
-        "@fest-lib/core": "github:fest-live/core.ts#main"
-    },
     "peerDependencies": {
         "@fest-lib/core": ">=0.1.0",
         "@fest-lib/uniform": ">=0.1.0"
